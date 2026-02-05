@@ -111,7 +111,7 @@ func (m *Model) tabsView() string {
 func (m *Model) statusView() string {
 	if m.mode == modeForm {
 		help := joinWithSeparator(
-			m.styles.HeaderHint.Render(" | "),
+			m.helpSeparator(),
 			m.helpItem("esc", "cancel"),
 			m.helpItem("ctrl+c", "quit"),
 		)
@@ -134,7 +134,7 @@ func (m *Model) statusView() string {
 		deleted = "deleted:on"
 	}
 	help := joinWithSeparator(
-		m.styles.HeaderHint.Render(" | "),
+		m.helpSeparator(),
 		m.helpItem("tab/shift+tab", "switch"),
 		m.helpItem("a", "add"),
 		m.helpItem("d", "delete"),
@@ -145,7 +145,7 @@ func (m *Model) statusView() string {
 	)
 	deletedLabel := m.styles.HeaderHint.Render(deleted)
 	helpLine := joinWithSeparator(
-		m.styles.HeaderHint.Render(" | "),
+		m.helpSeparator(),
 		help,
 		deletedLabel,
 	)
@@ -173,6 +173,10 @@ func (m *Model) helpItem(keys, label string) string {
 	return strings.TrimSpace(fmt.Sprintf("%s %s", keycaps, desc))
 }
 
+func (m *Model) helpSeparator() string {
+	return m.styles.HeaderHint.Render(" · ")
+}
+
 func (m *Model) renderKeys(keys string) string {
 	parts := strings.Split(keys, "/")
 	rendered := make([]string, 0, len(parts))
@@ -183,7 +187,7 @@ func (m *Model) renderKeys(keys string) string {
 		}
 		rendered = append(rendered, m.keycap(part))
 	}
-	return joinWithSeparator(m.styles.HeaderHint.Render(" / "), rendered...)
+	return joinWithSeparator(m.styles.HeaderHint.Render(" · "), rendered...)
 }
 
 func (m *Model) keycap(value string) string {
