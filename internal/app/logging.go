@@ -53,7 +53,7 @@ func newLogState(verbosity int) logState {
 	}
 	input := textinput.New()
 	input.Prompt = ""
-	input.Placeholder = "type a regex"
+	input.Placeholder = "type a Perl-compatible regex"
 	input.CharLimit = 256
 	input.Width = 32
 	maxLevel := logInfo
@@ -119,15 +119,24 @@ func (l *logState) matches(line string) bool {
 func (l *logState) validityLabel() string {
 	if l.filterErr != nil {
 		if parseErr, ok := l.filterErr.(*syntax.Error); ok {
-			return fmt.Sprintf("invalid: %s", parseErr.Code.String())
+			return fmt.Sprintf("invalid: %s", shortenReason(parseErr.Code.String()))
 		}
 		message := l.filterErr.Error()
 		message = strings.TrimPrefix(message, "error parsing regexp: ")
 		message = strings.TrimPrefix(message, "error parsing regex: ")
-		return fmt.Sprintf("invalid: %s", message)
+		return fmt.Sprintf("invalid: %s", shortenReason(message))
 	}
 	if strings.TrimSpace(l.input.Value()) == "" {
 		return "no filter"
 	}
 	return "valid"
+}
+
+func shortenReason(value string) string {
+	const maxRunes = 80
+	runes := []rune(strings.TrimSpace(value))
+	if len(runes) <= maxRunes {
+		return string(runes)
+	}
+	return string(runes[:maxRunes-1]) + "…"
 }

@@ -28,6 +28,7 @@ type Model struct {
 	formData              any
 	status                statusMsg
 	log                   logState
+	search                searchState
 	projectTypes          []data.ProjectType
 	maintenanceCategories []data.MaintenanceCategory
 }
@@ -42,6 +43,7 @@ func NewModel(store *data.Store, options Options) (*Model, error) {
 		showHouse: false,
 		mode:      modeTable,
 		log:       newLogState(options.Verbosity),
+		search:    newSearchState(),
 	}
 	if err := model.loadLookups(); err != nil {
 		return nil, err
@@ -62,7 +64,7 @@ func NewModel(store *data.Store, options Options) (*Model, error) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return m.formInitCmd()
+	return tea.Batch(m.formInitCmd(), m.startSearchIndexBuild())
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -92,6 +94,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
+	if m.mode == modeSearch {
+		return m.updateSearch(msg)
+	}
+
 	if m.mode == modeForm && m.form != nil {
 		updated, cmd := m.form.Update(msg)
 		form, ok := updated.(*huh.Form)
@@ -106,6 +112,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.setStatusError(err.Error())
 			} else {
 				m.setStatusInfo("Saved.")
+				m.search.dirty = true
 				_ = m.loadLookups()
 				_ = m.loadHouse()
 				_ = m.reloadAllTabs()
@@ -126,6 +133,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch typed.String() {
 		case "q":
 			return m, tea.Quit
+		case "/":
+			return m, m.openSearch()
 		case "l":
 			if m.log.enabled {
 				return m, m.toggleLogFocus()
@@ -247,6 +256,7 @@ func (m *Model) deleteSelected() {
 		return
 	}
 	tab.LastDeleted = &meta.ID
+	m.search.dirty = true
 	m.logDebug(fmt.Sprintf("Deleted %s %d", tab.Name, meta.ID))
 	m.setStatusInfo("Deleted. Press u to undo.")
 	_ = m.reloadActiveTab()
@@ -298,6 +308,7 @@ func (m *Model) restoreSelected() {
 	if tab.LastDeleted != nil && *tab.LastDeleted == meta.ID {
 		tab.LastDeleted = nil
 	}
+	m.search.dirty = true
 	m.logDebug(fmt.Sprintf("Restored %s %d", tab.Name, meta.ID))
 	m.setStatusInfo("Restored.")
 	_ = m.reloadActiveTab()
@@ -466,17 +477,7 @@ func (m *Model) logLines() int {
 	if !m.log.enabled {
 		return 0
 	}
-	body := 4
-	if m.height > 0 {
-		body = m.height / 4
-		if body < 3 {
-			body = 3
-		}
-		if body > 8 {
-			body = 8
-		}
-	}
-	return body + 2
+	return m.logBodyLines() + 6
 }
 
 func (m *Model) resizeLog() {
@@ -488,6 +489,20 @@ func (m *Model) resizeLog() {
 		width = 16
 	}
 	m.log.input.Width = width
+}
+
+func (m *Model) logBodyLines() int {
+	body := 4
+	if m.height > 0 {
+		body = m.height / 4
+		if body < 3 {
+			body = 3
+		}
+		if body > 8 {
+			body = 8
+		}
+	}
+	return body
 }
 
 func (m *Model) exitForm() {

@@ -14,7 +14,9 @@ func (m *Model) buildView() string {
 	house := m.houseView()
 	tabs := m.tabsView()
 	content := ""
-	if m.mode == modeForm && m.form != nil {
+	if m.mode == modeSearch {
+		content = m.searchView()
+	} else if m.mode == modeForm && m.form != nil {
 		content = m.form.View()
 	} else if tab := m.activeTab(); tab != nil {
 		content = m.tableView(tab)
@@ -110,6 +112,18 @@ func (m *Model) tabsView() string {
 }
 
 func (m *Model) statusView() string {
+	if m.mode == modeSearch {
+		help := joinWithSeparator(
+			m.helpSeparator(),
+			m.helpItem("enter", "open"),
+			m.helpItem("esc", "close"),
+			m.helpItem("up/down", "navigate"),
+		)
+		if m.search.indexing {
+			help = joinWithSeparator(m.helpSeparator(), help, "indexing…")
+		}
+		return help
+	}
 	if m.mode == modeForm {
 		help := joinWithSeparator(
 			m.helpSeparator(),
@@ -143,6 +157,7 @@ func (m *Model) statusView() string {
 		m.helpItem("x", "deleted"),
 		m.helpItem("p", "profile"),
 		m.helpItem("h", "house"),
+		m.helpItem("/", "search"),
 		m.helpItem("q", "quit"),
 	)
 	if m.log.enabled {
@@ -173,12 +188,11 @@ func (m *Model) logView() string {
 		return ""
 	}
 	title := m.styles.LogTitle.Render("Logs")
-	level := m.styles.HeaderHint.Render(fmt.Sprintf("v%d", m.log.verbosity))
-	focus := m.styles.HeaderHint.Render("blur")
+	indicator := m.styles.LogBlur.Render("○ filter")
 	if m.log.focus {
-		focus = m.styles.LogFocus.Render("focus")
+		indicator = m.styles.LogFocus.Render("● filter")
 	}
-	header := joinInline(title, level, focus)
+	header := joinInline(title, indicator)
 
 	filterStatus := m.log.validityLabel()
 	statusStyle := m.styles.LogValid
@@ -186,9 +200,13 @@ func (m *Model) logView() string {
 		statusStyle = m.styles.LogInvalid
 	}
 	filterLine := fmt.Sprintf(
-		"%s /%s/ %s",
+		"%s %s",
 		m.styles.HeaderHint.Render("filter"),
 		m.log.input.View(),
+	)
+	statusLine := fmt.Sprintf(
+		"%s %s",
+		m.styles.HeaderHint.Render("regex"),
 		statusStyle.Render(filterStatus),
 	)
 
@@ -196,9 +214,14 @@ func (m *Model) logView() string {
 	if width <= 0 {
 		width = 80
 	}
-	header = ansi.Truncate(header, width, "…")
-	filterLine = ansi.Truncate(filterLine, width, "…")
-	bodyLines := m.logLines() - 2
+	contentWidth := width - 4
+	if contentWidth < 1 {
+		contentWidth = 1
+	}
+	header = ansi.Truncate(header, contentWidth, "…")
+	filterLine = ansi.Truncate(filterLine, contentWidth, "…")
+	statusLine = ansi.Truncate(statusLine, contentWidth, "…")
+	bodyLines := m.logBodyLines()
 	if bodyLines < 1 {
 		bodyLines = 1
 	}
@@ -208,13 +231,19 @@ func (m *Model) logView() string {
 	}
 	lines := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		line := m.formatLogEntry(entry, width)
+		line := m.formatLogEntry(entry, contentWidth)
 		lines = append(lines, line)
 	}
 	if len(lines) == 0 {
 		lines = []string{m.styles.Empty.Render("No log entries.")}
 	}
-	return joinVerticalNonEmpty(header, filterLine, strings.Join(lines, "\n"))
+	content := joinVerticalNonEmpty(
+		header,
+		filterLine,
+		statusLine,
+		strings.Join(lines, "\n"),
+	)
+	return m.styles.LogBox.Render(content)
 }
 
 func (m *Model) logDivider() string {
@@ -253,7 +282,69 @@ func (m *Model) formatLogEntry(entry logEntry, width int) string {
 	}
 	level := levelStyle.Render(entry.Level.String())
 	raw := fmt.Sprintf("%s %s %s", entry.Time.Format("15:04:05"), level, entry.Message)
-	return ansi.Truncate(raw, width, "…")
+	innerWidth := width - 2
+	if innerWidth < 1 {
+		innerWidth = 1
+	}
+	return m.styles.LogEntry.Render(ansi.Truncate(raw, innerWidth, "…"))
+}
+
+func (m *Model) searchView() string {
+	width := m.width
+	if width <= 0 {
+		width = 80
+	}
+	contentWidth := width - 4
+	if contentWidth < 1 {
+		contentWidth = 1
+	}
+	title := m.styles.SearchTitle.Render("Search")
+	status := m.styles.SearchHint.Render("type to search")
+	if m.search.indexing {
+		status = m.styles.SearchHint.Render("indexing " + m.search.spinner.View())
+	}
+	header := joinInline(title, status)
+	query := fmt.Sprintf("%s %s", m.styles.HeaderHint.Render("query"), m.search.input.View())
+	query = ansi.Truncate(query, contentWidth, "…")
+	lines := make([]string, 0, maxSearchResults)
+	if m.search.indexing {
+		lines = append(lines, m.styles.Empty.Render("Building search index…"))
+	} else if len(m.search.results) == 0 && strings.TrimSpace(m.search.input.Value()) != "" {
+		lines = append(lines, m.styles.Empty.Render("No matches."))
+	} else if len(m.search.results) == 0 {
+		lines = append(lines, m.styles.Empty.Render("Start typing to search."))
+	} else {
+		for idx, entry := range m.search.results {
+			line := formatSearchResult(entry, contentWidth)
+			if idx == m.search.cursor {
+				line = m.styles.SearchSelected.Render(line)
+			} else {
+				line = m.styles.SearchResult.Render(line)
+			}
+			lines = append(lines, line)
+		}
+	}
+	content := joinVerticalNonEmpty(header, query, strings.Join(lines, "\n"))
+	return m.styles.SearchBox.Render(content)
+}
+
+func formatSearchResult(entry searchEntry, width int) string {
+	label := tabLabel(entry.Tab)
+	line := fmt.Sprintf("[%s] %s — %s", label, entry.Title, entry.Summary)
+	return ansi.Truncate(line, width, "…")
+}
+
+func tabLabel(kind TabKind) string {
+	switch kind {
+	case tabProjects:
+		return "Projects"
+	case tabQuotes:
+		return "Quotes"
+	case tabMaintenance:
+		return "Maintenance"
+	default:
+		return "Unknown"
+	}
 }
 
 func (m *Model) tableView(tab *Tab) string {

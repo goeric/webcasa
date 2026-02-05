@@ -19,12 +19,20 @@ type Styles struct {
 	TableSelected  lipgloss.Style
 	TableSeparator lipgloss.Style
 	LogTitle       lipgloss.Style
+	LogBox         lipgloss.Style
 	LogFocus       lipgloss.Style
+	LogBlur        lipgloss.Style
 	LogValid       lipgloss.Style
 	LogInvalid     lipgloss.Style
 	LogLevelInfo   lipgloss.Style
 	LogLevelError  lipgloss.Style
 	LogLevelDebug  lipgloss.Style
+	LogEntry       lipgloss.Style
+	SearchBox      lipgloss.Style
+	SearchTitle    lipgloss.Style
+	SearchHint     lipgloss.Style
+	SearchResult   lipgloss.Style
+	SearchSelected lipgloss.Style
 	Money          lipgloss.Style
 	Readonly       lipgloss.Style
 	Empty          lipgloss.Style
@@ -93,9 +101,15 @@ func DefaultStyles() Styles {
 			Background(lipgloss.Color("#1F2937")).
 			Padding(0, 1).
 			Bold(true),
+		LogBox: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#334155")).
+			Padding(0, 1),
 		LogFocus: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#34D399")).
 			Bold(true),
+		LogBlur: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#94A3B8")),
 		LogValid: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#34D399")).
 			Bold(true),
@@ -110,6 +124,26 @@ func DefaultStyles() Styles {
 			Bold(true),
 		LogLevelDebug: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#A78BFA")).
+			Bold(true),
+		LogEntry: lipgloss.NewStyle().
+			Background(lipgloss.Color("#0B1220")).
+			Padding(0, 1),
+		SearchBox: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#334155")).
+			Padding(0, 1),
+		SearchTitle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F8FAFC")).
+			Background(lipgloss.Color("#1E293B")).
+			Padding(0, 1).
+			Bold(true),
+		SearchHint: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#94A3B8")),
+		SearchResult: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#E2E8F0")),
+		SearchSelected: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#1F2937")).
+			Background(lipgloss.Color("#E2E8F0")).
 			Bold(true),
 		Money: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#C7A4FF")),
