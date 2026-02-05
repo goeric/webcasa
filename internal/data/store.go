@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Store struct {
@@ -14,7 +16,12 @@ type Store struct {
 }
 
 func Open(path string) (*Store, error) {
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
+	db, err := gorm.Open(
+		sqlite.Open(path),
+		&gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
@@ -33,6 +40,7 @@ func (s *Store) AutoMigrate() error {
 		&Quote{},
 		&MaintenanceCategory{},
 		&MaintenanceItem{},
+		&DeletionRecord{},
 	)
 }
 
@@ -156,27 +164,69 @@ func (s *Store) CreateMaintenance(item MaintenanceItem) error {
 }
 
 func (s *Store) DeleteProject(id uint) error {
-	return s.db.Delete(&Project{}, id).Error
+	result := s.db.Delete(&Project{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return s.logDeletion(DeletionEntityProject, id)
 }
 
 func (s *Store) DeleteQuote(id uint) error {
-	return s.db.Delete(&Quote{}, id).Error
+	result := s.db.Delete(&Quote{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return s.logDeletion(DeletionEntityQuote, id)
 }
 
 func (s *Store) DeleteMaintenance(id uint) error {
-	return s.db.Delete(&MaintenanceItem{}, id).Error
+	result := s.db.Delete(&MaintenanceItem{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return s.logDeletion(DeletionEntityMaintenance, id)
 }
 
 func (s *Store) RestoreProject(id uint) error {
-	return s.restoreByID(&Project{}, id)
+	if err := s.restoreByID(&Project{}, id); err != nil {
+		return err
+	}
+	return s.markDeletionRestored(DeletionEntityProject, id)
 }
 
 func (s *Store) RestoreQuote(id uint) error {
-	return s.restoreByID(&Quote{}, id)
+	if err := s.restoreByID(&Quote{}, id); err != nil {
+		return err
+	}
+	return s.markDeletionRestored(DeletionEntityQuote, id)
 }
 
 func (s *Store) RestoreMaintenance(id uint) error {
-	return s.restoreByID(&MaintenanceItem{}, id)
+	if err := s.restoreByID(&MaintenanceItem{}, id); err != nil {
+		return err
+	}
+	return s.markDeletionRestored(DeletionEntityMaintenance, id)
+}
+
+func (s *Store) LastDeletion(entity string) (DeletionRecord, error) {
+	var record DeletionRecord
+	err := s.db.
+		Where("entity = ? AND restored_at IS NULL", entity).
+		Order("id desc").
+		First(&record).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return DeletionRecord{}, gorm.ErrRecordNotFound
+	}
+	return record, err
 }
 
 func (s *Store) seedProjectTypes() error {
@@ -228,6 +278,22 @@ func (s *Store) restoreByID(model any, id uint) error {
 	return s.db.Unscoped().Model(model).
 		Where("id = ?", id).
 		Update("deleted_at", nil).Error
+}
+
+func (s *Store) logDeletion(entity string, id uint) error {
+	record := DeletionRecord{
+		Entity:    entity,
+		TargetID:  id,
+		DeletedAt: time.Now(),
+	}
+	return s.db.Create(&record).Error
+}
+
+func (s *Store) markDeletionRestored(entity string, id uint) error {
+	restoredAt := time.Now()
+	return s.db.Model(&DeletionRecord{}).
+		Where("entity = ? AND target_id = ? AND restored_at IS NULL", entity, id).
+		Update("restored_at", restoredAt).Error
 }
 
 func findOrCreateVendor(tx *gorm.DB, vendor Vendor) (Vendor, error) {

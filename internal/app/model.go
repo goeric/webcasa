@@ -233,15 +233,30 @@ func (m *Model) restoreSelected() {
 	}
 	meta, ok := m.selectedRowMeta()
 	if !ok {
-		if tab.LastDeleted == nil {
-			m.setStatusError("Nothing selected.")
+		if tab.LastDeleted != nil {
+			if err := m.restoreByTab(tab.Kind, *tab.LastDeleted); err != nil {
+				m.setStatusError(err.Error())
+				return
+			}
+			tab.LastDeleted = nil
+			m.setStatusInfo("Restored last deleted.")
+			_ = m.reloadActiveTab()
 			return
 		}
-		if err := m.restoreByTab(tab.Kind, *tab.LastDeleted); err != nil {
+		entity := deletionEntityForTab(tab.Kind)
+		record, err := m.store.LastDeletion(entity)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			m.setStatusError("Nothing to undo.")
+			return
+		}
+		if err != nil {
 			m.setStatusError(err.Error())
 			return
 		}
-		tab.LastDeleted = nil
+		if err := m.restoreByTab(tab.Kind, record.TargetID); err != nil {
+			m.setStatusError(err.Error())
+			return
+		}
 		m.setStatusInfo("Restored last deleted.")
 		_ = m.reloadActiveTab()
 		return
@@ -253,6 +268,9 @@ func (m *Model) restoreSelected() {
 	if err := m.restoreByTab(tab.Kind, meta.ID); err != nil {
 		m.setStatusError(err.Error())
 		return
+	}
+	if tab.LastDeleted != nil && *tab.LastDeleted == meta.ID {
+		tab.LastDeleted = nil
 	}
 	m.setStatusInfo("Restored.")
 	_ = m.reloadActiveTab()
@@ -268,6 +286,19 @@ func (m *Model) restoreByTab(kind TabKind, id uint) error {
 		return m.store.RestoreMaintenance(id)
 	default:
 		return nil
+	}
+}
+
+func deletionEntityForTab(kind TabKind) string {
+	switch kind {
+	case tabProjects:
+		return data.DeletionEntityProject
+	case tabQuotes:
+		return data.DeletionEntityQuote
+	case tabMaintenance:
+		return data.DeletionEntityMaintenance
+	default:
+		return ""
 	}
 }
 

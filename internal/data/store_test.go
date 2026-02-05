@@ -1,8 +1,11 @@
 package data
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
+
+	"gorm.io/gorm"
 )
 
 func TestSeedDefaults(t *testing.T) {
@@ -91,6 +94,43 @@ func TestSoftDeleteRestoreProject(t *testing.T) {
 	projects, err = store.ListProjects(false)
 	if err != nil || len(projects) != 1 {
 		t.Fatalf("ListProjects after restore expected 1, got %d err %v", len(projects), err)
+	}
+}
+
+func TestLastDeletionRecord(t *testing.T) {
+	store := newTestStore(t)
+	types, err := store.ProjectTypes()
+	if err != nil {
+		t.Fatalf("ProjectTypes error: %v", err)
+	}
+	project := Project{
+		Title:         "Test Project",
+		ProjectTypeID: types[0].ID,
+		Status:        ProjectStatusPlanned,
+	}
+	if err := store.CreateProject(project); err != nil {
+		t.Fatalf("CreateProject error: %v", err)
+	}
+	projects, err := store.ListProjects(false)
+	if err != nil || len(projects) != 1 {
+		t.Fatalf("ListProjects expected 1, got %d err %v", len(projects), err)
+	}
+	if err := store.DeleteProject(projects[0].ID); err != nil {
+		t.Fatalf("DeleteProject error: %v", err)
+	}
+	record, err := store.LastDeletion(DeletionEntityProject)
+	if err != nil {
+		t.Fatalf("LastDeletion error: %v", err)
+	}
+	if record.TargetID != projects[0].ID {
+		t.Fatalf("LastDeletion target %d != %d", record.TargetID, projects[0].ID)
+	}
+	if err := store.RestoreProject(record.TargetID); err != nil {
+		t.Fatalf("RestoreProject error: %v", err)
+	}
+	_, err = store.LastDeletion(DeletionEntityProject)
+	if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("expected ErrRecordNotFound, got %v", err)
 	}
 }
 

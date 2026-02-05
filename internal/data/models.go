@@ -13,6 +13,12 @@ const (
 	ProjectStatusCompleted  = "completed"
 )
 
+const (
+	DeletionEntityProject     = "project"
+	DeletionEntityQuote       = "quote"
+	DeletionEntityMaintenance = "maintenance"
+)
+
 func ProjectStatuses() []string {
 	return []string{
 		ProjectStatusPlanned,
@@ -132,4 +138,12 @@ type MaintenanceItem struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      gorm.DeletedAt `gorm:"index"`
+}
+
+type DeletionRecord struct {
+	ID         uint       `gorm:"primaryKey"`
+	Entity     string     `gorm:"index:idx_entity_restored,priority:1"`
+	TargetID   uint       `gorm:"index"`
+	DeletedAt  time.Time  `gorm:"index"`
+	RestoredAt *time.Time `gorm:"index:idx_entity_restored,priority:2"`
 }
