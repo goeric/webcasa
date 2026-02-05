@@ -12,6 +12,7 @@ type Styles struct {
 	HeaderSection lipgloss.Style
 	HeaderLabel   lipgloss.Style
 	HeaderValue   lipgloss.Style
+	Keycap        lipgloss.Style
 	TabActive     lipgloss.Style
 	TabInactive   lipgloss.Style
 	TableHeader   lipgloss.Style
@@ -57,6 +58,11 @@ func DefaultStyles() Styles {
 		HeaderValue: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#E8A2A2")).
 			Italic(true),
+		Keycap: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#0F172A")).
+			Background(lipgloss.Color("#E2E8F0")).
+			Padding(0, 1).
+			Bold(true),
 		TabActive: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Background(lipgloss.Color("#5A56E0")).

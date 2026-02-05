@@ -110,10 +110,11 @@ func (m *Model) tabsView() string {
 
 func (m *Model) statusView() string {
 	if m.mode == modeForm {
-		help := strings.Join([]string{
-			"esc cancel",
-			"ctrl+c quit",
-		}, " | ")
+		help := joinWithSeparator(
+			m.styles.HeaderHint.Render(" | "),
+			m.helpItem("esc", "cancel"),
+			m.helpItem("ctrl+c", "quit"),
+		)
 		if m.status.Text == "" {
 			return help
 		}
@@ -132,16 +133,22 @@ func (m *Model) statusView() string {
 	if tab != nil && tab.ShowDeleted {
 		deleted = "deleted:on"
 	}
-	help := strings.Join([]string{
-		"tab/shift+tab switch",
-		"a add",
-		"d delete",
-		"u restore",
-		"x deleted",
-		"h house",
-		"q quit",
-	}, " | ")
-	helpLine := fmt.Sprintf("%s | %s", help, deleted)
+	help := joinWithSeparator(
+		m.styles.HeaderHint.Render(" | "),
+		m.helpItem("tab/shift+tab", "switch"),
+		m.helpItem("a", "add"),
+		m.helpItem("d", "delete"),
+		m.helpItem("u", "restore"),
+		m.helpItem("x", "deleted"),
+		m.helpItem("h", "house"),
+		m.helpItem("q", "quit"),
+	)
+	deletedLabel := m.styles.HeaderHint.Render(deleted)
+	helpLine := joinWithSeparator(
+		m.styles.HeaderHint.Render(" | "),
+		help,
+		deletedLabel,
+	)
 	if m.status.Text == "" {
 		return helpLine
 	}
@@ -158,6 +165,29 @@ func (m *Model) statusView() string {
 
 func (m *Model) headerBox(content string) string {
 	return m.styles.HeaderBox.Render(content)
+}
+
+func (m *Model) helpItem(keys, label string) string {
+	keycaps := m.renderKeys(keys)
+	desc := m.styles.HeaderHint.Render(label)
+	return strings.TrimSpace(fmt.Sprintf("%s %s", keycaps, desc))
+}
+
+func (m *Model) renderKeys(keys string) string {
+	parts := strings.Split(keys, "/")
+	rendered := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		rendered = append(rendered, m.keycap(part))
+	}
+	return joinWithSeparator(m.styles.HeaderHint.Render(" / "), rendered...)
+}
+
+func (m *Model) keycap(value string) string {
+	return m.styles.Keycap.Render(strings.ToUpper(value))
 }
 
 func (m *Model) houseTitleLine(state string) string {
@@ -236,6 +266,16 @@ func joinInline(values ...string) string {
 		return ""
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Center, filtered...)
+}
+
+func joinWithSeparator(sep string, values ...string) string {
+	filtered := make([]string, 0, len(values))
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			filtered = append(filtered, value)
+		}
+	}
+	return strings.Join(filtered, sep)
 }
 
 func joinNonEmpty(values []string, sep string) string {
