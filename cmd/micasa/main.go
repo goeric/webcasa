@@ -11,11 +11,15 @@ import (
 )
 
 func main() {
-	if wantsHelp(os.Args[1:]) {
+	dbOverride, showHelp, err := parseArgs(os.Args[1:])
+	if err != nil {
+		fail("parse args", err)
+	}
+	if showHelp {
 		printHelp()
 		return
 	}
-	dbPath, err := data.DefaultDBPath()
+	dbPath, err := resolveDBPath(dbOverride)
 	if err != nil {
 		fail("resolve db path", err)
 	}
@@ -38,13 +42,30 @@ func main() {
 	}
 }
 
-func wantsHelp(args []string) bool {
+func parseArgs(args []string) (string, bool, error) {
+	var dbPath string
 	for _, arg := range args {
-		if arg == "-h" || arg == "--help" {
-			return true
+		switch arg {
+		case "-h", "--help":
+			return "", true, nil
+		default:
+			if strings.HasPrefix(arg, "-") {
+				return "", false, fmt.Errorf("unknown flag: %s", arg)
+			}
+			if dbPath != "" {
+				return "", false, fmt.Errorf("too many arguments")
+			}
+			dbPath = arg
 		}
 	}
-	return false
+	return dbPath, false, nil
+}
+
+func resolveDBPath(override string) (string, error) {
+	if override != "" {
+		return override, nil
+	}
+	return data.DefaultDBPath()
 }
 
 func printHelp() {
@@ -52,10 +73,13 @@ func printHelp() {
 		"micasa - home improvement tracker",
 		"",
 		"Usage:",
-		"  micasa [--help]",
+		"  micasa [db-path] [--help]",
 		"",
 		"Options:",
 		"  -h, --help    Show help and exit.",
+		"",
+		"Args:",
+		"  db-path       Override default sqlite path.",
 		"",
 		"Environment:",
 		"  MICASA_DB_PATH  Override default sqlite path.",
