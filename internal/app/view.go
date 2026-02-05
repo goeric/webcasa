@@ -109,6 +109,24 @@ func (m *Model) tabsView() string {
 }
 
 func (m *Model) statusView() string {
+	if m.mode == modeForm {
+		help := strings.Join([]string{
+			"esc cancel",
+			"ctrl+c quit",
+		}, " | ")
+		if m.status.Text == "" {
+			return help
+		}
+		style := m.styles.Info
+		if m.status.Kind == statusError {
+			style = m.styles.Error
+		}
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			style.Render(m.status.Text),
+			help,
+		)
+	}
 	deleted := "deleted:off"
 	tab := m.activeTab()
 	if tab != nil && tab.ShowDeleted {

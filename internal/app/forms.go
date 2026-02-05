@@ -150,7 +150,7 @@ func (m *Model) startHouseForm() {
 				Validate(optionalMoney("HOA fee")),
 		).Title("Financial"),
 	)
-	form.WithShowErrors(true)
+	applyFormDefaults(form)
 	m.mode = modeForm
 	m.formKind = formHouse
 	m.form = form
@@ -204,7 +204,7 @@ func (m *Model) startProjectForm() {
 				Value(&values.Description),
 		).Title("Timeline"),
 	)
-	form.WithShowErrors(true)
+	applyFormDefaults(form)
 	m.mode = modeForm
 	m.formKind = formProject
 	m.form = form
@@ -265,7 +265,7 @@ func (m *Model) startQuoteForm() error {
 			huh.NewText().Title("Notes").Value(&values.Notes),
 		).Title("Quote"),
 	)
-	form.WithShowErrors(true)
+	applyFormDefaults(form)
 	m.mode = modeForm
 	m.formKind = formQuote
 	m.form = form
@@ -314,11 +314,23 @@ func (m *Model) startMaintenanceForm() {
 			huh.NewText().Title("Notes").Value(&values.Notes),
 		).Title("Details"),
 	)
-	form.WithShowErrors(true)
+	applyFormDefaults(form)
 	m.mode = modeForm
 	m.formKind = formMaintenance
 	m.form = form
 	m.formData = values
+}
+
+func applyFormDefaults(form *huh.Form) {
+	form.WithShowErrors(true)
+	form.WithKeyMap(formKeyMap())
+}
+
+func formKeyMap() *huh.KeyMap {
+	keymap := huh.NewDefaultKeyMap()
+	keymap.Quit.SetKeys("esc")
+	keymap.Quit.SetHelp("esc", "cancel")
+	return keymap
 }
 
 func (m *Model) handleFormSubmit() error {
