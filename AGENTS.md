@@ -26,9 +26,12 @@ Pause work at a good stopping point if it seems like token percentage is getting
 - write the code as well factored and human readable as you possibly can
 - always run go test with the -v argument to get the most information
 
-
 Look at `remaining_work.md` and work through those tasks. When you complete a task, pause and wait for the developer's input before continuing on. Once allowed to move on, commit the current change set (fixing any pre-commit issues that show up).
 
-When you finish a task, remove the task from `remaining_work.md` and note in the git log that addresses the task what the original task description was.
+When you finish a task, add a ## Completed section to remaining_work.md and move the task description to a bulleted list in that section with the short commit hash trailing the task like
+
+- TASK_DESCRIPTION (SHORT-SHA)
+
+and also note in the git log that addresses the task what the original task description was.
 
 It's possible that remaining work has already been done, just leave those alone if you figure out that the task has already been done.
