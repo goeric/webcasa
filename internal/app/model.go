@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -246,6 +247,7 @@ func (m *Model) deleteSelected() {
 		return
 	}
 	tab.LastDeleted = &meta.ID
+	m.logDebug(fmt.Sprintf("Deleted %s %d", tab.Name, meta.ID))
 	m.setStatusInfo("Deleted. Press u to undo.")
 	_ = m.reloadActiveTab()
 }
@@ -296,6 +298,7 @@ func (m *Model) restoreSelected() {
 	if tab.LastDeleted != nil && *tab.LastDeleted == meta.ID {
 		tab.LastDeleted = nil
 	}
+	m.logDebug(fmt.Sprintf("Restored %s %d", tab.Name, meta.ID))
 	m.setStatusInfo("Restored.")
 	_ = m.reloadActiveTab()
 }
@@ -378,6 +381,7 @@ func (m *Model) reloadTab(tab *Tab) error {
 		var cellRows [][]cell
 		rows, meta, cellRows = projectRows(projects)
 		tab.CellRows = cellRows
+		m.logDebug(fmt.Sprintf("Loaded %d projects", len(projects)))
 	case tabQuotes:
 		var quotes []data.Quote
 		quotes, err = m.store.ListQuotes(tab.ShowDeleted)
@@ -387,6 +391,7 @@ func (m *Model) reloadTab(tab *Tab) error {
 		var cellRows [][]cell
 		rows, meta, cellRows = quoteRows(quotes)
 		tab.CellRows = cellRows
+		m.logDebug(fmt.Sprintf("Loaded %d quotes", len(quotes)))
 	case tabMaintenance:
 		var items []data.MaintenanceItem
 		items, err = m.store.ListMaintenance(tab.ShowDeleted)
@@ -396,6 +401,7 @@ func (m *Model) reloadTab(tab *Tab) error {
 		var cellRows [][]cell
 		rows, meta, cellRows = maintenanceRows(items)
 		tab.CellRows = cellRows
+		m.logDebug(fmt.Sprintf("Loaded %d maintenance items", len(items)))
 	}
 	tab.Table.SetRows(rows)
 	tab.Rows = meta
