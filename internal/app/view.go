@@ -134,6 +134,7 @@ func (m *Model) statusView() string {
 		m.helpItem("d", "delete"),
 		m.helpItem("u", "restore"),
 		m.helpItem("x", "deleted"),
+		m.helpItem("p", "profile"),
 		m.helpItem("h", "house"),
 		m.helpItem("q", "quit"),
 	)

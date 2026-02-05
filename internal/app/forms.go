@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -78,6 +80,9 @@ type maintenanceFormData struct {
 
 func (m *Model) startHouseForm() {
 	values := &houseFormData{}
+	if m.hasHouse {
+		values = houseFormValues(m.house)
+	}
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -414,8 +419,14 @@ func (m *Model) submitHouseForm() error {
 		HOAName:          strings.TrimSpace(values.HOAName),
 		HOAFeeCents:      hoaFee,
 	}
-	if err := m.store.CreateHouseProfile(profile); err != nil {
-		return err
+	if m.hasHouse {
+		if err := m.store.UpdateHouseProfile(profile); err != nil {
+			return err
+		}
+	} else {
+		if err := m.store.CreateHouseProfile(profile); err != nil {
+			return err
+		}
 	}
 	m.house = profile
 	m.hasHouse = true
@@ -629,4 +640,53 @@ func requiredMoney(label string) func(string) error {
 		}
 		return nil
 	}
+}
+
+func houseFormValues(profile data.HouseProfile) *houseFormData {
+	return &houseFormData{
+		Nickname:         profile.Nickname,
+		AddressLine1:     profile.AddressLine1,
+		AddressLine2:     profile.AddressLine2,
+		City:             profile.City,
+		State:            profile.State,
+		PostalCode:       profile.PostalCode,
+		YearBuilt:        intToString(profile.YearBuilt),
+		SquareFeet:       intToString(profile.SquareFeet),
+		LotSquareFeet:    intToString(profile.LotSquareFeet),
+		Bedrooms:         intToString(profile.Bedrooms),
+		Bathrooms:        floatToString(profile.Bathrooms),
+		FoundationType:   profile.FoundationType,
+		WiringType:       profile.WiringType,
+		RoofType:         profile.RoofType,
+		ExteriorType:     profile.ExteriorType,
+		HeatingType:      profile.HeatingType,
+		CoolingType:      profile.CoolingType,
+		WaterSource:      profile.WaterSource,
+		SewerType:        profile.SewerType,
+		ParkingType:      profile.ParkingType,
+		BasementType:     profile.BasementType,
+		InsuranceCarrier: profile.InsuranceCarrier,
+		InsurancePolicy:  profile.InsurancePolicy,
+		InsuranceRenewal: data.FormatDate(profile.InsuranceRenewal),
+		PropertyTax:      data.FormatOptionalCents(profile.PropertyTaxCents),
+		HOAName:          profile.HOAName,
+		HOAFee:           data.FormatOptionalCents(profile.HOAFeeCents),
+	}
+}
+
+func intToString(value int) string {
+	if value == 0 {
+		return ""
+	}
+	return strconv.Itoa(value)
+}
+
+func floatToString(value float64) string {
+	if value == 0 {
+		return ""
+	}
+	if value == math.Trunc(value) {
+		return fmt.Sprintf("%.0f", value)
+	}
+	return fmt.Sprintf("%.1f", value)
 }

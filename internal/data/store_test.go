@@ -37,6 +37,25 @@ func TestHouseProfileSingle(t *testing.T) {
 	}
 }
 
+func TestUpdateHouseProfile(t *testing.T) {
+	store := newTestStore(t)
+	profile := HouseProfile{Nickname: "Primary Residence", City: "Portland"}
+	if err := store.CreateHouseProfile(profile); err != nil {
+		t.Fatalf("CreateHouseProfile error: %v", err)
+	}
+	updated := HouseProfile{Nickname: "Primary Residence", City: "Seattle"}
+	if err := store.UpdateHouseProfile(updated); err != nil {
+		t.Fatalf("UpdateHouseProfile error: %v", err)
+	}
+	fetched, err := store.HouseProfile()
+	if err != nil {
+		t.Fatalf("HouseProfile error: %v", err)
+	}
+	if fetched.City != "Seattle" {
+		t.Fatalf("expected city Seattle, got %q", fetched.City)
+	}
+}
+
 func TestSoftDeleteRestoreProject(t *testing.T) {
 	store := newTestStore(t)
 	types, err := store.ProjectTypes()

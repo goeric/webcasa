@@ -66,6 +66,16 @@ func (s *Store) CreateHouseProfile(profile HouseProfile) error {
 	return s.db.Create(&profile).Error
 }
 
+func (s *Store) UpdateHouseProfile(profile HouseProfile) error {
+	var existing HouseProfile
+	if err := s.db.First(&existing).Error; err != nil {
+		return err
+	}
+	profile.ID = existing.ID
+	profile.CreatedAt = existing.CreatedAt
+	return s.db.Model(&existing).Select("*").Updates(profile).Error
+}
+
 func (s *Store) ProjectTypes() ([]ProjectType, error) {
 	var types []ProjectType
 	if err := s.db.Order("name").Find(&types).Error; err != nil {

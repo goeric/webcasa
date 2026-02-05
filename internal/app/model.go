@@ -115,6 +115,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showHouse = !m.showHouse
 			m.resizeTables()
 			return m, nil
+		case "p":
+			m.startHouseForm()
+			return m, m.formInitCmd()
 		case "a":
 			m.startAddForm()
 			return m, m.formInitCmd()
