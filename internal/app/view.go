@@ -38,7 +38,7 @@ func (m *Model) houseView() string {
 }
 
 func (m *Model) houseCollapsed() string {
-	line1 := m.houseTitleLine("collapsed")
+	line1 := m.houseTitleLine("▸")
 	line2 := joinInline(
 		m.chip("🏠", m.house.Nickname),
 		m.chip("📍", formatCityState(m.house)),
@@ -52,7 +52,7 @@ func (m *Model) houseCollapsed() string {
 
 func (m *Model) houseExpanded() string {
 	address := formatAddress(m.house)
-	line1 := m.houseTitleLine("expanded")
+	line1 := m.houseTitleLine("▾")
 	line2 := joinInline(
 		m.chip("🏠", m.house.Nickname),
 		m.chip("📍", address),
