@@ -26,11 +26,12 @@ type Model struct {
 	form                  *huh.Form
 	formData              any
 	status                statusMsg
+	log                   logState
 	projectTypes          []data.ProjectType
 	maintenanceCategories []data.MaintenanceCategory
 }
 
-func NewModel(store *data.Store) (*Model, error) {
+func NewModel(store *data.Store, options Options) (*Model, error) {
 	styles := DefaultStyles()
 	model := &Model{
 		store:     store,
@@ -39,6 +40,7 @@ func NewModel(store *data.Store) (*Model, error) {
 		active:    0,
 		showHouse: false,
 		mode:      modeTable,
+		log:       newLogState(options.Verbosity),
 	}
 	if err := model.loadLookups(); err != nil {
 		return nil, err
@@ -51,6 +53,9 @@ func NewModel(store *data.Store) (*Model, error) {
 	}
 	if !model.hasHouse {
 		model.startHouseForm()
+	}
+	if model.log.enabled {
+		model.logInfo("Log enabled.")
 	}
 	return model, nil
 }
@@ -69,6 +74,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if typed.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
+	}
+
+	if m.log.enabled && m.log.focus && m.mode != modeForm {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch keyMsg.String() {
+			case "esc":
+				m.log.focus = false
+				m.log.input.Blur()
+				return m, nil
+			}
+		}
+		var cmd tea.Cmd
+		m.log.input, cmd = m.log.input.Update(msg)
+		m.log.setFilter(m.log.input.Value())
+		return m, cmd
 	}
 
 	if m.mode == modeForm && m.form != nil {
@@ -105,6 +125,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch typed.String() {
 		case "q":
 			return m, tea.Quit
+		case "l":
+			if m.log.enabled {
+				return m, m.toggleLogFocus()
+			}
 		case "tab":
 			m.nextTab()
 			return m, nil
@@ -406,7 +430,7 @@ func (m *Model) loadLookups() error {
 }
 
 func (m *Model) resizeTables() {
-	height := m.height - m.houseLines() - 1 - m.statusLines()
+	height := m.height - m.houseLines() - 1 - m.statusLines() - m.logLines()
 	if height < 4 {
 		height = 4
 	}
@@ -418,6 +442,7 @@ func (m *Model) resizeTables() {
 		m.tabs[i].Table.SetHeight(tableHeight)
 		m.tabs[i].Table.SetWidth(m.width)
 	}
+	m.resizeLog()
 }
 
 func (m *Model) houseLines() int {
@@ -431,6 +456,34 @@ func (m *Model) statusLines() int {
 	return 2
 }
 
+func (m *Model) logLines() int {
+	if !m.log.enabled {
+		return 0
+	}
+	body := 4
+	if m.height > 0 {
+		body = m.height / 4
+		if body < 3 {
+			body = 3
+		}
+		if body > 8 {
+			body = 8
+		}
+	}
+	return body + 2
+}
+
+func (m *Model) resizeLog() {
+	if !m.log.enabled {
+		return
+	}
+	width := m.width - 24
+	if width < 16 {
+		width = 16
+	}
+	m.log.input.Width = width
+}
+
 func (m *Model) exitForm() {
 	m.mode = modeTable
 	m.formKind = formNone
@@ -440,10 +493,12 @@ func (m *Model) exitForm() {
 
 func (m *Model) setStatusInfo(text string) {
 	m.status = statusMsg{Text: text, Kind: statusInfo}
+	m.logInfo(text)
 }
 
 func (m *Model) setStatusError(text string) {
 	m.status = statusMsg{Text: text, Kind: statusError}
+	m.logError(text)
 }
 
 func (m *Model) formInitCmd() tea.Cmd {
@@ -451,4 +506,28 @@ func (m *Model) formInitCmd() tea.Cmd {
 		return m.form.Init()
 	}
 	return nil
+}
+
+func (m *Model) toggleLogFocus() tea.Cmd {
+	if !m.log.enabled {
+		return nil
+	}
+	m.log.focus = !m.log.focus
+	if m.log.focus {
+		return m.log.input.Focus()
+	}
+	m.log.input.Blur()
+	return nil
+}
+
+func (m *Model) logInfo(message string) {
+	m.log.append(logInfo, message)
+}
+
+func (m *Model) logError(message string) {
+	m.log.append(logError, message)
+}
+
+func (m *Model) logDebug(message string) {
+	m.log.append(logDebug, message)
 }

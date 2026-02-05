@@ -19,8 +19,9 @@ func (m *Model) buildView() string {
 	} else if tab := m.activeTab(); tab != nil {
 		content = m.tableView(tab)
 	}
+	logPane := m.logView()
 	status := m.statusView()
-	return lipgloss.JoinVertical(lipgloss.Left, house, tabs, content, status)
+	return joinVerticalNonEmpty(house, tabs, content, logPane, status)
 }
 
 func (m *Model) houseView() string {
@@ -138,6 +139,9 @@ func (m *Model) statusView() string {
 		m.helpItem("h", "house"),
 		m.helpItem("q", "quit"),
 	)
+	if m.log.enabled {
+		help = joinWithSeparator(m.helpSeparator(), help, m.helpItem("l", "log"))
+	}
 	deletedLabel := m.styles.HeaderHint.Render(deleted)
 	helpLine := joinWithSeparator(
 		m.helpSeparator(),
@@ -156,6 +160,85 @@ func (m *Model) statusView() string {
 		style.Render(m.status.Text),
 		helpLine,
 	)
+}
+
+func (m *Model) logView() string {
+	if !m.log.enabled {
+		return ""
+	}
+	title := m.styles.LogTitle.Render("Logs")
+	level := m.styles.HeaderHint.Render(fmt.Sprintf("v%d", m.log.verbosity))
+	focus := m.styles.HeaderHint.Render("blur")
+	if m.log.focus {
+		focus = m.styles.LogFocus.Render("focus")
+	}
+	header := joinInline(title, level, focus)
+
+	filterStatus := m.log.validityLabel()
+	statusStyle := m.styles.LogValid
+	if m.log.filterErr != nil {
+		statusStyle = m.styles.LogInvalid
+	}
+	filterLine := fmt.Sprintf(
+		"%s /%s/ %s",
+		m.styles.HeaderHint.Render("filter"),
+		m.log.input.View(),
+		statusStyle.Render(filterStatus),
+	)
+
+	width := m.width
+	if width <= 0 {
+		width = 80
+	}
+	header = ansi.Truncate(header, width, "…")
+	filterLine = ansi.Truncate(filterLine, width, "…")
+	bodyLines := m.logLines() - 2
+	if bodyLines < 1 {
+		bodyLines = 1
+	}
+	entries := m.filteredLogEntries()
+	if len(entries) > bodyLines {
+		entries = entries[len(entries)-bodyLines:]
+	}
+	lines := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		line := m.formatLogEntry(entry, width)
+		lines = append(lines, line)
+	}
+	if len(lines) == 0 {
+		lines = []string{m.styles.Empty.Render("No log entries.")}
+	}
+	return joinVerticalNonEmpty(header, filterLine, strings.Join(lines, "\n"))
+}
+
+func (m *Model) filteredLogEntries() []logEntry {
+	entries := make([]logEntry, 0, len(m.log.entries))
+	for _, entry := range m.log.entries {
+		raw := fmt.Sprintf(
+			"%s %s %s",
+			entry.Time.Format("15:04:05"),
+			entry.Level.String(),
+			entry.Message,
+		)
+		if !m.log.matches(raw) {
+			continue
+		}
+		entries = append(entries, entry)
+	}
+	return entries
+}
+
+func (m *Model) formatLogEntry(entry logEntry, width int) string {
+	levelStyle := m.styles.LogLevelInfo
+	switch entry.Level {
+	case logError:
+		levelStyle = m.styles.LogLevelError
+	case logDebug:
+		levelStyle = m.styles.LogLevelDebug
+	}
+	level := levelStyle.Render(entry.Level.String())
+	raw := fmt.Sprintf("%s %s %s", entry.Time.Format("15:04:05"), level, entry.Message)
+	return ansi.Truncate(raw, width, "…")
 }
 
 func (m *Model) tableView(tab *Tab) string {

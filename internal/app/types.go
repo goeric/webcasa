@@ -55,6 +55,10 @@ type statusMsg struct {
 	Kind statusKind
 }
 
+type Options struct {
+	Verbosity int
+}
+
 type alignKind int
 
 const (

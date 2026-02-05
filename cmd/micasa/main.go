@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	dbOverride, showHelp, err := parseArgs(os.Args[1:])
+	dbOverride, verbosity, showHelp, err := parseArgs(os.Args[1:])
 	if err != nil {
 		fail("parse args", err)
 	}
@@ -33,7 +33,7 @@ func main() {
 	if err := store.SeedDefaults(); err != nil {
 		fail("seed defaults", err)
 	}
-	model, err := app.NewModel(store)
+	model, err := app.NewModel(store, app.Options{Verbosity: verbosity})
 	if err != nil {
 		fail("initialize app", err)
 	}
@@ -42,23 +42,31 @@ func main() {
 	}
 }
 
-func parseArgs(args []string) (string, bool, error) {
+func parseArgs(args []string) (string, int, bool, error) {
 	var dbPath string
+	verbosity := 0
 	for _, arg := range args {
 		switch arg {
 		case "-h", "--help":
-			return "", true, nil
+			return "", verbosity, true, nil
+		case "-v", "--verbose":
+			verbosity++
 		default:
+			trimmed := strings.TrimLeft(arg, "-")
+			if strings.HasPrefix(arg, "-") && strings.Trim(trimmed, "v") == "" {
+				verbosity += len(trimmed)
+				continue
+			}
 			if strings.HasPrefix(arg, "-") {
-				return "", false, fmt.Errorf("unknown flag: %s", arg)
+				return "", 0, false, fmt.Errorf("unknown flag: %s", arg)
 			}
 			if dbPath != "" {
-				return "", false, fmt.Errorf("too many arguments")
+				return "", 0, false, fmt.Errorf("too many arguments")
 			}
 			dbPath = arg
 		}
 	}
-	return dbPath, false, nil
+	return dbPath, verbosity, false, nil
 }
 
 func resolveDBPath(override string) (string, error) {
@@ -73,10 +81,11 @@ func printHelp() {
 		"micasa - home improvement tracker",
 		"",
 		"Usage:",
-		"  micasa [db-path] [--help]",
+		"  micasa [db-path] [--help] [-v|-vv|-vvv]",
 		"",
 		"Options:",
 		"  -h, --help    Show help and exit.",
+		"  -v, --verbose Show logs (repeat for more detail).",
 		"",
 		"Args:",
 		"  db-path       Override default sqlite path.",

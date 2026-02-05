@@ -83,6 +83,7 @@ func (m *Model) startHouseForm() {
 	if m.hasHouse {
 		values = houseFormValues(m.house)
 	}
+	m.logDebug("Opening house profile form.")
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -170,6 +171,7 @@ func (m *Model) startProjectForm() {
 	if len(options) > 0 {
 		values.ProjectTypeID = options[0].Value
 	}
+	m.logDebug("Opening project form.")
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -224,6 +226,7 @@ func (m *Model) startQuoteForm() error {
 	if len(projects) == 0 {
 		return fmt.Errorf("add a project before adding quotes")
 	}
+	m.logDebug("Opening quote form.")
 	values := &quoteFormData{}
 	options := projectOptions(projects)
 	values.ProjectID = options[0].Value
@@ -284,6 +287,7 @@ func (m *Model) startMaintenanceForm() {
 	if len(options) > 0 {
 		values.CategoryID = options[0].Value
 	}
+	m.logDebug("Opening maintenance form.")
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().

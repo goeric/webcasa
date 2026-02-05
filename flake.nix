@@ -17,7 +17,7 @@
           version = "0.1.0";
           src = ./.;
           subPackages = [ "cmd/micasa" ];
-          vendorHash = "sha256-Cl7yHA3o5nPLE78hps0cgjv3jdvQe3ZIoX8zhSCqqoo=";
+          vendorHash = "sha256-0GfnvE7YqlD3CIwXvE2DYriSLgnskB94++MMGYiG4j4=";
         };
 
         preCommit = git-hooks.lib.${system}.run {

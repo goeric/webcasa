@@ -18,6 +18,13 @@ type Styles struct {
 	TableHeader    lipgloss.Style
 	TableSelected  lipgloss.Style
 	TableSeparator lipgloss.Style
+	LogTitle       lipgloss.Style
+	LogFocus       lipgloss.Style
+	LogValid       lipgloss.Style
+	LogInvalid     lipgloss.Style
+	LogLevelInfo   lipgloss.Style
+	LogLevelError  lipgloss.Style
+	LogLevelDebug  lipgloss.Style
 	Money          lipgloss.Style
 	Readonly       lipgloss.Style
 	Empty          lipgloss.Style
@@ -81,6 +88,29 @@ func DefaultStyles() Styles {
 			Bold(true),
 		TableSeparator: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#374151")),
+		LogTitle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F8FAFC")).
+			Background(lipgloss.Color("#1F2937")).
+			Padding(0, 1).
+			Bold(true),
+		LogFocus: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#34D399")).
+			Bold(true),
+		LogValid: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#34D399")).
+			Bold(true),
+		LogInvalid: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F87171")).
+			Bold(true),
+		LogLevelInfo: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#38BDF8")).
+			Bold(true),
+		LogLevelError: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F87171")).
+			Bold(true),
+		LogLevelDebug: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#A78BFA")).
+			Bold(true),
 		Money: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#C7A4FF")),
 		Readonly: lipgloss.NewStyle().
