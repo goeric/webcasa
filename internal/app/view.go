@@ -224,23 +224,14 @@ func (m *Model) statusView() string {
 		m.helpItem("e", m.editHint()),
 		m.helpItem("d", "del"),
 		m.helpItem("u", "undo"),
-		m.helpItem("x", "deleted"),
+		m.deletedHint(tab),
 		m.helpItem("p", "profile"),
 		m.helpItem("/", "\U0001F50D"),
 		m.helpItem("q", "quit"),
 	)
 	help = joinWithSeparator(m.helpSeparator(), help, m.helpItem("l", "log"))
-	metaSep := m.styles.HeaderHint.Render("  ▏ ")
-	var deletedLabel string
-	if tab != nil && tab.ShowDeleted {
-		deletedLabel = m.styles.DeletedLabel.Render("+ deleted")
-	}
 	dbLabel := m.styles.DBHint.Render(m.dbPath)
-	leftPart := help
-	if deletedLabel != "" {
-		leftPart = help + metaSep + deletedLabel
-	}
-	leftWidth := ansi.StringWidth(leftPart)
+	leftWidth := ansi.StringWidth(help)
 	dbWidth := ansi.StringWidth(dbLabel)
 	width := m.width
 	if width <= 0 {
@@ -250,7 +241,7 @@ func (m *Model) statusView() string {
 	if gap < 2 {
 		gap = 2
 	}
-	helpLine := leftPart + strings.Repeat(" ", gap) + dbLabel
+	helpLine := help + strings.Repeat(" ", gap) + dbLabel
 	if m.status.Text == "" {
 		return helpLine
 	}
@@ -263,6 +254,13 @@ func (m *Model) statusView() string {
 		style.Render(m.status.Text),
 		helpLine,
 	)
+}
+
+func (m *Model) deletedHint(tab *Tab) string {
+	if tab != nil && tab.ShowDeleted {
+		return m.styles.DeletedLabel.Render("x deleted")
+	}
+	return m.helpItem("x", "deleted")
 }
 
 func (m *Model) editHint() string {
