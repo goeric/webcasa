@@ -489,9 +489,13 @@ in case things crash or otherwise go haywire, be diligent about this.
 
 ## 2026-02-06 Session 10
 
+**User request**: Update CI to trigger on `main` instead of `go`; merge Go gitignore template; add Apache-2.0 license; add license header pre-commit hook.
 
 **Work done**:
 - Updated `.github/workflows/ci.yml` to trigger on `main` branch
+- Merged GitHub Go gitignore template into `.gitignore`
+- Added Apache-2.0 `LICENSE` file, updated README to reference it
+- Added `license-header` pre-commit hook in `flake.nix`: inserts/verifies 2-line Apache header on source files, auto-bumps stale copyright year
 
 # Completed work
 
