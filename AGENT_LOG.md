@@ -62,7 +62,7 @@
   - `forms.go`: inlined `floatToString` (was trivial wrapper around `formatFloat`)
   - `types.go`/`view.go`: replaced `tabLabel` switch with `TabKind.String()` method
 - Merged house title + stats into a single line for collapsed view; same for expanded (title + identity on one line, sections below); removed now-unused `houseTitleLine` helper
-- Right-aligned keystroke hints (H keycap / P edit) to the edge of the header box in both collapsed and expanded views via `houseLineWithTrailing` helper
+- Right-aligned keystroke hints — reverted: moved H/P hints back to status bar, removed `houseLineWithTrailing` helper
 
 ## 2026-02-05 Session 3
 
