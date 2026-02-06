@@ -346,3 +346,25 @@ message). Full detail-view for appliances = future scope.
 - "Maint" column on Appliances with item count
 - Visual distinction for detail view
 - Help overlay updates
+
+## Hide/Show Columns (HIDECOLS)
+
+**Goal**: Let users hide columns per-tab to reduce noise. Session-only (not persisted).
+
+**Design**:
+- Add `Hidden bool` to `columnSpec`
+- `ColCursor` stays as full index; `h`/`l` skip hidden columns
+- Rendering projects to visible-only data before calling render functions:
+  - `visibleProjection(tab)` returns visible specs, cell rows, col cursor, sorts
+  - All render functions receive projected data unchanged
+- Keybindings (Edit mode): `c` hides current column, `C` shows all
+- Can't hide the last visible column
+- Sort entries use full indices (hidden columns can still be sorted)
+- Inline edit uses full indices (no change needed)
+
+**Implementation**:
+1. `types.go`: `Hidden bool` on `columnSpec`
+2. `view.go`: projection helpers + wire into `tableView`
+3. `model.go`: `h`/`l` skip hidden, `c`/`C` keybindings
+4. Status bar + help overlay hints
+5. Tests

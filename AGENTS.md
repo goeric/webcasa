@@ -302,7 +302,8 @@ doing the same thing in a loop and not making progress.
 - Make sure to run the appropriate testing and formatting commands when you
   need to (usually a logical stopping point).
 - Write the code as well factored and human readable as you possibly can.
-- Always run `go test -v`, to get the most information about which test failed.
+- Always run `go test -v -shuffle=$RANDOM`, to get the most information about
+  which test failed and to avoid introducing test order dependencies.
 - Depend on `pre-commit` (which is automatically run when you make a commit) to
   catch formatting issues. **DO NOT** attempt to use `gofmt` or any other
   formatting tool directly
@@ -497,6 +498,26 @@ in case things crash or otherwise go haywire, be diligent about this.
 - Added Apache-2.0 `LICENSE` file, updated README to reference it
 - Added `license-header` pre-commit hook in `flake.nix`: inserts/verifies 2-line Apache header on source files, auto-bumps stale copyright year
 
+## 2026-02-06 Session 11
+
+**User request**: Implement [HIDECOLS] — hide/show columns with candy-wrapper stacks, ladle L-shape for edge columns, sparse ellipsis indicators.
+
+**Work done** (see git log for details):
+- `c` hides current column (Normal mode), `C` shows all; last visible column protected
+- `HideOrder int` on `columnSpec` tracks hide sequence (0=visible, >0=hidden)
+- `visibleProjection` filters hidden cols; nav (`h`/`l`) skips hidden cols
+- Gap separators: `⋯` at collapsed gaps on header + 3 data rows (top/mid/bottom), plain `│` elsewhere; divider always `─┼─`
+- Candy-colored pill stacks below table: `computeCollapsedStacks`, `renderCollapsedStacks`, `renderStackLine`; stacks ordered by column position (rightmost on top)
+- Middle stacks: `│` connector from table to pills, centered on `⋯` gap
+- Edge stacks: ladle L-shape (`│` border alongside body+pills, `╰────` / `────╯` base); `ladleChrome`, `renderLadleBottom`
+- Stack width clamped to column space; overlapping stacks merged (e.g. single visible column)
+- Both-edge bottom: single continuous `╰────╯` spanning full wrapped width
+- Blank spacer line between body and edge pills when no middle connector
+- Right `│` border padded to align with body
+- Status bar lists hidden column names; help overlay documents `c`/`C`
+- 15+ new tests: ladle chrome, bottom curves, stack merging, gap separators, join cells, hidden column names
+- Added `-shuffle=$RANDOM` to hard rules for `go test`
+
 # Completed work
 
 - [README] project README with features, keybindings, architecture, install instructions
@@ -532,6 +553,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [REDO] redo undone edits with r in Edit mode (c6b6739)
 - [COLWIDTH] stable column widths for fixed-option columns (c6b6739)
 - [TABHANDLER] TabHandler interface eliminates switch dispatch on TabKind/FormKind (67bfbe3)
+- [HIDECOLS] hide/show columns with candy stacks, ladle edges, sparse ellipsis
 - refactor forms.go and view.go: deduplicate submit/edit pairs, centering, inline edit boilerplate, form-data converters (9851c74)
 - scrap the log-on-dash-v approach, just enable logging dynamically (75b2c86)
 - remove the v1 in Logs; remove the forward slashes; ghost text reads type a Perl-compatible regex (1c623d4)
@@ -543,16 +565,33 @@ in case things crash or otherwise go haywire, be diligent about this.
 
 # Remaining work
 
-- [WEBSITE] I've got the `micasa.dev` domain. Help me build a github pages website for this project that is really fucking slick.
+- [WEBSITE] Help me build a `github-pages` website for this project. Modern,
+  simple, not AI sloppish, whimsical, funny, perhaps even a bit snarky and
+  irreverent. Ideally this wouldn't require a bunch of random javascript crap
+  like react and 500 MBs of deps, but ugh okay if that's needed to make the
+  thing awesome. make sure you setup the `github-pages` branch and all the
+  deployment configs so that I can just push to that branch to update the site.
+  The site should include a project overview, installation instructions,
+  feature list. Bonus points for a "demo" section with animated GIFs showing
+  off the terminal UI.
 - [DATEPICKER] for date column data entry can we make that a date picker that
   adjusts a nice little terminal calendar based on what the user has typed in
   so far?
 - [MAINT-GHOST] for maintenance items, compute the default ghost text for next due date from
   the last serviced date + the maintenance interval and default to that
+- [STYLING-TIME-TO-MAINT] add a gradient from say green to orange to red (where
+  green means maintenance is not due for a long time, orange means it's coming
+  up, and red means it's overdue) to the background of the "Next Due" column on
+  the maintenance tab. This would be a nice visual indicator of which items
+  need attention soon. Maybe make a computed column that contains days until
+  next maintenance and base the gradient on that, so we can have consistent
+  thresholds for the colors across all items.
 - [APPLIANCEAGE] Add an Age column to the Appliances table, it should be
   read-only and computed from purchase date and the current date based on the
-  current time zone.
-- [HIDECOLS] Add the ability to hide and show columns.
+  current time zone. I don't think this should involve a data model change, let me know if it does.
+- [HIDECOLS-INTERACTIVE] Make the collapsed column stacks interactive: navigate to
+  a candy-wrapper pill and press c to unhide just that column (peel it off the
+  stack). Currently c hides and C shows all; this would add per-column restore.
 - [NESTED-DRILL] Stack-based nested drilldown: push current detail onto a stack
   when drilling deeper (e.g. Appliances > Dishwasher > Filter Replacement service
   log), esc pops back one level, breadcrumb grows with each level.

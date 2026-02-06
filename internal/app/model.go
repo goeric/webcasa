@@ -174,18 +174,12 @@ func (m *Model) handleCommonKeys(key tea.KeyMsg) (tea.Cmd, bool) {
 		return nil, true
 	case "h", "left":
 		if tab := m.effectiveTab(); tab != nil {
-			tab.ColCursor--
-			if tab.ColCursor < 0 {
-				tab.ColCursor = len(tab.Specs) - 1
-			}
+			tab.ColCursor = nextVisibleCol(tab.Specs, tab.ColCursor, false)
 		}
 		return nil, true
 	case "l", "right":
 		if tab := m.effectiveTab(); tab != nil {
-			tab.ColCursor++
-			if tab.ColCursor >= len(tab.Specs) {
-				tab.ColCursor = 0
-			}
+			tab.ColCursor = nextVisibleCol(tab.Specs, tab.ColCursor, true)
 		}
 		return nil, true
 	}
@@ -216,6 +210,12 @@ func (m *Model) handleNormalKeys(key tea.KeyMsg) (tea.Cmd, bool) {
 			clearSorts(tab)
 			applySorts(tab)
 		}
+		return nil, true
+	case "c":
+		m.hideCurrentColumn()
+		return nil, true
+	case "C":
+		m.showAllColumns()
 		return nil, true
 	case "i":
 		m.enterEditMode()
@@ -806,6 +806,89 @@ func selectRowByID(tab *Tab, id uint) bool {
 		}
 	}
 	return false
+}
+
+// nextVisibleCol returns the next visible column index from current, wrapping
+// around. If forward is true, it searches right; otherwise left. Returns
+// current if no other visible columns exist.
+func nextVisibleCol(specs []columnSpec, current int, forward bool) int {
+	n := len(specs)
+	if n == 0 {
+		return 0
+	}
+	step := 1
+	if !forward {
+		step = n - 1
+	}
+	for i := 1; i <= n; i++ {
+		candidate := (current + i*step) % n
+		if specs[candidate].HideOrder == 0 {
+			return candidate
+		}
+	}
+	return current
+}
+
+// visibleCount returns the number of non-hidden columns.
+func visibleCount(specs []columnSpec) int {
+	count := 0
+	for _, s := range specs {
+		if s.HideOrder == 0 {
+			count++
+		}
+	}
+	return count
+}
+
+// nextHideOrder returns the next sequence number for hiding a column.
+func nextHideOrder(specs []columnSpec) int {
+	max := 0
+	for _, s := range specs {
+		if s.HideOrder > max {
+			max = s.HideOrder
+		}
+	}
+	return max + 1
+}
+
+func (m *Model) hideCurrentColumn() {
+	tab := m.effectiveTab()
+	if tab == nil {
+		return
+	}
+	col := tab.ColCursor
+	if col < 0 || col >= len(tab.Specs) {
+		return
+	}
+	if tab.Specs[col].HideOrder > 0 {
+		return
+	}
+	if visibleCount(tab.Specs) <= 1 {
+		m.setStatusError("Cannot hide the last visible column.")
+		return
+	}
+	tab.Specs[col].HideOrder = nextHideOrder(tab.Specs)
+	tab.ColCursor = nextVisibleCol(tab.Specs, col, true)
+	m.setStatusInfo(
+		fmt.Sprintf("Hidden: %s. Press C to show all.", tab.Specs[col].Title),
+	)
+}
+
+func (m *Model) showAllColumns() {
+	tab := m.effectiveTab()
+	if tab == nil {
+		return
+	}
+	any := false
+	for i := range tab.Specs {
+		if tab.Specs[i].HideOrder > 0 {
+			tab.Specs[i].HideOrder = 0
+			any = true
+		}
+	}
+	if any {
+		m.setStatusInfo("All columns visible.")
+	}
 }
 
 func tabIndex(kind TabKind) int {

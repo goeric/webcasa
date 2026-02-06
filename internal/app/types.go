@@ -147,4 +147,5 @@ type columnSpec struct {
 	Kind        cellKind
 	Link        *columnLink // non-nil if this column references another tab
 	FixedValues []string    // all possible values; used to stabilize column width
+	HideOrder   int         // 0 = visible; >0 = hidden (higher = more recently hidden)
 }
