@@ -6,3 +6,4 @@
   the terminal's background. When adding or changing styles, always provide both
   Light and Dark variants. See `styles.go` for the existing palette and the
   comment block documenting chromatic/neutral roles.
+- Always run `go mod tidy` before committing to keep `go.mod` and `go.sum` clean.
