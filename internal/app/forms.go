@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/micasa/micasa/internal/data"
 )
 
@@ -1084,15 +1085,26 @@ func projectOptions(projects []data.Project) []huh.Option[uint] {
 }
 
 func statusOptions() []huh.Option[string] {
-	return withOrdinals([]huh.Option[string]{
-		huh.NewOption("ideating", data.ProjectStatusIdeating),
-		huh.NewOption("planned", data.ProjectStatusPlanned),
-		huh.NewOption("quoted", data.ProjectStatusQuoted),
-		huh.NewOption("in progress", data.ProjectStatusInProgress),
-		huh.NewOption("delayed", data.ProjectStatusDelayed),
-		huh.NewOption("completed", data.ProjectStatusCompleted),
-		huh.NewOption("abandoned", data.ProjectStatusAbandoned),
-	})
+	type entry struct {
+		label string
+		value string
+		color lipgloss.AdaptiveColor
+	}
+	statuses := []entry{
+		{"ideating", data.ProjectStatusIdeating, muted},
+		{"planned", data.ProjectStatusPlanned, accent},
+		{"quoted", data.ProjectStatusQuoted, secondary},
+		{"underway", data.ProjectStatusInProgress, success},
+		{"delayed", data.ProjectStatusDelayed, warning},
+		{"completed", data.ProjectStatusCompleted, textDim},
+		{"abandoned", data.ProjectStatusAbandoned, danger},
+	}
+	opts := make([]huh.Option[string], len(statuses))
+	for i, s := range statuses {
+		colored := lipgloss.NewStyle().Foreground(s.color).Render(s.label)
+		opts[i] = huh.NewOption(colored, s.value)
+	}
+	return withOrdinals(opts)
 }
 
 // withOrdinals prefixes each option label with its 1-based position so users
