@@ -481,6 +481,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [DRILLDOWN-STYLE] Styled Log column with accent color, underline, and trailing `>` arrow to signal interactive drilldown; added `cellDrilldown` kind, `Drilldown` style, drilldown-aware sort comparator
 - Fixed enter on Maintenance tab: only drills into service log on Log (drilldown) column; Appliance column now correctly follows FK link to Appliances tab; status bar hint is column-aware
 - Removed edit-on-enter: enter in Normal mode only does drilldown/FK nav, enter in Edit mode no longer edits; status bar hint hidden when enter has no action
+- GitHub Actions: CI (build+test on Go 1.24/1.25, golangci-lint, go mod tidy check) + Release (goreleaser on tag push)
 - Appliances Maint column: pill badge drilldown into maintenance items scoped to that appliance; `applianceMaintenanceHandler` + `applianceMaintenanceColumnSpecs` (no Appliance column); `ListMaintenanceByAppliance` store method; refactored `openDetail` into `openDetailWith`/`openServiceLogDetail`/`openApplianceMaintenanceDetail`; 5 new tests
 
 # Completed work
