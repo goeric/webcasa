@@ -50,7 +50,7 @@
 - Shortened status bar help labels: arrow symbols for left/right/up/down, `del`/`undo`/`col`/`nav` instead of longer words
 - Replaced search/house labels with emoji (🔍/🏠), changed "edit all" to "edit"
 - Moved `h` house toggle hint from status bar to house profile title line
-- Replaced `+ deleted` indicator with color change on `x deleted` hint text
+- Replaced `+ deleted` indicator: keycap stays normal, only "deleted" label changes color when active
 
 ## 2026-02-05 Session 3
 

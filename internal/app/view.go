@@ -257,10 +257,12 @@ func (m *Model) statusView() string {
 }
 
 func (m *Model) deletedHint(tab *Tab) string {
+	key := m.keycap("x")
+	label := m.styles.HeaderHint.Render("deleted")
 	if tab != nil && tab.ShowDeleted {
-		return m.styles.DeletedLabel.Render("x deleted")
+		label = m.styles.DeletedLabel.Render("deleted")
 	}
-	return m.helpItem("x", "deleted")
+	return strings.TrimSpace(fmt.Sprintf("%s %s", key, label))
 }
 
 func (m *Model) editHint() string {
