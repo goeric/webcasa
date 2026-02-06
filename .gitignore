@@ -1,10 +1,40 @@
-.direnv
-.pre-commit-config.yaml
-result
-result-*
-target/
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+micasa
+
+# Test binary, built with `go test -c`
+*.test
+
+# Code coverage profiles and other test artifacts
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directories
+vendor
+
+# Database files
 *.db
 *.sqlite
+
+# Nix
+.direnv
+result
+result-*
+
+# Env / local
+.env
+.pre-commit-config.yaml
 dev.md
-vendor
-micasa
+
+# Rust (legacy)
+target/

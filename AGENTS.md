@@ -484,6 +484,12 @@ in case things crash or otherwise go haywire, be diligent about this.
 - GitHub Actions: CI (build+test on Go 1.24/1.25, golangci-lint, go mod tidy check) + Release (goreleaser on tag push)
 - Appliances Maint column: pill badge drilldown into maintenance items scoped to that appliance; `applianceMaintenanceHandler` + `applianceMaintenanceColumnSpecs` (no Appliance column); `ListMaintenanceByAppliance` store method; refactored `openDetail` into `openDetailWith`/`openServiceLogDetail`/`openApplianceMaintenanceDetail`; 5 new tests
 
+## 2026-02-06 Session 10
+
+
+**Work done**:
+- Updated `.github/workflows/ci.yml` to trigger on `main` branch
+
 # Completed work
 
 - [README] project README with features, keybindings, architecture, install instructions
