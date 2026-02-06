@@ -10,6 +10,7 @@
   use middot-separated inline text, cleaner section layout in expanded view
 - for maintenance items, compute the default ghost text for next due date from
   the last serviced date + the maintenance interval and default to that
+- [RW-NOTRUNC] avoid truncating cell text when terminal is wide enough
 
 ## Completed
 

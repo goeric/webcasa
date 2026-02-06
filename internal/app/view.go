@@ -699,17 +699,68 @@ func columnWidths(
 	if available < columnCount {
 		available = columnCount
 	}
-	widths := make([]int, columnCount)
-	for i, spec := range specs {
-		maxWidth := headerTitleWidth(spec)
-		if spec.Max > 0 && maxWidth > spec.Max {
-			maxWidth = spec.Max
+
+	natural := naturalWidths(specs, rows)
+
+	// If content-driven widths fit, use them — no truncation.
+	if sumInts(natural) <= available {
+		widths := make([]int, columnCount)
+		copy(widths, natural)
+		extra := available - sumInts(widths)
+		if extra > 0 {
+			flex := flexColumns(specs)
+			if len(flex) == 0 {
+				flex = allColumns(specs)
+			}
+			distribute(widths, specs, flex, extra, true)
 		}
-		// Account for all possible values so columns with fixed option
-		// sets don't shift width when the displayed value changes.
+		return widths
+	}
+
+	// Content exceeds terminal width — apply Max constraints.
+	widths := make([]int, columnCount)
+	for i, w := range natural {
+		if specs[i].Max > 0 && w > specs[i].Max {
+			w = specs[i].Max
+		}
+		widths[i] = w
+	}
+
+	total := sumInts(widths)
+	if total <= available {
+		// Max-capped fits. Give extra space to truncated columns first
+		// so they can show their full content before flex columns grow.
+		extra := available - total
+		extra = widenTruncated(widths, natural, extra)
+		if extra > 0 {
+			flex := flexColumns(specs)
+			if len(flex) == 0 {
+				flex = allColumns(specs)
+			}
+			distribute(widths, specs, flex, extra, true)
+		}
+		return widths
+	}
+
+	// Still too wide — shrink flex columns.
+	deficit := total - available
+	flex := flexColumns(specs)
+	if len(flex) == 0 {
+		flex = allColumns(specs)
+	}
+	distribute(widths, specs, flex, deficit, false)
+	return widths
+}
+
+// naturalWidths returns the content-driven width for each column (header,
+// fixed values, and actual cell values) floored by Min but NOT capped by Max.
+func naturalWidths(specs []columnSpec, rows [][]cell) []int {
+	widths := make([]int, len(specs))
+	for i, spec := range specs {
+		w := headerTitleWidth(spec)
 		for _, fv := range spec.FixedValues {
-			if w := lipgloss.Width(fv); w > maxWidth {
-				maxWidth = w
+			if fw := lipgloss.Width(fv); fw > w {
+				w = fw
 			}
 		}
 		for _, row := range rows {
@@ -720,39 +771,39 @@ func columnWidths(
 			if value == "" {
 				continue
 			}
-			cellWidth := lipgloss.Width(value)
-			if cellWidth > maxWidth {
-				maxWidth = cellWidth
+			if cw := lipgloss.Width(value); cw > w {
+				w = cw
 			}
 		}
-		if maxWidth < spec.Min {
-			maxWidth = spec.Min
+		if w < spec.Min {
+			w = spec.Min
 		}
-		if spec.Max > 0 && maxWidth > spec.Max {
-			maxWidth = spec.Max
-		}
-		widths[i] = maxWidth
+		widths[i] = w
 	}
-	total := sumInts(widths)
-	if total == available {
-		return widths
-	}
-	if total < available {
-		extra := available - total
-		flex := flexColumns(specs)
-		if len(flex) == 0 {
-			flex = allColumns(specs)
-		}
-		distribute(widths, specs, flex, extra, true)
-		return widths
-	}
-	deficit := total - available
-	flex := flexColumns(specs)
-	if len(flex) == 0 {
-		flex = allColumns(specs)
-	}
-	distribute(widths, specs, flex, deficit, false)
 	return widths
+}
+
+// widenTruncated gives extra space to columns whose current width is less than
+// their natural (content-driven) width, eliminating truncation where possible.
+// Returns the remaining unused extra.
+func widenTruncated(widths, natural []int, extra int) int {
+	for extra > 0 {
+		changed := false
+		for i := range widths {
+			if extra == 0 {
+				break
+			}
+			if widths[i] < natural[i] {
+				widths[i]++
+				extra--
+				changed = true
+			}
+		}
+		if !changed {
+			break
+		}
+	}
+	return extra
 }
 
 func distribute(
