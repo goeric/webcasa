@@ -183,7 +183,7 @@ func (m *Model) statusView() string {
 			m.helpSeparator(),
 			m.helpItem("enter", "open"),
 			m.helpItem("esc", "close"),
-			m.helpItem("up/down", "navigate"),
+			m.helpItem("\u2191/\u2193", "nav"),
 		)
 		if m.search.indexing {
 			help = joinWithSeparator(m.helpSeparator(), help, "indexing…")
@@ -219,11 +219,11 @@ func (m *Model) statusView() string {
 	help := joinWithSeparator(
 		m.helpSeparator(),
 		m.helpItem("tab/shift+tab", "switch"),
-		m.helpItem("left/right", "column"),
+		m.helpItem("\u2190/\u2192", "col"),
 		m.helpItem("a", "add"),
 		m.helpItem("e", m.editHint()),
-		m.helpItem("d", "delete"),
-		m.helpItem("u", "restore"),
+		m.helpItem("d", "del"),
+		m.helpItem("u", "undo"),
 		m.helpItem("x", "deleted"),
 		m.helpItem("p", "profile"),
 		m.helpItem("h", "house"),
