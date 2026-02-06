@@ -120,6 +120,7 @@ const (
 	cellReadonly
 	cellDate
 	cellStatus
+	cellDrilldown // interactive count that opens a detail view
 )
 
 type cell struct {

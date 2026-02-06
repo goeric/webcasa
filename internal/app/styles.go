@@ -26,6 +26,7 @@ type Styles struct {
 	ModeEdit        lipgloss.Style
 	Money           lipgloss.Style
 	Readonly        lipgloss.Style
+	Drilldown       lipgloss.Style
 	Empty           lipgloss.Style
 	Error           lipgloss.Style
 	Info            lipgloss.Style
@@ -151,6 +152,9 @@ func DefaultStyles() Styles {
 			Foreground(success),
 		Readonly: lipgloss.NewStyle().
 			Foreground(textDim),
+		Drilldown: lipgloss.NewStyle().
+			Foreground(accent).
+			Underline(true),
 		Empty: lipgloss.NewStyle().
 			Foreground(textDim),
 		Error: lipgloss.NewStyle().

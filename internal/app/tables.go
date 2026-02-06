@@ -118,7 +118,7 @@ func maintenanceColumnSpecs() []columnSpec {
 		{Title: "Last", Min: 10, Max: 12, Kind: cellDate},
 		{Title: "Next", Min: 10, Max: 12, Kind: cellDate},
 		{Title: "Every", Min: 6, Max: 10},
-		{Title: "Log", Min: 4, Max: 6, Align: alignRight, Kind: cellReadonly},
+		{Title: "Log", Min: 4, Max: 6, Align: alignRight, Kind: cellDrilldown},
 	}
 }
 
@@ -314,9 +314,9 @@ func maintenanceRows(
 			appName = item.Appliance.Name
 			appLinkID = *item.ApplianceID
 		}
-		logCount := ""
+		logCount := ">"
 		if n := logCounts[item.ID]; n > 0 {
-			logCount = fmt.Sprintf("%d", n)
+			logCount = fmt.Sprintf("%d >", n)
 		}
 		rowCells := []cell{
 			{Value: fmt.Sprintf("%d", item.ID), Kind: cellReadonly},
@@ -326,7 +326,7 @@ func maintenanceRows(
 			{Value: dateValue(item.LastServicedAt), Kind: cellDate},
 			{Value: dateValue(item.NextDueAt), Kind: cellDate},
 			{Value: interval, Kind: cellText},
-			{Value: logCount, Kind: cellReadonly},
+			{Value: logCount, Kind: cellDrilldown},
 		}
 		rows = append(rows, cellsToRow(rowCells))
 		cells = append(cells, rowCells)

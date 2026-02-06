@@ -478,6 +478,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 - Moved remaining work items and completed work list from `remaining_work.md` into new "Remaining work" and "Completed work" sections in `AGENTS.md`
 - Updated hard rules and dev best practices to reference `AGENTS.md` sections instead of `remaining_work.md`
 - Deleted `remaining_work.md`
+- [DRILLDOWN-STYLE] Styled Log column with accent color, underline, and trailing `>` arrow to signal interactive drilldown; added `cellDrilldown` kind, `Drilldown` style, drilldown-aware sort comparator
 
 # Completed work
 

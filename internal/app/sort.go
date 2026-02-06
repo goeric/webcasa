@@ -116,6 +116,12 @@ func compareCells(tab *Tab, col, a, b int) int {
 	case cellReadonly:
 		// ID columns are numeric.
 		return compareNumeric(va, vb)
+	case cellDrilldown:
+		// Strip trailing arrow decoration (e.g. "3 >" -> "3").
+		return compareNumeric(
+			strings.TrimRight(strings.TrimSpace(va), ">"),
+			strings.TrimRight(strings.TrimSpace(vb), ">"),
+		)
 	default:
 		return compareStrings(va, vb)
 	}

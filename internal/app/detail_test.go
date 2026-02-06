@@ -184,8 +184,8 @@ func TestMaintenanceColumnsIncludeLog(t *testing.T) {
 	if last.Title != "Log" {
 		t.Fatalf("expected last maintenance column to be 'Log', got %q", last.Title)
 	}
-	if last.Kind != cellReadonly {
-		t.Fatal("expected Log column to be readonly")
+	if last.Kind != cellDrilldown {
+		t.Fatal("expected Log column to be drilldown")
 	}
 }
 

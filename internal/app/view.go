@@ -678,6 +678,8 @@ func cellStyle(kind cellKind, styles Styles) lipgloss.Style {
 		return styles.Money
 	case cellReadonly:
 		return styles.Readonly
+	case cellDrilldown:
+		return styles.Drilldown
 	default:
 		return lipgloss.NewStyle()
 	}
