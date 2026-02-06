@@ -195,7 +195,6 @@ func (m *Model) statusView() string {
 			m.helpItem("h/l", "col"),
 			m.helpItem("s", "sort"),
 			m.helpItem("i", "edit"),
-			m.deletedHint(m.activeTab()),
 			m.helpItem("H", "house"),
 			m.helpItem("?", "help"),
 			m.helpItem("q", "quit"),
@@ -206,8 +205,7 @@ func (m *Model) statusView() string {
 			modeBadge,
 			m.helpItem("a", "add"),
 			m.helpItem("e", m.editHint()),
-			m.helpItem("d", "del"),
-			m.helpItem("u", "undo"),
+			m.helpItem("d", "del/restore"),
 			m.deletedHint(m.activeTab()),
 			m.helpItem("p", "profile"),
 			m.helpItem("esc", "normal"),
@@ -320,7 +318,6 @@ func (m *Model) helpView() string {
 				{"d/u", "Half page down/up"},
 				{"tab/shift+tab", "Switch tabs"},
 				{"H", "Toggle house profile"},
-				{"x", "Toggle showing deleted items"},
 				{"s", "Sort by column (cycle asc/desc/off)"},
 				{"S", "Clear all sorts"},
 				{"enter", "Edit current cell"},
@@ -334,8 +331,8 @@ func (m *Model) helpView() string {
 			bindings: []binding{
 				{"a", "Add new entry"},
 				{"e / enter", "Edit cell (or full row on ID column)"},
-				{"d", "Delete selected entry"},
-				{"u", "Restore last deleted entry"},
+				{"d", "Toggle delete/restore"},
+				{"x", "Toggle showing deleted items"},
 				{"p", "Edit house profile"},
 				{"esc", "Back to Normal mode"},
 			},
@@ -596,15 +593,21 @@ func renderCell(
 	}
 
 	if deleted {
-		style = style.Foreground(danger).Strikethrough(true)
+		style = style.Foreground(textDim).Strikethrough(true).Italic(true)
 	}
 
-	switch hl {
-	case highlightCursor:
-		// Underline just the text, then pad to column width so the
-		// underline doesn't stretch across the whole cell.
+	// For cursor underline and deleted strikethrough, style just the
+	// text and pad separately so the decoration matches text length.
+	if hl == highlightCursor || deleted {
+		cursorStyle := style
+		if hl == highlightCursor {
+			cursorStyle = cursorStyle.Underline(true).Bold(true)
+		}
+		if hl == highlightRow {
+			cursorStyle = cursorStyle.Background(surface).Bold(true)
+		}
 		truncated := ansi.Truncate(value, width, "…")
-		styled := style.Underline(true).Bold(true).Render(truncated)
+		styled := cursorStyle.Render(truncated)
 		textW := lipgloss.Width(truncated)
 		if pad := width - textW; pad > 0 {
 			if spec.Align == alignRight {
@@ -613,7 +616,9 @@ func renderCell(
 			return styled + strings.Repeat(" ", pad)
 		}
 		return styled
-	case highlightRow:
+	}
+
+	if hl == highlightRow {
 		style = style.Background(surface).Bold(true)
 	}
 

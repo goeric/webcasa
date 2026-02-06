@@ -8,9 +8,6 @@
   match, if m:n not sure, help me   figure out the ux for that )
 - [RW-HOUSE-UX] redesign house profile collapsed/expanded views: remove chip borders,
   use middot-separated inline text, cleaner section layout in expanded view
-- [RW-SORT] multi-column sorting: `s` cycles asc/desc/none per column, `S`
-  clears all sorts; priority = insertion order; header indicators; Normal mode
-  only
 - for maintenance items, compute the default ghost text for next due date from
   the last serviced date + the maintenance interval and default to that
 
@@ -22,12 +19,18 @@
 - [RW-CURSOR] replace orange-bg cell cursor with underline+bold; fix ANSI leak from nested lipgloss Render (5406579)
 - [RW-ULLEN] underline matches text length, not full column width (5406579)
 - [RW-CONSOLIDATE] merge LEARNINGS.md and AGENT_LOG.md into AGENTS.md sections (5406579)
-- [RW-ARROWS] use proper arrow/triangle characters for sort indicators
-- [RW-SORTSTABLE] sort indicators render within existing column width, no layout shift
-- [RW-STATUSBAR-ENTER] remove redundant `enter edit` from Normal mode status bar
-- [RW-SORTPK] PK as implicit tiebreaker, skip priority number for single-column sorts
-- [RW-EDITLABEL] shorten "edit mode" to "edit" in Normal mode status bar
-- [RW-DELETEDANSI] fix ANSI leak on deleted rows: merge strikethrough into per-cell style instead of wrapping
+- [RW-ARROWS] use proper arrow/triangle characters for sort indicators (98384e0)
+- [RW-SORTSTABLE] sort indicators render within existing column width, no layout shift (98384e0)
+- [RW-STATUSBAR-ENTER] remove redundant `enter edit` from Normal mode status bar (98384e0)
+- [RW-SORTPK] PK as implicit tiebreaker, skip priority number for single-column sorts (98384e0)
+- [RW-EDITLABEL] shorten "edit mode" to "edit" in Normal mode status bar (98384e0)
+- [RW-DELETEDANSI] fix ANSI leak on deleted rows: merge strikethrough into per-cell style instead of wrapping (98384e0)
+- [RW-SORT] multi-column sorting (98384e0)
+- [RW-STRIKELEN] strikethrough length matches text, not full column width
+- [RW-STRIKECLR] softer color for deleted row strikethrough
+- [RW-XEDIT] move x (show deleted) to Edit mode only
+- [RW-DELITALIC] add italic to deleted rows
+- [RW-DTOGGLE] d toggles delete/restore instead of separate d/u keys
 
 - refactor forms.go and view.go: deduplicate submit/edit pairs, centering, inline edit boilerplate, form-data converters (9851c74)
 - scrap the log-on-dash-v approach, just enable logging dynamically (and allow changing log level) with a keyboard shortcut and bring up the logger ui component when that key is pressed (it's a toggle obviously) (75b2c86)

@@ -175,9 +175,6 @@ func (m *Model) handleCommonKeys(key tea.KeyMsg) (tea.Cmd, bool) {
 			}
 		}
 		return nil, true
-	case "x":
-		m.toggleShowDeleted()
-		return nil, true
 	}
 	return nil, false
 }
@@ -234,10 +231,10 @@ func (m *Model) handleEditKeys(key tea.KeyMsg) (tea.Cmd, bool) {
 		}
 		return m.formInitCmd(), true
 	case "d":
-		m.deleteSelected()
+		m.toggleDeleteSelected()
 		return nil, true
-	case "u":
-		m.restoreSelected()
+	case "x":
+		m.toggleShowDeleted()
 		return nil, true
 	case "p":
 		m.startHouseForm()
@@ -401,7 +398,7 @@ func (m *Model) selectedCell(col int) (cell, bool) {
 	return row[col], true
 }
 
-func (m *Model) deleteSelected() {
+func (m *Model) toggleDeleteSelected() {
 	tab := m.activeTab()
 	if tab == nil {
 		return
@@ -412,7 +409,15 @@ func (m *Model) deleteSelected() {
 		return
 	}
 	if meta.Deleted {
-		m.setStatusError("Already deleted.")
+		if err := m.restoreByTab(tab.Kind, meta.ID); err != nil {
+			m.setStatusError(err.Error())
+			return
+		}
+		if tab.LastDeleted != nil && *tab.LastDeleted == meta.ID {
+			tab.LastDeleted = nil
+		}
+		m.setStatusInfo("Restored.")
+		_ = m.reloadActiveTab()
 		return
 	}
 	var err error
@@ -431,57 +436,7 @@ func (m *Model) deleteSelected() {
 		return
 	}
 	tab.LastDeleted = &meta.ID
-	m.setStatusInfo("Deleted. Press u to undo.")
-	_ = m.reloadActiveTab()
-}
-
-func (m *Model) restoreSelected() {
-	tab := m.activeTab()
-	if tab == nil {
-		return
-	}
-	meta, ok := m.selectedRowMeta()
-	if !ok {
-		if tab.LastDeleted != nil {
-			if err := m.restoreByTab(tab.Kind, *tab.LastDeleted); err != nil {
-				m.setStatusError(err.Error())
-				return
-			}
-			tab.LastDeleted = nil
-			m.setStatusInfo("Restored last deleted.")
-			_ = m.reloadActiveTab()
-			return
-		}
-		entity := deletionEntityForTab(tab.Kind)
-		record, err := m.store.LastDeletion(entity)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			m.setStatusError("Nothing to undo.")
-			return
-		}
-		if err != nil {
-			m.setStatusError(err.Error())
-			return
-		}
-		if err := m.restoreByTab(tab.Kind, record.TargetID); err != nil {
-			m.setStatusError(err.Error())
-			return
-		}
-		m.setStatusInfo("Restored last deleted.")
-		_ = m.reloadActiveTab()
-		return
-	}
-	if !meta.Deleted {
-		m.setStatusError("Selected item is not deleted.")
-		return
-	}
-	if err := m.restoreByTab(tab.Kind, meta.ID); err != nil {
-		m.setStatusError(err.Error())
-		return
-	}
-	if tab.LastDeleted != nil && *tab.LastDeleted == meta.ID {
-		tab.LastDeleted = nil
-	}
-	m.setStatusInfo("Restored.")
+	m.setStatusInfo("Deleted. Press d to restore.")
 	_ = m.reloadActiveTab()
 }
 
@@ -497,21 +452,6 @@ func (m *Model) restoreByTab(kind TabKind, id uint) error {
 		return m.store.RestoreAppliance(id)
 	default:
 		return nil
-	}
-}
-
-func deletionEntityForTab(kind TabKind) string {
-	switch kind {
-	case tabProjects:
-		return data.DeletionEntityProject
-	case tabQuotes:
-		return data.DeletionEntityQuote
-	case tabMaintenance:
-		return data.DeletionEntityMaintenance
-	case tabAppliances:
-		return data.DeletionEntityAppliance
-	default:
-		return ""
 	}
 }
 
