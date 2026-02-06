@@ -94,7 +94,8 @@ func (m *Model) houseCollapsed() string {
 		styledPart(hint, sqftLabel(m.house.SquareFeet)),
 		styledPart(hint, formatInt(m.house.YearBuilt)),
 	)
-	return joinInline(title, badge, stats, m.keycap("H"))
+	left := joinInline(title, badge, stats)
+	return m.houseLineWithTrailing(left, m.keycap("H"))
 }
 
 func (m *Model) houseExpanded() string {
@@ -108,13 +109,9 @@ func (m *Model) houseExpanded() string {
 		styledPart(val, m.house.Nickname),
 		styledPart(hint, formatAddress(m.house)),
 	)
-	titleLine := joinInline(
-		title,
-		badge,
-		identity,
-		m.keycap("H"),
-		m.helpItem("p", "edit"),
-	)
+	left := joinInline(title, badge, identity)
+	right := joinInline(m.keycap("H"), m.helpItem("p", "edit"))
+	titleLine := m.houseLineWithTrailing(left, right)
 
 	structNums := joinStyledParts(sep,
 		styledPart(val, formatInt(m.house.YearBuilt)),
@@ -927,6 +924,20 @@ func safeWidth(widths []int, idx int) int {
 
 func (m *Model) headerBox(content string) string {
 	return m.styles.HeaderBox.Render(content)
+}
+
+// houseLineWithTrailing renders left content with trailing content right-aligned
+// within the header box inner width.
+func (m *Model) houseLineWithTrailing(left, trailing string) string {
+	// HeaderBox has 1-char border + 1-char padding on each side = 4 chars.
+	innerWidth := m.effectiveWidth() - 4
+	leftW := ansi.StringWidth(left)
+	trailW := ansi.StringWidth(trailing)
+	gap := innerWidth - leftW - trailW
+	if gap < 2 {
+		gap = 2
+	}
+	return left + strings.Repeat(" ", gap) + trailing
 }
 
 func (m *Model) helpItem(keys, label string) string {
