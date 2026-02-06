@@ -236,8 +236,7 @@ func (m *Model) statusView() string {
 	if tab != nil && tab.ShowDeleted {
 		deletedLabel = m.styles.DeletedLabel.Render("+ deleted")
 	}
-	dbLabel := m.styles.HeaderHint.Render("db:") +
-		m.styles.DBHint.Render(m.dbPath)
+	dbLabel := m.styles.DBHint.Render(m.dbPath)
 	leftPart := help
 	if deletedLabel != "" {
 		leftPart = help + metaSep + deletedLabel
