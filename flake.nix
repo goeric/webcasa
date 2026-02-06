@@ -1,3 +1,6 @@
+# Copyright 2026 Phillip Cloud
+# Licensed under the Apache License, Version 2.0
+
 {
   description = "micasa Go development environment";
 
@@ -31,6 +34,65 @@
           ];
         };
 
+        licenseCheck = pkgs.writeShellScript "license-check" ''
+          head=${pkgs.coreutils}/bin/head
+          sed=${pkgs.gnused}/bin/sed
+          grep=${pkgs.gnugrep}/bin/grep
+          basename=${pkgs.coreutils}/bin/basename
+          date=${pkgs.coreutils}/bin/date
+
+          year=$($date +%Y)
+          owner="Phillip Cloud"
+          spdx="Licensed under the Apache License, Version 2.0"
+
+          comment_prefix() {
+            case "$1" in
+              *.go|go.mod)  echo "//" ;;
+              *.nix|*.yml|*.yaml|*.sh|.envrc|.gitignore) echo "#" ;;
+              *.md)         echo "md" ;;
+              *)            echo "#" ;;
+            esac
+          }
+
+          status=0
+          for f in "$@"; do
+            name=$($basename "$f")
+            pfx=$(comment_prefix "$name")
+
+            if [ "$pfx" = "md" ]; then
+              line1="<!-- Copyright $year $owner -->"
+              line2="<!-- $spdx -->"
+              year_pat="<!-- Copyright [0-9]\{4\} $owner -->"
+            else
+              line1="$pfx Copyright $year $owner"
+              line2="$pfx $spdx"
+              year_pat="$pfx Copyright [0-9]\{4\} $owner"
+            fi
+
+            first=$($head -n1 "$f")
+            second=$($sed -n '2p' "$f")
+
+            # Already correct
+            if [ "$first" = "$line1" ] && [ "$second" = "$line2" ]; then
+              continue
+            fi
+
+            # Header present with stale year -- bump it
+            if echo "$first" | $grep -q "^$year_pat$" \
+               && [ "$second" = "$line2" ]; then
+              $sed -i "1s|$year_pat|$line1|" "$f"
+              echo "bumped year in $f"
+              continue
+            fi
+
+            # No header -- insert it
+            $sed -i "1i\\$line1\n$line2\n" "$f"
+            echo "added license header to $f"
+            status=1
+          done
+          exit $status
+        '';
+
         preCommit = git-hooks.lib.${system}.run {
           src = ./.;
           hooks = {
@@ -40,6 +102,15 @@
             };
             golangci-lint.enable = true;
             gotest.enable = true;
+            license-header = {
+              enable = true;
+              name = "license-header";
+              entry = "${licenseCheck}";
+              files = "\\.(go|nix|ya?ml|sh|md)$|^\\.envrc$|\\.gitignore$|^go\\.mod$";
+              excludes = ["LICENSE" "flake\\.lock" "go\\.sum" "\\.json$"];
+              language = "system";
+              pass_filenames = true;
+            };
           };
         };
 
@@ -64,6 +135,9 @@
               pkgs.go
               pkgs.gopls
               pkgs.git
+              pkgs.tokei
+              pkgs.fd
+              pkgs.ripgrep-all
             ]
             ++ enabledPackages;
           };
