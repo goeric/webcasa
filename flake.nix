@@ -29,8 +29,9 @@
           src = ./.;
           subPackages = [ "cmd/micasa" ];
           vendorHash = "sha256-m7+UP6UEOYrLz4xz0YAVvzVieGFOpibPx9UEKT9roDk=";
+          env.CGO_ENABLED = 0;
           ldflags = [
-            "-X main.version=${version}" # Set a variable in the main package
+            "-X main.version=${version}"
           ];
         };
 
