@@ -409,6 +409,7 @@ func newTestStore(t *testing.T) *Store {
 	if err != nil {
 		t.Fatalf("Open error: %v", err)
 	}
+	t.Cleanup(func() { _ = store.Close() })
 	if err := store.AutoMigrate(); err != nil {
 		t.Fatalf("AutoMigrate error: %v", err)
 	}

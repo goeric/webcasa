@@ -34,6 +34,15 @@ func Open(path string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
+// Close closes the underlying database connection.
+func (s *Store) Close() error {
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		return fmt.Errorf("get underlying db: %w", err)
+	}
+	return sqlDB.Close()
+}
+
 func (s *Store) AutoMigrate() error {
 	return s.db.AutoMigrate(
 		&HouseProfile{},
