@@ -566,16 +566,40 @@ in case things crash or otherwise go haywire, be diligent about this.
 - highlight the part of the string that the regex matched in log lines (4289fb7)
 - entry editing: make editing existing entries work (a457c44)
 - anchored status bar: keystroke info always at bottom of terminal (a457c44)
+- [BADGE-REFACTOR] replace candy stacks with single-line hidden-column badges (356abd4)
+- [BADGE-LEFTALIGN] left-align badges, color-only for cursor position (fef8e04)
+- [BADGE-TRIANGLES] triangle glyphs on outermost badges (4336fb2)
+- [BADGE-CENTER] center badge row relative to table width (c566cc6, 00bce3d)
+- [GHCR] nix container build + push to ghcr.io on release (59a8ba0)
+- [SEMREL] semantic-release workflow + container on release event (238b785)
+- [GHCR-META] docker/metadata-action semver cascade + SHA tags (f066639, 498b799)
+- [PURE-GO-SQLITE] pure-Go SQLite driver, no CGO (b96f7cd)
+- [SHOWCOL-HINT] shift+C hint in status bar when columns hidden (90a850d)
+- [CI-XPLAT] CI across Linux, macOS, Windows (6295c50)
+- [CI-SHUFFLE] -shuffle=on in CI tests (f0878c4)
+- [CI-BINARIES] cross-platform binary uploads on release (9303b94)
+- [CGO-OFF] CGO_ENABLED=0 everywhere: nix, dev shell, CI (a173788, bae0824, efe06d2)
+- [WIN-TEMPDIR] Store.Close() for Windows temp dir cleanup (2c132df)
+- [CI-PRECOMMIT] nix pre-commit hooks replace manual lint/tidy CI jobs (9479cce)
 
 ## 2026-02-07 Session 12
 
-**Work done**:
-- Committed pre-existing refactor: candy stacks replaced with single-line hidden-column badges (356abd4)
-- Left-aligned all badges, color-only for position (fef8e04)
-- Triangle glyphs on outermost badges for direction (4336fb2)
-- Centered badge row (c566cc6)
-- [GHCR] Removed goreleaser setup, replaced release workflow with nix container build + push to ghcr.io
-- [SEMREL] Added semantic-release workflow (push to main), split container push into own workflow triggered by `release: [published]`
+**Work done** (see git log for details):
+- [BADGE-REFACTOR] Replaced candy stacks with single-line hidden-column badges (356abd4)
+- [BADGE-LEFTALIGN] Left-aligned all badges, color-only for position (fef8e04)
+- [BADGE-TRIANGLES] Triangle glyphs on outermost badges for direction (4336fb2)
+- [BADGE-CENTER] Centered badge row relative to actual table width (c566cc6, 00bce3d)
+- [GHCR] Removed goreleaser, nix container build + push to ghcr.io (59a8ba0)
+- [SEMREL] Semantic-release workflow on push to main, container push on release event (238b785)
+- [GHCR-META] docker/metadata-action for semver tag cascade + short/long SHA tags (f066639, 498b799)
+- [PURE-GO-SQLITE] Switched from mattn/go-sqlite3 (CGO) to glebarez/sqlite (pure Go) (b96f7cd)
+- [SHOWCOL-HINT] shift+C hint in status bar when columns are hidden (90a850d)
+- [CI-XPLAT] CI test matrix across Linux, macOS, Windows (6295c50)
+- [CI-SHUFFLE] -shuffle=on in CI tests (f0878c4)
+- [CI-BINARIES] Cross-platform binary uploads on release (6 targets + checksums) (9303b94)
+- [CGO-OFF] CGO_ENABLED=0 in nix buildGoModule, dev shell, and CI binaries (a173788, bae0824, efe06d2)
+- [WIN-TEMPDIR] Store.Close() + t.Cleanup to fix Windows test temp dir cleanup (2c132df)
+- [CI-PRECOMMIT] Replaced lint/tidy CI jobs with nix pre-commit hooks (9479cce)
 
 # Remaining work
 
