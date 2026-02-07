@@ -405,7 +405,7 @@ func (m *Model) tableView(tab *Tab) string {
 	divider := renderDivider(widths, plainSeps, normalDiv, m.styles.TableSeparator)
 
 	// Badge line accounts for 1 row of vertical space when visible.
-	badges := renderHiddenBadges(tab.Specs, tab.ColCursor, width, m.styles)
+	badges := renderHiddenBadges(tab.Specs, tab.ColCursor, m.styles)
 	badgeChrome := 0
 	if badges != "" {
 		badgeChrome = 1

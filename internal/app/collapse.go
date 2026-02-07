@@ -50,70 +50,29 @@ func hiddenColumnNames(specs []columnSpec) []string {
 	return names
 }
 
-// renderHiddenBadges renders a single line showing hidden column names,
-// split by their position relative to the cursor. Columns to the left of
-// the cursor are left-aligned in one color; columns to the right are
-// right-aligned in another. This gives spatial awareness of what's hidden.
+// renderHiddenBadges renders a single left-aligned line of hidden column
+// names. Color indicates position relative to the cursor: HiddenLeft for
+// columns to the left, HiddenRight for columns to the right.
 func renderHiddenBadges(
 	specs []columnSpec,
 	colCursor int,
-	width int,
 	styles Styles,
 ) string {
-	var leftNames, rightNames []string
+	sep := styles.HeaderHint.Render(" · ")
+
+	var parts []string
 	for i, spec := range specs {
 		if spec.HideOrder == 0 {
 			continue
 		}
 		if i < colCursor {
-			leftNames = append(leftNames, spec.Title)
+			parts = append(parts, styles.HiddenLeft.Render(spec.Title))
 		} else {
-			rightNames = append(rightNames, spec.Title)
+			parts = append(parts, styles.HiddenRight.Render(spec.Title))
 		}
 	}
-	if len(leftNames) == 0 && len(rightNames) == 0 {
+	if len(parts) == 0 {
 		return ""
 	}
-
-	sep := styles.HeaderHint.Render(" · ")
-
-	var leftStr, rightStr string
-	if len(leftNames) > 0 {
-		parts := make([]string, len(leftNames))
-		for i, name := range leftNames {
-			parts[i] = styles.HiddenLeft.Render(name)
-		}
-		leftStr = strings.Join(parts, sep)
-	}
-	if len(rightNames) > 0 {
-		parts := make([]string, len(rightNames))
-		for i, name := range rightNames {
-			parts[i] = styles.HiddenRight.Render(name)
-		}
-		rightStr = strings.Join(parts, sep)
-	}
-
-	leftW := lipgloss.Width(leftStr)
-	rightW := lipgloss.Width(rightStr)
-
-	// Both sides present: left-align left group, right-align right group.
-	if leftStr != "" && rightStr != "" {
-		gap := width - leftW - rightW
-		if gap < 1 {
-			gap = 1
-		}
-		return leftStr + strings.Repeat(" ", gap) + rightStr
-	}
-
-	// Left only: left-aligned.
-	if leftStr != "" {
-		return leftStr
-	}
-
-	// Right only: right-aligned.
-	pad := width - rightW
-	if pad < 0 {
-		pad = 0
-	}
-	return strings.Repeat(" ", pad) + rightStr
+	return strings.Join(parts, sep)
 }

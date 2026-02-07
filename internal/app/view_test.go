@@ -363,7 +363,7 @@ func TestNextHideOrder(t *testing.T) {
 
 func TestRenderHiddenBadgesEmpty(t *testing.T) {
 	specs := []columnSpec{{Title: "A"}, {Title: "B"}}
-	out := renderHiddenBadges(specs, 0, 80, DefaultStyles())
+	out := renderHiddenBadges(specs, 0, DefaultStyles())
 	if out != "" {
 		t.Fatalf("expected empty when nothing hidden, got %q", out)
 	}
@@ -375,7 +375,7 @@ func TestRenderHiddenBadgesLeftOnly(t *testing.T) {
 		{Title: "Name"},
 		{Title: "Status"},
 	}
-	out := renderHiddenBadges(specs, 2, 80, DefaultStyles())
+	out := renderHiddenBadges(specs, 2, DefaultStyles())
 	if !strings.Contains(out, "ID") {
 		t.Fatalf("expected 'ID' in left badges, got %q", out)
 	}
@@ -387,7 +387,7 @@ func TestRenderHiddenBadgesRightOnly(t *testing.T) {
 		{Title: "Name"},
 		{Title: "Cost", HideOrder: 1},
 	}
-	out := renderHiddenBadges(specs, 0, 80, DefaultStyles())
+	out := renderHiddenBadges(specs, 0, DefaultStyles())
 	if !strings.Contains(out, "Cost") {
 		t.Fatalf("expected 'Cost' in right badges, got %q", out)
 	}
@@ -399,7 +399,7 @@ func TestRenderHiddenBadgesBothSides(t *testing.T) {
 		{Title: "Name"},
 		{Title: "Cost", HideOrder: 2},
 	}
-	out := renderHiddenBadges(specs, 1, 80, DefaultStyles())
+	out := renderHiddenBadges(specs, 1, DefaultStyles())
 	if !strings.Contains(out, "ID") || !strings.Contains(out, "Cost") {
 		t.Fatalf("expected both 'ID' and 'Cost', got %q", out)
 	}
