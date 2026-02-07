@@ -436,7 +436,8 @@ func (m *Model) tableView(tab *Tab) string {
 		bodyParts = append(bodyParts, strings.Join(rows, "\n"))
 	}
 	if badges != "" {
-		bodyParts = append(bodyParts, badges)
+		centered := lipgloss.PlaceHorizontal(width, lipgloss.Center, badges)
+		bodyParts = append(bodyParts, centered)
 	}
 	return joinVerticalNonEmpty(bodyParts...)
 }
