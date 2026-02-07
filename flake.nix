@@ -131,6 +131,7 @@
           in
           pkgs.mkShell {
             inherit shellHook;
+            CGO_ENABLED = "0";
             packages = [
               pkgs.go
               pkgs.gopls
