@@ -182,7 +182,8 @@ func (m *Model) hiddenHint() string {
 		return ""
 	}
 	label := "hidden: " + strings.Join(names, ", ")
-	return m.styles.HeaderHint.Render(label)
+	hint := m.keycap("C") + " " + m.styles.HeaderHint.Render("show all")
+	return m.styles.HeaderHint.Render(label) + "  " + hint
 }
 
 func (m *Model) deletedHint(tab *Tab) string {
