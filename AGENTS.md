@@ -608,6 +608,9 @@ in case things crash or otherwise go haywire, be diligent about this.
 
 **Work done**:
 - [RELEASE-CONSOLIDATE] Consolidated release.yml, binaries.yml, container.yml into single release.yml; semantic-release outputs gate downstream binaries/container jobs via `if: needs.semantic-release.outputs.published == 'true'`; deleted standalone binaries.yml and container.yml
+- [MAINT-GHOST] Made Next Due autocomputed instead of stored: removed `NextDueAt` from `MaintenanceItem` model, seed data, forms, inline edit; `maintenanceRows`/`applianceMaintenanceRows` now call `data.ComputeNextDue` at render time; col 5 (Next) falls through to full edit form on inline edit attempt; removed ghost text helpers and tests
+- [DEMO-MEM] `--demo` now uses in-memory SQLite by default; pass a db-path alongside `--demo` to persist; removed `--memory` flag
+- [MAINT-GHOST] Next Due is now autocomputed (LastServiced + IntervalMonths), not stored; removed NextDueAt from model, forms, seed data; column is read-only in table
 
 # Remaining work
 
@@ -623,8 +626,8 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [DATEPICKER] for date column data entry can we make that a date picker that
   adjusts a nice little terminal calendar based on what the user has typed in
   so far?
-- [MAINT-GHOST] for maintenance items, compute the default ghost text for next due date from
-  the last serviced date + the maintenance interval and default to that
+- [HOTNESS-KEYS] in nav mode, ^ should go to the first column, $ to the last
+- [NORMAL-TO-NAV] change the NORMAL label to NAV
 - [STYLING-TIME-TO-MAINT] add a gradient from say green to orange to red (where
   green means maintenance is not due for a long time, orange means it's coming
   up, and red means it's overdue) to the background of the "Next Due" column on
