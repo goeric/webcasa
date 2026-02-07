@@ -302,8 +302,9 @@ doing the same thing in a loop and not making progress.
 - Make sure to run the appropriate testing and formatting commands when you
   need to (usually a logical stopping point).
 - Write the code as well factored and human readable as you possibly can.
-- Always run `go test -v -shuffle=$RANDOM`, to get the most information about
-  which test failed and to avoid introducing test order dependencies.
+- Always run `go test -shuffle=$RANDOM -v ./...` (all packages, not a
+  specific directory) to get the most information about which test failed
+  and to avoid introducing test order dependencies.
 - Depend on `pre-commit` (which is automatically run when you make a commit) to
   catch formatting issues. **DO NOT** attempt to use `gofmt` or any other
   formatting tool directly
