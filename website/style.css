@@ -55,6 +55,34 @@ h2 .accent {
   color: var(--terracotta);
 }
 
+h2 .accent-alt {
+  color: var(--sage);
+}
+
+/* --- Typewriter --- */
+.typewriter {
+  white-space: nowrap;
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.85em;
+}
+
+.typewriter::after {
+  content: "\2588";
+  margin-left: 1px;
+  opacity: 0.3;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter::after {
+    animation: none;
+  }
+}
+
 a {
   color: var(--terracotta);
   text-decoration-thickness: 1px;
@@ -186,8 +214,7 @@ section + section {
   text-align: center;
   max-width: 560px;
   margin: 0 auto;
-  padding: 2.5rem 0;
-  border-top: 1px solid var(--rule);
+  padding: 0 0 2.5rem;
   font-style: italic;
 }
 
@@ -198,17 +225,12 @@ section + section {
 }
 
 .feature {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0 1rem;
-  align-items: baseline;
 }
 
 .feature-q {
   font-family: "DM Serif Display", "Georgia", serif;
   font-size: 1.1rem;
   color: var(--charcoal);
-  grid-column: 1 / -1;
   margin-bottom: 0.25rem;
 }
 
@@ -220,7 +242,6 @@ section + section {
 
 .feature-a {
   color: var(--charcoal-soft);
-  grid-column: 1 / -1;
   padding-left: 1.75rem;
 }
 
@@ -229,6 +250,14 @@ section + section {
   color: var(--sage);
   font-weight: 700;
   margin-left: -1.75rem;
+}
+
+/* --- Section notes --- */
+.section-note {
+  color: var(--warm-gray);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
 }
 
 /* --- Install --- */
@@ -247,6 +276,15 @@ section + section {
   color: var(--warm-gray);
   font-style: italic;
   font-size: 0.9rem;
+}
+
+.install-data {
+  text-align: center;
+  color: var(--warm-gray);
+  font-size: 0.85rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
 }
 
 /* --- Keybindings --- */

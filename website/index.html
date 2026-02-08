@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><polygon points='16,4 2,16 6,16 6,28 26,28 26,16 30,16' fill='%23c05e3c'/><rect x='13' y='19' width='6' height='9' fill='%23faf6f1'/></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -42,51 +43,38 @@
 <div class="container">
   <p class="pitch">
     Home ownership is a never-ending parade of things that are broken, about to
-    break, or quietly plotting to break while you sleep. <strong>micasa</strong>
-    helps you keep track of all of it from the comfort of your terminal, because
-    you have enough browser tabs open already.
+    break, or quietly plotting to break while you sleep. It&rsquo;s also that
+    spark at 11pm on a Tuesday where you decide the kitchen absolutely needs an
+    island. <strong>micasa</strong> tracks the disasters <em>and</em> the
+    daydreams from the comfort of your terminal, because you have enough browser
+    tabs open already.
   </p>
 </div>
 
 <!-- ─── Features ─── -->
 <section id="features">
   <div class="container">
-    <h2>Frequently <span class="accent">panicked</span> questions</h2>
+    <h2>Frequently <span class="typewriter accent" id="typewriter">asked</span> questions</h2>
     <div class="features-grid">
 
       <div class="feature">
         <p class="feature-q">When did I last change the furnace filter?</p>
-        <p class="feature-a">Maintenance schedules with auto-computed due dates and full service history.</p>
+        <p class="feature-a">Maintenance schedules, auto-computed due dates, full service history.</p>
       </div>
 
       <div class="feature">
-        <p class="feature-q">How much was that roof quote?</p>
-        <p class="feature-a">Vendor quotes with labor, materials, and other cost breakdowns.</p>
+        <p class="feature-q">What if we finally did the backyard?</p>
+        <p class="feature-a">Projects from napkin sketch to completion&mdash;or graceful abandonment.</p>
+      </div>
+
+      <div class="feature">
+        <p class="feature-q">How much would it actually cost to&hellip;</p>
+        <p class="feature-a">Quotes, vendors, stare at the numbers, close the laptop, reopen the laptop.</p>
       </div>
 
       <div class="feature">
         <p class="feature-q">Is the dishwasher still under warranty?</p>
-        <p class="feature-a">Appliance tracking with purchase dates, warranty expiry, and linked maintenance items.</p>
-      </div>
-
-      <div class="feature">
-        <p class="feature-q">Who replaced the water heater last time?</p>
-        <p class="feature-a">Service log with vendor tracking. Drill into any maintenance item to see the full history.</p>
-      </div>
-
-      <div class="feature">
-        <p class="feature-q">What's the status of&hellip; everything?</p>
-        <p class="feature-a">Projects with color-coded statuses, from &ldquo;ideating&rdquo; to &ldquo;completed&rdquo; to &ldquo;abandoned.&rdquo;</p>
-      </div>
-
-      <div class="feature">
-        <p class="feature-q">Do I need a mouse for this?</p>
-        <p class="feature-a">No. Vim-style modal editing, <code>hjkl</code> navigation, undo/redo, multi-column sorting. Your mouse can rest.</p>
-      </div>
-
-      <div class="feature">
-        <p class="feature-q">Where does my data live?</p>
-        <p class="feature-a"><code>~/.local/share/micasa/micasa.db</code>. One file. Back it up with <code>cp</code>. Radical, we know.</p>
+        <p class="feature-a">Appliance tracking with purchase dates, warranty windows, and linked maintenance.</p>
       </div>
 
     </div>
@@ -109,6 +97,7 @@
 micasa          # start fresh with your own house</code></pre>
       </div>
     </div>
+    <p class="install-data">Your data stays yours. <code>~/.local/share/micasa/micasa.db</code>. One file. Back it up with <code>cp</code>.</p>
   </div>
 </section>
 
@@ -116,6 +105,7 @@ micasa          # start fresh with your own house</code></pre>
 <section id="keys">
   <div class="container">
     <h2>Keyboard <span class="accent">driven</span></h2>
+    <p class="section-note">No mouse required.</p>
     <div class="keys-modes">
 
       <div>
@@ -181,5 +171,59 @@ micasa          # start fresh with your own house</code></pre>
   </div>
 </footer>
 
+<script>
+(function () {
+  var el = document.getElementById('typewriter');
+  var words = [
+    { text: 'panicked',    cls: 'accent' },
+    { text: 'daydreamed',  cls: 'accent-alt' },
+    { text: 'avoided',        cls: 'accent' },
+    { text: 'workshopped',  cls: 'accent-alt' },
+    { text: 'entertained', cls: 'accent-alt' }
+  ];
+  var i = 0;
+  var TYPE = 100, DELETE = 60, PAUSE = 2800, GAP = 500;
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return;
+
+  function type(word, cb) {
+    var j = 0;
+    el.className = 'typewriter ' + word.cls;
+    (function next() {
+      el.textContent = word.text.slice(0, ++j);
+      if (j < word.text.length) setTimeout(next, TYPE);
+      else setTimeout(cb, PAUSE);
+    })();
+  }
+
+  function erase(cb) {
+    var text = el.textContent;
+    (function next() {
+      text = text.slice(0, -1);
+      el.textContent = text;
+      if (text.length > 0) setTimeout(next, DELETE);
+      else setTimeout(cb, GAP);
+    })();
+  }
+
+  function cycle() {
+    type(words[i], function () {
+      erase(function () {
+        i = (i + 1) % words.length;
+        cycle();
+      });
+    });
+  }
+
+  // First word is already seeded in HTML; pause, erase, then continue
+  setTimeout(function () {
+    erase(function () {
+      i = 1;
+      cycle();
+    });
+  }, PAUSE);
+})();
+</script>
 </body>
 </html>
