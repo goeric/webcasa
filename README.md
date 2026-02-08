@@ -2,7 +2,7 @@
 <!-- Licensed under the Apache License, Version 2.0 -->
 
 <div align="center">
-  <img src="website/house.svg" alt="micasa" width="120">
+  <img src="website/house.svg" alt="micasa">
 </div>
 
 # `micasa`
