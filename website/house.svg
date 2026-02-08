@@ -1,59 +1,55 @@
 <!-- Copyright 2026 Phillip Cloud -->
 <!-- Licensed under the Apache License, Version 2.0 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 90" width="180" height="123">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 90" width="140" height="117">
   <!-- Terminal background with rounded corners -->
-  <rect x="0" y="0" width="132" height="90" rx="6" fill="#2d2a26"/>
-  <!-- Grid: 11 cols x 7 rows, cell=10x10, offset=(11,12) for padding -->
-  <!-- Row 0: ??? (half-blocks + full shade) -->
-  <rect x="51" y="17" width="10" height="5" fill="#c05e3c"/>
-  <rect x="61" y="12" width="10" height="10" fill="#c05e3c" opacity="0.75"/>
-  <rect x="71" y="17" width="10" height="5" fill="#c05e3c"/>
-  <!-- Row 1: ??????? -->
-  <rect x="31" y="27" width="10" height="5" fill="#c05e3c"/>
-  <rect x="41" y="22" width="10" height="10" fill="#c05e3c" opacity="0.75"/>
-  <rect x="51" y="22" width="10" height="10" fill="#c05e3c" opacity="0.75"/>
-  <rect x="61" y="22" width="10" height="10" fill="#c05e3c" opacity="0.75"/>
-  <rect x="71" y="22" width="10" height="10" fill="#c05e3c" opacity="0.75"/>
-  <rect x="81" y="22" width="10" height="10" fill="#c05e3c" opacity="0.75"/>
-  <rect x="91" y="27" width="10" height="5" fill="#c05e3c"/>
-  <!-- Row 2: ??????????? -->
-  <rect x="11" y="37" width="10" height="5" fill="#c05e3c"/>
-  <rect x="21" y="32" width="90" height="10" fill="#c05e3c" opacity="0.75"/>
-  <rect x="111" y="37" width="10" height="5" fill="#c05e3c"/>
-  <!-- Row 3: ?? ?? ?? ?? -->
-  <rect x="11" y="42" width="10" height="10" fill="#c05e3c"/>
-  <rect x="21" y="42" width="10" height="10" fill="#c05e3c"/>
-  <rect x="41" y="42" width="10" height="10" fill="#c05e3c" opacity="0.3"/>
-  <rect x="51" y="42" width="10" height="10" fill="#c05e3c" opacity="0.3"/>
-  <rect x="71" y="42" width="10" height="10" fill="#c05e3c" opacity="0.3"/>
-  <rect x="81" y="42" width="10" height="10" fill="#c05e3c" opacity="0.3"/>
-  <rect x="101" y="42" width="10" height="10" fill="#c05e3c"/>
-  <rect x="111" y="42" width="10" height="10" fill="#c05e3c"/>
-  <!-- Row 4: ??  ???? ?? -->
-  <rect x="11" y="52" width="10" height="10" fill="#c05e3c"/>
-  <rect x="21" y="52" width="10" height="10" fill="#c05e3c"/>
-  <rect x="51" y="52" width="10" height="10" fill="#c05e3c"/>
-  <rect x="61" y="52" width="10" height="10" fill="#c05e3c"/>
-  <rect x="71" y="52" width="10" height="10" fill="#c05e3c"/>
-  <rect x="81" y="52" width="10" height="10" fill="#c05e3c"/>
-  <rect x="101" y="52" width="10" height="10" fill="#c05e3c"/>
-  <rect x="111" y="52" width="10" height="10" fill="#c05e3c"/>
-  <!-- Row 5: ??  ?  ? ?? -->
-  <rect x="11" y="62" width="10" height="10" fill="#c05e3c"/>
-  <rect x="21" y="62" width="10" height="10" fill="#c05e3c"/>
-  <rect x="51" y="62" width="10" height="10" fill="#c05e3c"/>
-  <rect x="81" y="62" width="10" height="10" fill="#c05e3c"/>
-  <rect x="101" y="62" width="10" height="10" fill="#c05e3c"/>
-  <rect x="111" y="62" width="10" height="10" fill="#c05e3c"/>
-  <!-- Row 6: ??????????? (top-half blocks) -->
-  <rect x="11" y="72" width="110" height="5" fill="#c05e3c"/>
+  <rect x="0" y="0" width="108" height="90" rx="6" fill="#2d2a26"/>
+  <!-- Grid: 11 cols x 7 rows, cell=8x10, offset=(10,12) for padding -->
+  <!-- Row 0: peak (half-blocks + full shade) -->
+  <rect x="42" y="17" width="8" height="5" fill="#c05e3c"/>
+  <rect x="50" y="12" width="8" height="10" fill="#c05e3c" opacity="0.75"/>
+  <rect x="58" y="17" width="8" height="5" fill="#c05e3c"/>
+  <!-- Row 1: mid roof -->
+  <rect x="26" y="27" width="8" height="5" fill="#c05e3c"/>
+  <rect x="34" y="22" width="40" height="10" fill="#c05e3c" opacity="0.75"/>
+  <rect x="74" y="27" width="8" height="5" fill="#c05e3c"/>
+  <!-- Row 2: roof base -->
+  <rect x="10" y="37" width="8" height="5" fill="#c05e3c"/>
+  <rect x="18" y="32" width="72" height="10" fill="#c05e3c" opacity="0.75"/>
+  <rect x="90" y="37" width="8" height="5" fill="#c05e3c"/>
+  <!-- Row 3: walls + windows -->
+  <rect x="10" y="42" width="8" height="10" fill="#c05e3c"/>
+  <rect x="18" y="42" width="8" height="10" fill="#c05e3c"/>
+  <rect x="34" y="42" width="8" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="42" y="42" width="8" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="58" y="42" width="8" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="66" y="42" width="8" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="82" y="42" width="8" height="10" fill="#c05e3c"/>
+  <rect x="90" y="42" width="8" height="10" fill="#c05e3c"/>
+  <!-- Row 4: walls + door top -->
+  <rect x="10" y="52" width="8" height="10" fill="#c05e3c"/>
+  <rect x="18" y="52" width="8" height="10" fill="#c05e3c"/>
+  <rect x="42" y="52" width="8" height="10" fill="#c05e3c"/>
+  <rect x="50" y="52" width="8" height="10" fill="#c05e3c"/>
+  <rect x="58" y="52" width="8" height="10" fill="#c05e3c"/>
+  <rect x="66" y="52" width="8" height="10" fill="#c05e3c"/>
+  <rect x="82" y="52" width="8" height="10" fill="#c05e3c"/>
+  <rect x="90" y="52" width="8" height="10" fill="#c05e3c"/>
+  <!-- Row 5: walls + door -->
+  <rect x="10" y="62" width="8" height="10" fill="#c05e3c"/>
+  <rect x="18" y="62" width="8" height="10" fill="#c05e3c"/>
+  <rect x="42" y="62" width="8" height="10" fill="#c05e3c"/>
+  <rect x="66" y="62" width="8" height="10" fill="#c05e3c"/>
+  <rect x="82" y="62" width="8" height="10" fill="#c05e3c"/>
+  <rect x="90" y="62" width="8" height="10" fill="#c05e3c"/>
+  <!-- Row 6: foundation (top-half blocks) -->
+  <rect x="10" y="72" width="88" height="5" fill="#c05e3c"/>
   <!-- Subtle scanlines for terminal feel -->
-  <rect x="0" y="11" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
-  <rect x="0" y="21" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
-  <rect x="0" y="31" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
-  <rect x="0" y="41" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
-  <rect x="0" y="51" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
-  <rect x="0" y="61" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
-  <rect x="0" y="71" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
-  <rect x="0" y="81" width="132" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="11" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="21" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="31" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="41" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="51" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="61" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="71" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
+  <rect x="0" y="81" width="108" height="1" fill="#faf6f1" opacity="0.03"/>
 </svg>
