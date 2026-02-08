@@ -208,6 +208,15 @@ section + section {
 }
 
 /* --- Pitch --- */
+.brand {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.85em;
+  font-style: normal;
+  background: var(--linen);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
 .pitch {
   font-size: 1.05rem;
   color: var(--charcoal-soft);
@@ -357,30 +366,10 @@ section + section {
 }
 
 /* --- Tech --- */
-.tech-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  list-style: none;
-  justify-content: center;
-}
-
-.tech-list li {
-  background: var(--linen);
-  border: 1px solid var(--rule);
-  padding: 0.35rem 0.9rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: var(--charcoal-soft);
-}
-
-.tech-list li a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.tech-list li a:hover {
-  color: var(--terracotta);
+.tech-note {
+  text-align: center;
+  color: var(--warm-gray);
+  font-size: 0.9rem;
 }
 
 /* --- Footer --- */
