@@ -1,13 +1,13 @@
 <!-- Copyright 2026 Phillip Cloud -->
 <!-- Licensed under the Apache License, Version 2.0 -->
 
-# `micasa`
-
-A terminal UI for tracking everything about your home. Single SQLite file. No cloud. No account. No subscriptions. Just your house.
-
 <div align="center">
   <img src="website/house.svg" alt="micasa" width="180">
 </div>
+
+# `micasa`
+
+A terminal UI for tracking everything about your home. Single SQLite file. No cloud. No account. No subscriptions. Just your house.
 
 Your house is quietly plotting to break while you sleep -- and you're dreaming about redoing the kitchen. `micasa` tracks both from your terminal.
 
