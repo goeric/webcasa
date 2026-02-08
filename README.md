@@ -5,9 +5,7 @@
 
 A terminal UI for tracking everything about your home. Single SQLite file. No cloud. No account. No subscriptions. Just your house.
 
-<div align="center">
-
-```
+<table align="center"><tr><td><pre>
       ▄▓▄
     ▄▓▓▓▓▓▄
   ▄▓▓▓▓▓▓▓▓▓▄
@@ -15,9 +13,7 @@ A terminal UI for tracking everything about your home. Single SQLite file. No cl
   ██  ████ ██
   ██  █  █ ██
   ▀▀▀▀▀▀▀▀▀▀▀
-```
-
-</div>
+</pre></td></tr></table>
 
 Your house is quietly plotting to break while you sleep -- and you're dreaming about redoing the kitchen. `micasa` tracks both from your terminal.
 
