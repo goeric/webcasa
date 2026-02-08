@@ -271,6 +271,9 @@ These have been repeatedly requested. Violating them wastes the user's time.
   `lipgloss.AdaptiveColor{Light, Dark}`. See `styles.go` for the existing
   palette and roles. When adding or changing styles, always provide both Light
   and Dark variants.
+- **No mass-history-cleanup logs**: Don't write detailed session log entries
+  for git history rewrites (filter-branch, squash rebases, etc.) -- they
+  reference commit hashes that no longer exist and add noise.
 
 If the user asks you to learn something, add it to this "Hard rules" section
 so it survives context resets. This file is always injected; external files
@@ -643,6 +646,14 @@ in case things crash or otherwise go haywire, be diligent about this.
 - README synced with website content: matching features, pitch, install (fixed stale CGO claim + go install URL), tech prose, keybindings
 - README house art: pixel-art SVG with dark terminal background, terracotta blocks at 3 opacity levels, 6x10 cell grid, centered via `<div align="center"><img>`
 - Added hard rule: keep README and website in sync
+
+## 2026-02-08 Session 15
+
+**User request**: Remove `.cursor/cli.json` from git history entirely; add `.cursor/` to `.gitignore`. User also requested squashing chatty commits but rescinded -- too much churn.
+
+**Work done**:
+- [CURSOR-CLEAN] `git filter-branch --index-filter` removed `.cursor/cli.json` from all 182 commits; `--prune-empty` dropped pure-cli.json chore commits; cleaned up backup refs, expired reflogs, GC'd unreachable objects
+- Added `.cursor/` to `.gitignore`
 
 # Remaining work
 

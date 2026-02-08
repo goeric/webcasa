@@ -34,6 +34,9 @@ vendor
 result
 result-*
 
+# Editor
+.cursor/
+
 # Env / local
 .env
 .pre-commit-config.yaml
