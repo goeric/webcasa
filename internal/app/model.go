@@ -888,9 +888,9 @@ func selectRowByID(tab *Tab, id uint) bool {
 	return false
 }
 
-// nextVisibleCol returns the next visible column index from current, wrapping
-// around. If forward is true, it searches right; otherwise left. Returns
-// current if no other visible columns exist.
+// nextVisibleCol returns the next visible column index from current, clamping
+// at boundaries. If forward is true it searches right; otherwise left. Returns
+// current if already at the edge or no other visible columns exist.
 func nextVisibleCol(specs []columnSpec, current int, forward bool) int {
 	n := len(specs)
 	if n == 0 {
@@ -898,12 +898,11 @@ func nextVisibleCol(specs []columnSpec, current int, forward bool) int {
 	}
 	step := 1
 	if !forward {
-		step = n - 1
+		step = -1
 	}
-	for i := 1; i <= n; i++ {
-		candidate := (current + i*step) % n
-		if specs[candidate].HideOrder == 0 {
-			return candidate
+	for i := current + step; i >= 0 && i < n; i += step {
+		if specs[i].HideOrder == 0 {
+			return i
 		}
 	}
 	return current
@@ -948,7 +947,12 @@ func (m *Model) hideCurrentColumn() {
 		return
 	}
 	tab.Specs[col].HideOrder = nextHideOrder(tab.Specs)
-	tab.ColCursor = nextVisibleCol(tab.Specs, col, true)
+	// Try forward first; if at the right edge fall back to backward.
+	next := nextVisibleCol(tab.Specs, col, true)
+	if next == col {
+		next = nextVisibleCol(tab.Specs, col, false)
+	}
+	tab.ColCursor = next
 	m.updateTabViewport(tab)
 	m.setStatusInfo(
 		fmt.Sprintf("Hidden: %s. Press C to show all.", tab.Specs[col].Title),

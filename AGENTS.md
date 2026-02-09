@@ -830,6 +830,9 @@ in case things crash or otherwise go haywire, be diligent about this.
 
 ## Bugs
 
+- [NAV-CLAMP] ~~Remove table column navigation wrapping -- clamp at edges
+  instead of wrapping around.~~ DONE
+
 ## Questions
 - Why are some values pointers to numbers instead of just the number? E.g.,
   HOAFeeCents and PropertyTaxCents. Why aren't those just plain int64s?

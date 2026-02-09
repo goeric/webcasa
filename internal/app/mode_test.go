@@ -124,13 +124,13 @@ func TestColumnNavH(t *testing.T) {
 	}
 }
 
-func TestColumnNavWrapsLeft(t *testing.T) {
+func TestColumnNavClampsLeft(t *testing.T) {
 	m := newTestModel()
 	tab := m.activeTab()
 	tab.ColCursor = 0
 	sendKey(m, "h")
-	if tab.ColCursor != len(tab.Specs)-1 {
-		t.Fatalf("expected wrap to last column, got %d", tab.ColCursor)
+	if tab.ColCursor != 0 {
+		t.Fatalf("expected clamp at column 0, got %d", tab.ColCursor)
 	}
 }
 

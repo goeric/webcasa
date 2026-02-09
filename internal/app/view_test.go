@@ -149,13 +149,19 @@ func TestNextVisibleColBackward(t *testing.T) {
 	}
 }
 
-func TestNextVisibleColWraps(t *testing.T) {
+func TestNextVisibleColClampsAtEdge(t *testing.T) {
 	specs := []columnSpec{
 		{Title: "A"}, {Title: "B", HideOrder: 1}, {Title: "C", HideOrder: 2},
 	}
+	// Only A is visible; forward from A should stay at A (clamp).
 	got := nextVisibleCol(specs, 0, true)
 	if got != 0 {
-		t.Fatalf("expected 0 (wrap around, only A visible), got %d", got)
+		t.Fatalf("expected 0 (clamp, only A visible), got %d", got)
+	}
+	// Backward from A should also stay at A.
+	got = nextVisibleCol(specs, 0, false)
+	if got != 0 {
+		t.Fatalf("expected 0 (clamp backward, only A visible), got %d", got)
 	}
 }
 
@@ -164,6 +170,22 @@ func TestNextVisibleColAllVisible(t *testing.T) {
 	got := nextVisibleCol(specs, 1, true)
 	if got != 2 {
 		t.Fatalf("expected 2, got %d", got)
+	}
+}
+
+func TestNextVisibleColClampsRight(t *testing.T) {
+	specs := []columnSpec{{Title: "A"}, {Title: "B"}, {Title: "C"}}
+	got := nextVisibleCol(specs, 2, true)
+	if got != 2 {
+		t.Fatalf("expected 2 (clamp at right edge), got %d", got)
+	}
+}
+
+func TestNextVisibleColClampsLeftAllVisible(t *testing.T) {
+	specs := []columnSpec{{Title: "A"}, {Title: "B"}, {Title: "C"}}
+	got := nextVisibleCol(specs, 0, false)
+	if got != 0 {
+		t.Fatalf("expected 0 (clamp at left edge), got %d", got)
 	}
 }
 
