@@ -487,11 +487,9 @@ func (m *Model) tableView(tab *Tab) string {
 	fullWidths := columnWidths(visSpecs, visCells, width, sepW)
 
 	// Horizontal scroll viewport: determine which columns are on screen.
-	ensureCursorVisible(tab, visColCursor, len(visSpecs))
 	vpStart, vpEnd, hasLeft, hasRight := viewportRange(
 		fullWidths, sepW, width, tab.ViewOffset, visColCursor,
 	)
-	tab.ViewOffset = vpStart
 
 	// Slice everything to the viewport window.
 	vpSpecs := sliceViewport(visSpecs, vpStart, vpEnd)

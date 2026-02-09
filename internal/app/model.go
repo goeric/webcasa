@@ -86,6 +86,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = typed.Width
 		m.height = typed.Height
 		m.resizeTables()
+		m.updateAllViewports()
 	case tea.KeyMsg:
 		if typed.String() == "ctrl+c" {
 			return m, tea.Interrupt
@@ -223,11 +224,13 @@ func (m *Model) handleCommonKeys(key tea.KeyMsg) (tea.Cmd, bool) {
 	case "h", "left":
 		if tab := m.effectiveTab(); tab != nil {
 			tab.ColCursor = nextVisibleCol(tab.Specs, tab.ColCursor, false)
+			m.updateTabViewport(tab)
 		}
 		return nil, true
 	case "l", "right":
 		if tab := m.effectiveTab(); tab != nil {
 			tab.ColCursor = nextVisibleCol(tab.Specs, tab.ColCursor, true)
+			m.updateTabViewport(tab)
 		}
 		return nil, true
 	}
@@ -718,6 +721,7 @@ func (m *Model) reloadTab(tab *Tab) error {
 	tab.Table.SetRows(rows)
 	tab.Rows = meta
 	applySorts(tab)
+	m.updateTabViewport(tab)
 	return nil
 }
 
@@ -945,6 +949,7 @@ func (m *Model) hideCurrentColumn() {
 	}
 	tab.Specs[col].HideOrder = nextHideOrder(tab.Specs)
 	tab.ColCursor = nextVisibleCol(tab.Specs, col, true)
+	m.updateTabViewport(tab)
 	m.setStatusInfo(
 		fmt.Sprintf("Hidden: %s. Press C to show all.", tab.Specs[col].Title),
 	)
@@ -963,8 +968,37 @@ func (m *Model) showAllColumns() {
 		}
 	}
 	if any {
+		m.updateTabViewport(tab)
 		m.setStatusInfo("All columns visible.")
 	}
+}
+
+func (m *Model) updateAllViewports() {
+	if tab := m.activeTab(); tab != nil {
+		m.updateTabViewport(tab)
+	}
+	if m.detail != nil {
+		m.updateTabViewport(&m.detail.Tab)
+	}
+}
+
+func (m *Model) updateTabViewport(tab *Tab) {
+	if tab == nil {
+		return
+	}
+	visSpecs, visCells, visColCursor, _, _ := visibleProjection(tab)
+	if len(visSpecs) == 0 || visColCursor < 0 {
+		tab.ViewOffset = 0
+		return
+	}
+	width := m.effectiveWidth()
+	sepW := lipgloss.Width(" │ ")
+	fullWidths := columnWidths(visSpecs, visCells, width, sepW)
+	ensureCursorVisible(tab, visColCursor, len(visSpecs))
+	vpStart, _, _, _ := viewportRange(
+		fullWidths, sepW, width, tab.ViewOffset, visColCursor,
+	)
+	tab.ViewOffset = vpStart
 }
 
 func tabIndex(kind TabKind) int {
