@@ -148,8 +148,7 @@
           inherit micasa;
           default = micasa;
           website = pkgs.writeShellScriptBin "micasa-website" ''
-            echo "Serving website at http://localhost:8000"
-            ${pkgs.python3}/bin/python3 -m http.server 8000 -d website
+            ${pkgs.python3}/bin/python3 -m http.server 0 -d website
           '';
           record-demo = pkgs.writeShellApplication {
             name = "record-demo";
