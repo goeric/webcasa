@@ -8,6 +8,8 @@ description = "Multi-column sorting, column hiding, and horizontal scrolling."
 linkTitle = "Sorting & Columns"
 +++
 
+![Sorting with indicators](/docs/images/sorting.png)
+
 ## Multi-column sorting
 
 micasa supports multi-column sorting in Normal mode.

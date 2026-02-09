@@ -10,6 +10,8 @@ linkTitle = "Quotes"
 
 The Quotes tab helps you compare vendor quotes for your projects.
 
+![Quotes table](/docs/images/quotes.png)
+
 ## Prerequisites
 
 You need at least one project before you can add a quote, since every quote

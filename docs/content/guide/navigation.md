@@ -11,6 +11,8 @@ linkTitle = "Navigation"
 micasa uses vim-style modal keybindings. There are three modes: **Normal**,
 **Edit**, and **Form**.
 
+![Help overlay showing keybindings](/docs/images/help.png)
+
 ## Normal mode
 
 Normal mode is the default. The status bar shows a blue **NAV** badge. You

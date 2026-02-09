@@ -11,6 +11,8 @@ linkTitle = "Projects"
 The Projects tab tracks things you want to do to your house, from small
 repairs to major renovations.
 
+![Projects table](/docs/images/projects.png)
+
 ## Adding a project
 
 1. Switch to the Projects tab (`tab` until it's active)

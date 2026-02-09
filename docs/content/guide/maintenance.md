@@ -11,6 +11,8 @@ linkTitle = "Maintenance"
 The Maintenance tab tracks recurring upkeep tasks -- things that need to happen
 on a schedule to keep your house running.
 
+![Maintenance table](/docs/images/maintenance.png)
+
 ## Adding a maintenance item
 
 1. Switch to the Maintenance tab
@@ -50,6 +52,8 @@ actually performed. The **Log** column shows the entry count.
 
 To view the service log, navigate to the Log column in Normal mode and press
 `enter`. This opens a detail view with its own table:
+
+![Service log drilldown](/docs/images/service-log.png)
 
 | Column       | Description |
 |--------------|-------------|

@@ -43,5 +43,7 @@ micasa --demo   # poke around with sample data
 micasa          # start fresh with your own house
 ```
 
+![micasa dashboard](/docs/images/dashboard.png)
+
 Read the full [Installation]({{< ref "/getting-started/installation" >}}) guide for
 other options (binaries, Nix, container).

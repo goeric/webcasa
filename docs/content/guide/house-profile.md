@@ -11,6 +11,8 @@ linkTitle = "House Profile"
 The house profile holds your home's physical and financial details. There's
 exactly one per database.
 
+![House profile](/docs/images/house-profile.png)
+
 ## First-time setup
 
 On first launch (with no existing database), micasa presents the house profile

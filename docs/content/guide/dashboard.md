@@ -11,6 +11,8 @@ linkTitle = "Dashboard"
 The dashboard is an at-a-glance overview of what needs attention in your home.
 It appears as a centered overlay on top of the normal table view.
 
+![Dashboard overlay](/docs/images/dashboard.png)
+
 ## Opening the dashboard
 
 - On launch (if you have a house profile), the dashboard opens automatically

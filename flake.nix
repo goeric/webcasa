@@ -242,6 +242,158 @@
               echo "Done: $CAST_FILE and $GIF_FILE"
             '';
           };
+          capture-screenshots = pkgs.writeShellApplication {
+            name = "capture-screenshots";
+            runtimeInputs = [
+              micasa
+              pkgs.asciinema
+              pkgs.asciinema-agg
+              pkgs.tmux
+              pkgs.imagemagick
+            ];
+            text = ''
+              OUT="docs/static/images"
+              mkdir -p "$OUT"
+              SESSION="micasa-screenshots"
+              COLS=120
+              ROWS=36
+
+              cleanup() {
+                tmux kill-session -t "$SESSION" 2>/dev/null || true
+              }
+              trap cleanup EXIT
+
+              send() { tmux send-keys -t "$SESSION" "$@"; }
+              pause() { sleep "''${1:-0.5}"; }
+
+              FONT_DIR="${pkgs.jetbrains-mono}/share/fonts/truetype"
+              AGG_OPTS=(
+                --font-dir "$FONT_DIR"
+                --font-family "JetBrains Mono"
+                --theme asciinema
+                --cols "$COLS" --rows "$ROWS"
+                --no-loop
+              )
+
+              # Capture a single screenshot:
+              #   capture <name> <setup_delay> <key_sequence_fn>
+              # Records a short asciinema cast, converts to GIF, extracts last frame as PNG.
+              capture() {
+                local name="$1"
+                local setup_delay="$2"
+                local cast_file gif_file png_file
+                cast_file="$(mktemp --suffix=.cast)"
+                gif_file="$(mktemp --suffix=.gif)"
+                png_file="$OUT/$name.png"
+
+                cleanup
+
+                tmux new-session -d -s "$SESSION" -x "$COLS" -y "$ROWS"
+                send "TERM=xterm-256color asciinema rec --cols $COLS --rows $ROWS --overwrite '$cast_file' -c 'micasa --demo'" Enter
+                pause "$setup_delay"
+
+                # Run the key sequence (caller sets this up via the third arg eval)
+                eval "$3"
+
+                # Hold final state briefly so agg captures it clearly
+                pause 1.5
+
+                # Quit micasa and stop recording
+                send q
+                pause 1
+
+                echo "  rendering $name..."
+                agg "''${AGG_OPTS[@]}" "$cast_file" "$gif_file" 2>/dev/null
+
+                # Extract last frame from GIF as PNG
+                convert "''${gif_file}[-1]" "$png_file"
+
+                rm -f "$cast_file" "$gif_file"
+                echo "  -> $png_file"
+              }
+
+              echo "Capturing screenshots..."
+
+              # 1. Dashboard (appears on launch)
+              capture "dashboard" 4 "true"
+
+              # 2. Projects table (D dismisses dashboard without switching tabs)
+              capture "projects" 4 '
+                send D; pause 1.5
+                send j; pause 0.3
+                send j; pause 0.3
+                send j; pause 0.3
+              '
+
+              # 3. Quotes table
+              capture "quotes" 4 '
+                send D; pause 0.5
+                send Tab; pause 1.5
+                send j; pause 0.3
+                send j; pause 0.3
+              '
+
+              # 4. Maintenance table
+              capture "maintenance" 4 '
+                send D; pause 0.5
+                send Tab; pause 0.5
+                send Tab; pause 1.5
+                send j; pause 0.3
+                send j; pause 0.3
+              '
+
+              # 5. Service log drilldown (maintenance > Log column > enter)
+              capture "service-log" 4 '
+                send D; pause 0.5
+                send Tab; pause 0.5
+                send Tab; pause 1
+                send l; pause 0.3
+                send l; pause 0.3
+                send l; pause 0.3
+                send l; pause 0.3
+                send l; pause 0.3
+                send l; pause 0.3
+                send l; pause 0.5
+                send Enter; pause 1.5
+              '
+
+              # 6. Appliances table
+              capture "appliances" 4 '
+                send D; pause 0.5
+                send Tab; pause 0.5
+                send Tab; pause 0.5
+                send Tab; pause 1.5
+                send j; pause 0.3
+                send j; pause 0.3
+              '
+
+              # 7. House profile expanded
+              capture "house-profile" 4 '
+                send D; pause 0.5
+                send H; pause 1.5
+              '
+
+              # 8. Help overlay
+              capture "help" 4 '
+                send D; pause 0.5
+                send "?"; pause 1.5
+              '
+
+              # 9. Sorting indicators
+              capture "sorting" 4 '
+                send D; pause 0.5
+                send l; pause 0.3
+                send l; pause 0.3
+                send s; pause 0.8
+                send l; pause 0.3
+                send s; pause 0.8
+              '
+
+              echo ""
+              echo "Done! Screenshots in $OUT/"
+              ls -la "$OUT/"*.png
+            '';
+          };
           micasa-container = pkgs.dockerTools.buildImage {
             name = "micasa";
             tag = "latest";
@@ -265,6 +417,7 @@
           website = flake-utils.lib.mkApp { drv = self.packages.${system}.website; };
           record-demo = flake-utils.lib.mkApp { drv = self.packages.${system}.record-demo; };
           docs = flake-utils.lib.mkApp { drv = self.packages.${system}.docs; };
+          capture-screenshots = flake-utils.lib.mkApp { drv = self.packages.${system}.capture-screenshots; };
         };
 
         formatter = pkgs.nixpkgs-fmt;
