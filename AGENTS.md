@@ -599,6 +599,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [MODULE-RENAME] Go module path corrected from micasa/micasa to cpcloud/micasa (f2fc33d)
 - [DASHBOARD] Dashboard landing screen with overdue/upcoming maintenance, active projects, expiring warranties, recent activity, YTD spending (271121c)
 - [WEBSITE-CHIMNEY] animated chimney smoke particle system on website hero house (75318ac)
+- [PARSE-ARGS] replaced manual arg parsing with alecthomas/kong
 
 ## 2026-02-07 Session 12
 
@@ -694,6 +695,10 @@ in case things crash or otherwise go haywire, be diligent about this.
   - CSS: removed `@keyframes smoke-drift` and static `.smoke-*` rules; added `.smoke-bed` + `.smoke-particle` with `will-change: transform, opacity`
   - Fixed chimney detachment: `top: -0.65em` -> `top: -0.15em` so chimney bottom overlaps first roof line
   - Dialed smoke down: max 5 particles (was 10), spawn every 800-1500ms (was 350-700), peak opacity 0.12-0.3 (was 0.25-0.5), slower rise, gentler scale growth, mostly light ░ glyphs
+- [PARSE-ARGS] Replaced hand-rolled `parseArgs` loop with `alecthomas/kong` struct-based CLI parser
+  - `cli` struct with `arg`, `env`, `help` tags; kong handles help, errors, env var docs
+  - Removed `cliOpts`, `parseArgs`, `printHelp` (~35 lines); `resolveDBPath` kept for demo/default logic
+  - Help output auto-documents `$MICASA_DB_PATH` env var
 
 # Remaining work
 
@@ -732,8 +737,6 @@ in case things crash or otherwise go haywire, be diligent about this.
   and ideally we can gather some data to get a rough idea of when a thing is
   due for replacement; would be sweet if we could pull that data based on the
   model number; doesn't need to be super sophisticated, just plausible
-- [PARSE-ARGS] can we avoid manual argument parsing and use a maintained
-  library for this?
 - [STATUS-MODE-VERBOSITY] is there a kind of verbose status bar we can add that
   shows keystrokes and also more verbose context?
 - [VENDORS-TAB] Vendors as a first-class tab. Vendor model already exists but is

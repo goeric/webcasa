@@ -7,23 +7,27 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
+	"github.com/alecthomas/kong"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cpcloud/micasa/internal/app"
 	"github.com/cpcloud/micasa/internal/data"
 )
 
+type cli struct {
+	DBPath string `arg:"" optional:"" help:"SQLite database path. Pass with --demo to persist demo data." env:"MICASA_DB_PATH"`
+	Demo   bool   `                   help:"Launch with sample data in an in-memory database."`
+}
+
 func main() {
-	opts, err := parseArgs(os.Args[1:])
-	if err != nil {
-		fail("parse args", err)
-	}
-	if opts.showHelp {
-		printHelp()
-		return
-	}
-	dbPath, err := resolveDBPath(opts)
+	var c cli
+	kong.Parse(&c,
+		kong.Name("micasa"),
+		kong.Description("A terminal UI for tracking everything about your home."),
+		kong.UsageOnError(),
+	)
+
+	dbPath, err := resolveDBPath(c)
 	if err != nil {
 		fail("resolve db path", err)
 	}
@@ -37,7 +41,7 @@ func main() {
 	if err := store.SeedDefaults(); err != nil {
 		fail("seed defaults", err)
 	}
-	if opts.demo {
+	if c.Demo {
 		if err := store.SeedDemoData(); err != nil {
 			fail("seed demo data", err)
 		}
@@ -54,62 +58,14 @@ func main() {
 	}
 }
 
-type cliOpts struct {
-	dbPath   string
-	demo     bool
-	showHelp bool
-}
-
-func parseArgs(args []string) (cliOpts, error) {
-	var opts cliOpts
-	for _, arg := range args {
-		switch arg {
-		case "-h", "--help":
-			opts.showHelp = true
-			return opts, nil
-		case "--demo":
-			opts.demo = true
-		default:
-			if strings.HasPrefix(arg, "-") {
-				return cliOpts{}, fmt.Errorf("unknown flag: %s", arg)
-			}
-			if opts.dbPath != "" {
-				return cliOpts{}, fmt.Errorf("too many arguments")
-			}
-			opts.dbPath = arg
-		}
+func resolveDBPath(c cli) (string, error) {
+	if c.DBPath != "" {
+		return c.DBPath, nil
 	}
-	return opts, nil
-}
-
-func resolveDBPath(opts cliOpts) (string, error) {
-	if opts.dbPath != "" {
-		return opts.dbPath, nil
-	}
-	if opts.demo {
+	if c.Demo {
 		return ":memory:", nil
 	}
 	return data.DefaultDBPath()
-}
-
-func printHelp() {
-	lines := []string{
-		"micasa - home improvement tracker",
-		"",
-		"Usage:",
-		"  micasa [db-path] [--demo] [--help]",
-		"",
-		"Options:",
-		"  -h, --help  Show help and exit.",
-		"  --demo      Launch with sample data in an in-memory database.",
-		"",
-		"Args:",
-		"  db-path     SQLite path. Pass with --demo to persist demo data.",
-		"",
-		"Environment:",
-		"  MICASA_DB_PATH  Override default sqlite path.",
-	}
-	_, _ = fmt.Fprintln(os.Stdout, strings.Join(lines, "\n"))
 }
 
 func fail(context string, err error) {

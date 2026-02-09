@@ -6,6 +6,7 @@ module github.com/cpcloud/micasa
 go 1.24.2
 
 require (
+	github.com/alecthomas/kong v1.14.0
 	github.com/charmbracelet/bubbles v0.21.1
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/huh v0.8.0
