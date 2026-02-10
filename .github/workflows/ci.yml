@@ -9,10 +9,6 @@ on:
   pull_request:
     branches: [main]
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
@@ -20,6 +16,9 @@ jobs:
   test:
     name: Build & Test (${{ matrix.os }}, Go ${{ matrix.go-version }})
     runs-on: ${{ matrix.os }}
+    concurrency:
+      group: ci-test-${{ matrix.os }}-${{ matrix.go-version }}-${{ github.ref }}
+      cancel-in-progress: true
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -43,6 +42,9 @@ jobs:
   pre-commit:
     name: Pre-commit
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-pre-commit-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -54,6 +56,9 @@ jobs:
   nix-build:
     name: Nix Build
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-nix-build-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -74,6 +79,9 @@ jobs:
   docs:
     name: Docs Build
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-docs-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -90,6 +98,9 @@ jobs:
   secrets:
     name: Secret Scan
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-secrets-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
