@@ -87,13 +87,8 @@ jobs:
 
       - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
 
-      - name: Copy favicon
-        run: |
-          mkdir -p docs/static/images
-          cp images/favicon.svg docs/static/images/favicon.svg
-
       - name: Build docs
-        run: nix run 'nixpkgs#hugo' -- --source docs --baseURL /docs/
+        run: nix run '.#build-docs'
 
   secrets:
     name: Secret Scan

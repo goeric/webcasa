@@ -32,17 +32,8 @@ jobs:
 
       - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
 
-      - name: Copy favicon
-        run: |
-          mkdir -p website/images docs/static/images
-          cp images/favicon.svg website/images/favicon.svg
-          cp images/favicon.svg docs/static/images/favicon.svg
-
       - name: Build docs
-        run: nix run 'nixpkgs#hugo' -- --source docs --baseURL /docs/ --destination ../website/docs
-
-      - name: Copy shared assets
-        run: cp -r images website/images
+        run: nix run '.#build-docs'
 
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
