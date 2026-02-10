@@ -1,5 +1,7 @@
 Require micasa
 
+Output docs/static/images/house-profile.gif
+
 Set Shell bash
 Set FontFamily "JetBrains Mono"
 Set FontSize 14
@@ -25,5 +27,3 @@ Sleep 3s
 Show
 
 Sleep 2s
-
-Screenshot docs/static/images/house-profile.png

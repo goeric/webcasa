@@ -251,6 +251,7 @@
             runtimeInputs = [
               micasa
               pkgs.vhs
+              pkgs.imagemagick
             ];
             text = ''
               TAPES="docs/tapes"
@@ -269,6 +270,18 @@
                 [[ "$name" == "debug" ]] && continue
                 echo "  capturing $name..."
                 vhs "$tape"
+
+                # Tapes with Output (GIF) need frame extraction; tapes with
+                # Screenshot produce PNGs directly.
+                gif="$OUT/$name.gif"
+                if [[ -f "$gif" ]]; then
+                  magick "$gif" -coalesce "$OUT/$name-frame.png"
+                  # coalesce produces numbered files; grab the last one
+                  last=$(ls -1 "$OUT/$name-frame"*.png 2>/dev/null | tail -1)
+                  mv "$last" "$OUT/$name.png"
+                  rm -f "$OUT/$name-frame"*.png "$gif"
+                fi
+
                 echo "  -> $OUT/$name.png"
               done
 
