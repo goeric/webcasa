@@ -119,7 +119,7 @@ func maintenanceColumnSpecs() []columnSpec {
 			Link:  &columnLink{TargetTab: tabAppliances, Relation: "m:1"},
 		},
 		{Title: "Last", Min: 10, Max: 12, Kind: cellDate},
-		{Title: "Next", Min: 10, Max: 12, Kind: cellDate},
+		{Title: "Next", Min: 10, Max: 12, Kind: cellUrgency},
 		{Title: "Every", Min: 6, Max: 10},
 		{Title: "Log", Min: 4, Max: 6, Align: alignRight, Kind: cellDrilldown},
 	}
@@ -134,7 +134,8 @@ func applianceColumnSpecs() []columnSpec {
 		{Title: "Serial", Min: 8, Max: 14},
 		{Title: "Location", Min: 8, Max: 14},
 		{Title: "Purchased", Min: 10, Max: 12, Kind: cellDate},
-		{Title: "Warranty", Min: 10, Max: 12, Kind: cellDate},
+		{Title: "Age", Min: 5, Max: 8, Kind: cellReadonly},
+		{Title: "Warranty", Min: 10, Max: 12, Kind: cellWarranty},
 		{Title: "Cost", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
 		{Title: "Maint", Min: 5, Max: 6, Align: alignRight, Kind: cellDrilldown},
 	}
@@ -148,7 +149,7 @@ func applianceMaintenanceColumnSpecs() []columnSpec {
 		{Title: "Item", Min: 12, Max: 26, Flex: true},
 		{Title: "Category", Min: 10, Max: 14},
 		{Title: "Last", Min: 10, Max: 12, Kind: cellDate},
-		{Title: "Next", Min: 10, Max: 12, Kind: cellDate},
+		{Title: "Next", Min: 10, Max: 12, Kind: cellUrgency},
 		{Title: "Every", Min: 6, Max: 10},
 	}
 }
@@ -171,7 +172,7 @@ func applianceMaintenanceRows(
 			{Value: item.Name, Kind: cellText},
 			{Value: item.Category.Name, Kind: cellText},
 			{Value: dateValue(item.LastServicedAt), Kind: cellDate},
-			{Value: dateValue(nextDue), Kind: cellDate},
+			{Value: dateValue(nextDue), Kind: cellUrgency},
 			{Value: interval, Kind: cellText},
 		}
 		rows = append(rows, cellsToRow(rowCells))
@@ -226,6 +227,7 @@ func serviceLogRows(
 func applianceRows(
 	items []data.Appliance,
 	maintCounts map[uint]int,
+	now time.Time,
 ) ([]table.Row, []rowMeta, [][]cell) {
 	rows := make([]table.Row, 0, len(items))
 	meta := make([]rowMeta, 0, len(items))
@@ -244,7 +246,8 @@ func applianceRows(
 			{Value: item.SerialNumber, Kind: cellText},
 			{Value: item.Location, Kind: cellText},
 			{Value: dateValue(item.PurchaseDate), Kind: cellDate},
-			{Value: dateValue(item.WarrantyExpiry), Kind: cellDate},
+			{Value: applianceAge(item.PurchaseDate, now), Kind: cellReadonly},
+			{Value: dateValue(item.WarrantyExpiry), Kind: cellWarranty},
 			{Value: centsValue(item.CostCents), Kind: cellMoney},
 			{Value: maintCount, Kind: cellDrilldown},
 		}
@@ -256,6 +259,35 @@ func applianceRows(
 		})
 	}
 	return rows, meta, cells
+}
+
+// applianceAge returns a human-readable age string from purchase date to now.
+func applianceAge(purchased *time.Time, now time.Time) string {
+	if purchased == nil {
+		return ""
+	}
+	years := now.Year() - purchased.Year()
+	months := int(now.Month()) - int(purchased.Month())
+	if now.Day() < purchased.Day() {
+		months--
+	}
+	if months < 0 {
+		years--
+		months += 12
+	}
+	if years < 0 {
+		return ""
+	}
+	if years == 0 {
+		if months <= 0 {
+			return "<1 mo"
+		}
+		return fmt.Sprintf("%d mo", months)
+	}
+	if months == 0 {
+		return fmt.Sprintf("%dy", years)
+	}
+	return fmt.Sprintf("%dy %dm", years, months)
 }
 
 func specsToColumns(specs []columnSpec) []table.Column {
@@ -372,7 +404,7 @@ func maintenanceRows(
 			{Value: item.Category.Name, Kind: cellText},
 			{Value: appName, Kind: cellText, LinkID: appLinkID},
 			{Value: dateValue(item.LastServicedAt), Kind: cellDate},
-			{Value: dateValue(nextDue), Kind: cellDate},
+			{Value: dateValue(nextDue), Kind: cellUrgency},
 			{Value: interval, Kind: cellText},
 			{Value: logCount, Kind: cellDrilldown},
 		}

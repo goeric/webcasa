@@ -198,8 +198,8 @@ func (m *Model) statusView() string {
 	}
 
 	// Both badges render at the same width to prevent layout shift.
-	badgeWidth := lipgloss.Width(m.styles.ModeNormal.Render("NORMAL"))
-	modeBadge := m.styles.ModeNormal.Render("NORMAL")
+	badgeWidth := lipgloss.Width(m.styles.ModeNormal.Render("NAV"))
+	modeBadge := m.styles.ModeNormal.Render("NAV")
 	if m.mode == modeEdit {
 		modeBadge = m.styles.ModeEdit.
 			Width(badgeWidth).
@@ -249,7 +249,7 @@ func (m *Model) statusView() string {
 			m.helpItem("r", "redo"),
 			m.deletedHint(m.effectiveTab()),
 			m.helpItem("p", "profile"),
-			m.helpItem("esc", "normal"),
+			m.helpItem("esc", "nav"),
 		)
 	}
 
@@ -397,7 +397,7 @@ func (m *Model) helpView() string {
 		bindings []binding
 	}{
 		{
-			title: "Normal Mode",
+			title: "Nav Mode",
 			bindings: []binding{
 				{"j/k", "Move through rows"},
 				{"h/l", "Move through columns"},

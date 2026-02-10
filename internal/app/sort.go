@@ -114,7 +114,7 @@ func compareCells(tab *Tab, col, a, b int) int {
 	switch kind {
 	case cellMoney:
 		return compareMoney(va, vb)
-	case cellDate:
+	case cellDate, cellUrgency, cellWarranty:
 		return compareDates(va, vb)
 	case cellReadonly:
 		// ID columns are numeric.

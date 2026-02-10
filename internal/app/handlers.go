@@ -5,6 +5,7 @@ package app
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/cpcloud/micasa/internal/data"
@@ -304,7 +305,7 @@ func (applianceHandler) Load(
 	if err != nil {
 		maintCounts = map[uint]int{}
 	}
-	rows, meta, cellRows := applianceRows(items, maintCounts)
+	rows, meta, cellRows := applianceRows(items, maintCounts, time.Now())
 	return rows, meta, cellRows, nil
 }
 

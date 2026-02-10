@@ -347,8 +347,8 @@ func TestDashboardStatusBarShowsNormal(t *testing.T) {
 	// statusView always shows normal-mode status; dashboard hints are
 	// in the overlay, not the status bar.
 	status := m.statusView()
-	if !strings.Contains(status, "NORMAL") {
-		t.Error("expected NORMAL badge in status bar")
+	if !strings.Contains(status, "NAV") {
+		t.Error("expected NAV badge in status bar")
 	}
 }
 

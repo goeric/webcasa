@@ -70,6 +70,9 @@ micasa uses GORM's soft delete feature. When you delete an item, it sets a
 - Deleted items can be restored (press `d` on a deleted item in Edit mode)
 - The `deletion_records` table tracks when items were deleted and restored
 - Toggle `x` in Edit mode to show/hide deleted items
+- Soft deletions persist across runs -- quit and reopen, and your deleted items
+  are still hidden (but restorable). Nothing is ever permanently lost unless
+  you edit the database file directly
 
 ## Portability
 

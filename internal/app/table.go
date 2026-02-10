@@ -6,9 +6,11 @@ package app
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/cpcloud/micasa/internal/data"
 )
 
 // visibleProjection computes the visible-only view of a tab's columns and data.
@@ -325,6 +327,10 @@ func renderCell(
 		if s, ok := styles.StatusStyles[value]; ok {
 			style = s
 		}
+	} else if cellValue.Kind == cellUrgency {
+		style = urgencyStyle(value)
+	} else if cellValue.Kind == cellWarranty {
+		style = warrantyStyle(value)
 	}
 
 	if deleted {
@@ -435,6 +441,45 @@ func cellStyle(kind cellKind, styles Styles) lipgloss.Style {
 	default:
 		return lipgloss.NewStyle()
 	}
+}
+
+// urgencyStyle returns a style colored from green (far out) through yellow
+// (upcoming) to red (overdue) based on the number of days until a date.
+// Thresholds: >60 days = green, 30-60 = yellow, 0-30 = orange, <0 = red.
+func urgencyStyle(dateStr string) lipgloss.Style {
+	if dateStr == "" {
+		return lipgloss.NewStyle()
+	}
+	t, err := time.Parse(data.DateLayout, strings.TrimSpace(dateStr))
+	if err != nil {
+		return lipgloss.NewStyle()
+	}
+	days := int(time.Until(t).Hours() / 24)
+	switch {
+	case days < 0:
+		return lipgloss.NewStyle().Foreground(danger).Bold(true)
+	case days <= 30:
+		return lipgloss.NewStyle().Foreground(secondary)
+	case days <= 60:
+		return lipgloss.NewStyle().Foreground(warning)
+	default:
+		return lipgloss.NewStyle().Foreground(success)
+	}
+}
+
+// warrantyStyle returns green if the warranty is still active, red if expired.
+func warrantyStyle(dateStr string) lipgloss.Style {
+	if dateStr == "" {
+		return lipgloss.NewStyle()
+	}
+	t, err := time.Parse(data.DateLayout, strings.TrimSpace(dateStr))
+	if err != nil {
+		return lipgloss.NewStyle()
+	}
+	if time.Now().After(t) {
+		return lipgloss.NewStyle().Foreground(danger)
+	}
+	return lipgloss.NewStyle().Foreground(success)
 }
 
 func formatCell(value string, width int, align alignKind) string {

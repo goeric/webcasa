@@ -402,6 +402,100 @@ func TestServiceLogCRUD(t *testing.T) {
 	}
 }
 
+func TestSoftDeletePersistsAcrossRuns(t *testing.T) {
+	// Verify that soft-deleted items stay hidden after closing and reopening
+	// the database, confirming cross-session persistence.
+	path := filepath.Join(t.TempDir(), "persist.db")
+
+	// Session 1: create a project, then soft-delete it.
+	store1, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open session 1: %v", err)
+	}
+	if err := store1.AutoMigrate(); err != nil {
+		t.Fatalf("AutoMigrate session 1: %v", err)
+	}
+	if err := store1.SeedDefaults(); err != nil {
+		t.Fatalf("SeedDefaults session 1: %v", err)
+	}
+	types, _ := store1.ProjectTypes()
+	if err := store1.CreateProject(Project{Title: "Persist Test", ProjectTypeID: types[0].ID, Status: ProjectStatusPlanned}); err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	// Find the created project by listing.
+	projects, _ := store1.ListProjects(false)
+	var projectID uint
+	for _, p := range projects {
+		if p.Title == "Persist Test" {
+			projectID = p.ID
+			break
+		}
+	}
+	if projectID == 0 {
+		t.Fatal("could not find created project")
+	}
+	if err := store1.DeleteProject(projectID); err != nil {
+		t.Fatalf("DeleteProject: %v", err)
+	}
+	_ = store1.Close()
+
+	// Session 2: reopen and verify the project is still soft-deleted.
+	store2, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open session 2: %v", err)
+	}
+	t.Cleanup(func() { _ = store2.Close() })
+	if err := store2.AutoMigrate(); err != nil {
+		t.Fatalf("AutoMigrate session 2: %v", err)
+	}
+
+	// Normal list should not include the deleted project.
+	projects2, err := store2.ListProjects(false)
+	if err != nil {
+		t.Fatalf("ListProjects(false): %v", err)
+	}
+	for _, p := range projects2 {
+		if p.ID == projectID {
+			t.Fatal("soft-deleted project should not appear in normal listing after reopen")
+		}
+	}
+
+	// Unscoped list should include it.
+	projectsAll, err := store2.ListProjects(true)
+	if err != nil {
+		t.Fatalf("ListProjects(true): %v", err)
+	}
+	found := false
+	for _, p := range projectsAll {
+		if p.ID == projectID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("soft-deleted project should appear in unscoped listing after reopen")
+	}
+
+	// Restore should still work.
+	if err := store2.RestoreProject(projectID); err != nil {
+		t.Fatalf("RestoreProject: %v", err)
+	}
+	projects3, err := store2.ListProjects(false)
+	if err != nil {
+		t.Fatalf("ListProjects after restore: %v", err)
+	}
+	found = false
+	for _, p := range projects3 {
+		if p.ID == projectID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("restored project should appear in normal listing")
+	}
+}
+
 func newTestStore(t *testing.T) *Store {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "test.db")

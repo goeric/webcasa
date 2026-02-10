@@ -125,6 +125,8 @@ const (
 	cellDate
 	cellStatus
 	cellDrilldown // interactive count that opens a detail view
+	cellWarranty  // date with green/red coloring based on expiry
+	cellUrgency   // date colored by proximity (green -> yellow -> red)
 )
 
 type cell struct {

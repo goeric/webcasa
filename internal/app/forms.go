@@ -686,7 +686,7 @@ func (m *Model) inlineEditAppliance(id uint, col int) error {
 		return fmt.Errorf("load appliance: %w", err)
 	}
 	values := applianceFormValues(item)
-	// Column mapping: 0=ID, 1=Name, 2=Brand, 3=Model, 4=Serial, 5=Location, 6=Purchased, 7=Warranty, 8=Cost, 9=Maint(readonly)
+	// Column mapping: 0=ID, 1=Name, 2=Brand, 3=Model, 4=Serial, 5=Location, 6=Purchased, 7=Age(readonly), 8=Warranty, 9=Cost, 10=Maint(readonly)
 	var field huh.Field
 	switch col {
 	case 1:
@@ -704,12 +704,12 @@ func (m *Model) inlineEditAppliance(id uint, col int) error {
 			Title("Purchase date (YYYY-MM-DD)").
 			Value(&values.PurchaseDate).
 			Validate(optionalDate("purchase date"))
-	case 7:
+	case 8:
 		field = huh.NewInput().
 			Title("Warranty expiry (YYYY-MM-DD)").
 			Value(&values.WarrantyExpiry).
 			Validate(optionalDate("warranty expiry"))
-	case 8:
+	case 9:
 		field = huh.NewInput().
 			Title("Cost").
 			Placeholder("899.00").

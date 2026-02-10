@@ -300,7 +300,7 @@ func TestTabSwitchBlockedInEditMode(t *testing.T) {
 
 func TestModeBadgeFixedWidth(t *testing.T) {
 	styles := DefaultStyles()
-	normalBadge := styles.ModeNormal.Render("NORMAL")
+	normalBadge := styles.ModeNormal.Render("NAV")
 	normalWidth := lipgloss.Width(normalBadge)
 
 	editBadge := styles.ModeEdit.
@@ -311,7 +311,7 @@ func TestModeBadgeFixedWidth(t *testing.T) {
 
 	if normalWidth != editWidth {
 		t.Fatalf(
-			"badge widths should match: NORMAL=%d, EDIT=%d",
+			"badge widths should match: NAV=%d, EDIT=%d",
 			normalWidth, editWidth,
 		)
 	}

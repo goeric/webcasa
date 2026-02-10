@@ -6,6 +6,7 @@ package app
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cpcloud/micasa/internal/data"
@@ -599,5 +600,44 @@ func TestViewportSortsNoOffset(t *testing.T) {
 	}
 	if adjusted[0].Dir != sortAsc {
 		t.Fatalf("expected sortAsc, got %v", adjusted[0].Dir)
+	}
+}
+
+func TestApplianceAge(t *testing.T) {
+	now := time.Date(2026, 2, 10, 0, 0, 0, 0, time.UTC)
+	tests := []struct {
+		name     string
+		purchase *time.Time
+		want     string
+	}{
+		{"nil purchase", nil, ""},
+		{"less than a month", ptr(time.Date(2026, 1, 20, 0, 0, 0, 0, time.UTC)), "<1 mo"},
+		{"a few months", ptr(time.Date(2025, 10, 5, 0, 0, 0, 0, time.UTC)), "4 mo"},
+		{"one year exact", ptr(time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC)), "1y"},
+		{"years and months", ptr(time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)), "2y 7m"},
+		{"future date", ptr(time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)), ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := applianceAge(tt.purchase, now)
+			if got != tt.want {
+				t.Errorf("applianceAge(%v, %v) = %q, want %q", tt.purchase, now, got, tt.want)
+			}
+		})
+	}
+}
+
+func ptr[T any](v T) *T { return &v }
+
+func TestNavBadgeLabel(t *testing.T) {
+	m := newTestModel()
+	m.width = 120
+	m.height = 40
+	status := m.statusView()
+	if !strings.Contains(status, "NAV") {
+		t.Error("expected NAV badge in status bar")
+	}
+	if strings.Contains(status, "NORMAL") {
+		t.Error("status bar should not contain NORMAL anymore")
 	}
 }
