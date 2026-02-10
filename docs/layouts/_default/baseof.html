@@ -14,7 +14,7 @@
 
 <div class="docs-topbar">
   <button class="menu-toggle" onclick="document.querySelector('.docs-sidebar').classList.toggle('open')" aria-label="Toggle menu">&#9776;</button>
-  <a href="/">micasa</a>
+  <a href="{{ "/" | relURL }}">micasa</a>
 </div>
 
 <div class="docs-layout">
@@ -26,7 +26,7 @@
     {{ partial "pager.html" . }}
 
     <div class="docs-footer">
-      <a href="/">micasa.dev</a> &middot;
+      <a href="https://micasa.dev">micasa.dev</a> &middot;
       <a href="https://github.com/cpcloud/micasa">GitHub</a> &middot;
       <a href="https://github.com/cpcloud/micasa/blob/main/LICENSE">Apache-2.0</a>
     </div>
