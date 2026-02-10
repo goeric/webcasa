@@ -276,7 +276,9 @@ These have been repeatedly requested. Violating them wastes the user's time.
   expected paths) before integrating.
 - **Nix vendorHash after dep changes**: After adding or updating a Go
   dependency, run `nix build '.#micasa'`. If it fails with a hash mismatch,
-  update `vendorHash` in `flake.nix` to the expected value from the error.
+  temporarily set `vendorHash = lib.fakeHash;` (not `""`) to get the
+  expected hash from the error without a noisy warning, then paste in the
+  real hash.
 - **Run `go mod tidy` before committing** to keep `go.mod`/`go.sum` clean.
 - **Record every user request** in the "Remaining work" section of this file
   (with a unique ID) if it is not already there. Mark it done when complete.
