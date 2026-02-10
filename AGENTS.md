@@ -1132,6 +1132,21 @@ in case things crash or otherwise go haywire, be diligent about this.
   in the dashboard summary. Could be a dedicated view, a detail pane on
   maintenance items, or a global activity feed.
 
+## Future / Tabled
+
+- [MICARRO] Sibling CLI for car maintenance (`micarro` or similar). Shares
+  data layer and SQLite format with micasa, same TUI patterns, but distinct
+  identity. Cars need mileage-based intervals (not just time-based), so the
+  scheduling model diverges. Decision: option 2 (sibling CLI sharing Go
+  packages), tabled for now.
+- [MISHERRAS] Sibling CLI (`misherras`) for tool/equipment tracking. Purchase
+  info, warranty, maintenance (blade/bit replacement, calibration),
+  lending/location. Same shared-core approach as micarro. Tabled.
+- [MISCOSAS] Umbrella name for the family of apps: `miscosas` ("my things").
+  Shared Go module (`github.com/cpcloud/miscosas`) with common TUI framework,
+  SQLite conventions, Wong palette, modal vim keys. Individual apps: micasa
+  (house), micarro (cars), misherras (tools). Tabled.
+
 ## Questions
 - Why are some values pointers to numbers instead of just the number? E.g.,
   HOAFeeCents and PropertyTaxCents. Why aren't those just plain int64s?
