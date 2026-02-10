@@ -841,6 +841,13 @@ func (s *Store) CountMaintenanceByAppliance(applianceIDs []uint) (map[uint]int, 
 }
 
 func (s *Store) DeleteProject(id uint) error {
+	n, err := s.countDependents(&Quote{}, "project_id", id)
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return fmt.Errorf("project has %d active quote(s) -- delete them first", n)
+	}
 	return s.softDelete(&Project{}, DeletionEntityProject, id)
 }
 
@@ -849,6 +856,13 @@ func (s *Store) DeleteQuote(id uint) error {
 }
 
 func (s *Store) DeleteMaintenance(id uint) error {
+	n, err := s.countDependents(&ServiceLogEntry{}, "maintenance_item_id", id)
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return fmt.Errorf("maintenance item has %d service log(s) -- delete them first", n)
+	}
 	return s.softDelete(&MaintenanceItem{}, DeletionEntityMaintenance, id)
 }
 
@@ -870,6 +884,14 @@ func (s *Store) RestoreMaintenance(id uint) error {
 
 func (s *Store) RestoreAppliance(id uint) error {
 	return s.restoreEntity(&Appliance{}, DeletionEntityAppliance, id)
+}
+
+// countDependents counts non-deleted rows in model where fkColumn equals id.
+// GORM's soft-delete scope automatically excludes deleted rows.
+func (s *Store) countDependents(model any, fkColumn string, id uint) (int64, error) {
+	var count int64
+	err := s.db.Model(model).Where(fkColumn+" = ?", id).Count(&count).Error
+	return count, err
 }
 
 func (s *Store) softDelete(model any, entity string, id uint) error {

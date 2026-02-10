@@ -6,6 +6,7 @@ package data
 import (
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -619,6 +620,107 @@ func TestCountServiceLogsByVendor(t *testing.T) {
 	}
 	if counts[vendorID] != 1 {
 		t.Fatalf("expected 1 job, got %d", counts[vendorID])
+	}
+}
+
+func TestDeleteProjectBlockedByQuotes(t *testing.T) {
+	store := newTestStore(t)
+	types, _ := store.ProjectTypes()
+	project := Project{
+		Title: "Blocked Project", ProjectTypeID: types[0].ID,
+		Status: ProjectStatusPlanned,
+	}
+	if err := store.CreateProject(project); err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	projects, _ := store.ListProjects(false)
+	projID := projects[0].ID
+
+	// Attach a quote.
+	quote := Quote{ProjectID: projID, TotalCents: 1000}
+	if err := store.CreateQuote(quote, Vendor{Name: "V1"}); err != nil {
+		t.Fatalf("CreateQuote: %v", err)
+	}
+
+	// Delete should be refused.
+	err := store.DeleteProject(projID)
+	if err == nil {
+		t.Fatal("expected error deleting project with active quotes")
+	}
+	if !strings.Contains(err.Error(), "active quote") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Soft-delete the quote, then project deletion should succeed.
+	quotes, _ := store.ListQuotes(false)
+	if err := store.DeleteQuote(quotes[0].ID); err != nil {
+		t.Fatalf("DeleteQuote: %v", err)
+	}
+	if err := store.DeleteProject(projID); err != nil {
+		t.Fatalf("DeleteProject after quote removed: %v", err)
+	}
+}
+
+func TestDeleteMaintenanceBlockedByServiceLogs(t *testing.T) {
+	store := newTestStore(t)
+	cats, _ := store.MaintenanceCategories()
+	item := MaintenanceItem{
+		Name: "Blocked Maint", CategoryID: cats[0].ID, IntervalMonths: 3,
+	}
+	if err := store.CreateMaintenance(item); err != nil {
+		t.Fatalf("CreateMaintenance: %v", err)
+	}
+	items, _ := store.ListMaintenance(false)
+	maintID := items[0].ID
+
+	// Attach a service log.
+	now := time.Now()
+	entry := ServiceLogEntry{MaintenanceItemID: maintID, ServicedAt: now}
+	if err := store.CreateServiceLog(entry, Vendor{Name: "SL Vendor"}); err != nil {
+		t.Fatalf("CreateServiceLog: %v", err)
+	}
+
+	// Delete should be refused.
+	err := store.DeleteMaintenance(maintID)
+	if err == nil {
+		t.Fatal("expected error deleting maintenance with active service logs")
+	}
+	if !strings.Contains(err.Error(), "service log") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Soft-delete the service log, then maintenance deletion should succeed.
+	logs, _ := store.ListServiceLog(maintID, false)
+	if err := store.DeleteServiceLog(logs[0].ID); err != nil {
+		t.Fatalf("DeleteServiceLog: %v", err)
+	}
+	if err := store.DeleteMaintenance(maintID); err != nil {
+		t.Fatalf("DeleteMaintenance after logs removed: %v", err)
+	}
+}
+
+func TestDeleteApplianceAllowedWithMaintenance(t *testing.T) {
+	store := newTestStore(t)
+	appliance := Appliance{Name: "Deletable Fridge"}
+	if err := store.CreateAppliance(appliance); err != nil {
+		t.Fatalf("CreateAppliance: %v", err)
+	}
+	appliances, _ := store.ListAppliances(false)
+	appID := appliances[0].ID
+
+	// Attach a maintenance item.
+	cats, _ := store.MaintenanceCategories()
+	item := MaintenanceItem{
+		Name: "Filter", CategoryID: cats[0].ID, IntervalMonths: 6,
+		ApplianceID: &appID,
+	}
+	if err := store.CreateMaintenance(item); err != nil {
+		t.Fatalf("CreateMaintenance: %v", err)
+	}
+
+	// Appliance deletion should succeed (SET NULL semantics).
+	if err := store.DeleteAppliance(appID); err != nil {
+		t.Fatalf("DeleteAppliance should be allowed: %v", err)
 	}
 }
 

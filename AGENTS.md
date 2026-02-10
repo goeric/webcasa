@@ -1013,6 +1013,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [NAV-CLAMP] column navigation clamped at edges instead of wrapping
 - [DASH-RESIZE] dashboard dynamically resizes for terminal height (2b322cd)
 - [DASH-NO-ACTIVITY] removed recent activity from dashboard summary (a818e44)
+- [SAFE-DELETE] FK guards on soft-delete: projects with quotes and maintenance with service logs are refused with actionable error messages
 
 # Remaining work
 
@@ -1071,10 +1072,6 @@ in case things crash or otherwise go haywire, be diligent about this.
   HOAFeeCents and PropertyTaxCents. Why aren't those just plain int64s?
 
 ## Moar
-- [SAFE-DELETE] make sure that deleting, even soft deleting doesn't break the
-  model, e.g., if i try to delete a quote that's linked to a project, i get
-  a reasonable error message, probably in the status bar but open to thoughts
-  on where to show it
 - [HIDE-COMPLETED] would be nice to have a way to hide completed projects
   easily. we'll get to the generic way to do that when we implement filter,
   but i think it will still be useful as a standalone feature
