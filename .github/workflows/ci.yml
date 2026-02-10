@@ -117,8 +117,6 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: write
-      issues: write
-      pull-requests: write
     outputs:
       published: ${{ steps.release.outputs.new_release_published }}
       tag: ${{ steps.release.outputs.new_release_git_tag }}
