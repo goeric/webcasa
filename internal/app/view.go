@@ -511,7 +511,7 @@ func (m *Model) helpView() string {
 				{"h/l", "Previous/next day"},
 				{"j/k", "Next/previous week"},
 				{"H/L", "Previous/next month"},
-				{"ctrl+shift+h/l", "Previous/next year"},
+				{"[/]", "Previous/next year"},
 				{"enter", "Pick date"},
 				{"esc", "Cancel"},
 			},

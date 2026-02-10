@@ -80,7 +80,7 @@ func calendarGrid(cal calendarState, styles Styles) string {
 	// Navigation hints split into two lines to keep the box compact.
 	hintStyle := lipgloss.NewStyle().Foreground(textDim)
 	hints := lipgloss.JoinVertical(lipgloss.Left,
-		hintStyle.Render("h/l day · j/k week · H/L month · ctrl+shift+h/l year"),
+		hintStyle.Render("h/l day · j/k week · H/L month · [/] year"),
 		hintStyle.Render("enter pick · esc cancel"),
 	)
 

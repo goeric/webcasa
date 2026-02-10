@@ -1075,7 +1075,8 @@ in case things crash or otherwise go haywire, be diligent about this.
   HOAFeeCents and PropertyTaxCents. Why aren't those just plain int64s?
 
 ## Moar
-- for the calendar widget, let's make ctrl+shift+h/l moves years
+- ~~for the calendar widget, let's make ctrl+shift+h/l moves years~~ DONE
+- calendar widget day column alignment bug: centering shifted short last rows (6fdc566)
 - let's make sure that deleting, even soft deleting doesn't break the model,
   e.g., if i try to delete a quote that's linked to a project, i get
   a reasonable error message, probably in the status bar but open to thoughts

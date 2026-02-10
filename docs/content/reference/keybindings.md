@@ -117,7 +117,7 @@ input:
 | `h`/`l`   | Move one day left/right |
 | `j`/`k`   | Move one week down/up |
 | `H`/`L`   | Move one month back/forward |
-| `ctrl+shift+h`/`l` | Move one year back/forward |
+| `[`/`]` | Move one year back/forward |
 | `enter`   | Pick the highlighted date |
 | `esc`     | Cancel (keep original value) |
 
