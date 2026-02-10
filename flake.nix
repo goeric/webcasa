@@ -155,7 +155,7 @@
           '';
           website = pkgs.writeShellScriptBin "micasa-website" ''
             ${self.packages.${system}.build-docs}/bin/micasa-build-docs >/dev/null 2>&1
-            ${pkgs.python3}/bin/python3 -m http.server 0 -d website
+            ${pkgs.python3Packages.livereload}/bin/livereload website/
           '';
           docs = pkgs.writeShellScriptBin "micasa-docs" ''
             ${pkgs.hugo}/bin/hugo server --source docs --baseURL /docs/ --bind 0.0.0.0
