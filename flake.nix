@@ -287,6 +287,17 @@
               ls -la docs/static/images/*.png
             '';
           };
+          run-pre-commit =
+            let
+              runtimePath = pkgs.lib.makeBinPath (
+                [ pkgs.go pkgs.git ] ++ preCommit.enabledPackages
+              );
+            in
+            pkgs.writeShellScriptBin "run-pre-commit" ''
+              export PATH="${runtimePath}:$PATH"
+              ${preCommit.shellHook}
+              pre-commit run --all-files
+            '';
           micasa-container = pkgs.dockerTools.buildImage {
             name = "micasa";
             tag = "latest";
@@ -316,6 +327,7 @@
           docs = flake-utils.lib.mkApp { drv = self.packages.${system}.docs; };
           capture-one = flake-utils.lib.mkApp { drv = self.packages.${system}.capture-one; };
           capture-screenshots = flake-utils.lib.mkApp { drv = self.packages.${system}.capture-screenshots; };
+          pre-commit = flake-utils.lib.mkApp { drv = self.packages.${system}.run-pre-commit; };
         };
 
         formatter = pkgs.nixpkgs-fmt;

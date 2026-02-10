@@ -53,7 +53,7 @@ jobs:
       - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
 
       - name: Run pre-commit hooks
-        run: nix develop --command pre-commit run --all-files
+        run: nix run '.#pre-commit'
 
   nix-build:
     name: Nix Build
