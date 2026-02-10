@@ -225,6 +225,23 @@ func TestCalendarMonthNavigation(t *testing.T) {
 	}
 }
 
+func TestCalendarYearNavigation(t *testing.T) {
+	cal := &calendarState{
+		Cursor: time.Date(2026, 2, 15, 0, 0, 0, 0, time.Local),
+	}
+	calendarMoveYear(cal, 1)
+	if cal.Cursor.Year() != 2027 {
+		t.Fatalf("expected 2027, got %d", cal.Cursor.Year())
+	}
+	if cal.Cursor.Month() != time.February || cal.Cursor.Day() != 15 {
+		t.Fatalf("expected Feb 15, got %s", cal.Cursor.Format("Jan 2"))
+	}
+	calendarMoveYear(cal, -2)
+	if cal.Cursor.Year() != 2025 {
+		t.Fatalf("expected 2025, got %d", cal.Cursor.Year())
+	}
+}
+
 func TestOpenCalendarWithEmptyValue(t *testing.T) {
 	m := newTestModel()
 	dateVal := ""

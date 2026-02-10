@@ -844,6 +844,15 @@ in case things crash or otherwise go haywire, be diligent about this.
   - Fixed chimney smoke after rebuild: smoke particle system re-queries `smoke-bed` DOM element on each spawn instead of caching stale reference
   - Removed all stick figure / side door CSS (`.stick-figure`, `.side-door`, `.walking`)
 
+## 2026-02-10 Session 30
+
+**User request**: Add `ctrl+shift+h/l` to move whole years in the calendar date picker.
+
+**Work done**:
+- Added `calendarMoveYear()` function and wired `ctrl+shift+h/l` in `handleCalendarKey`
+- Updated calendar hints, help overlay, and keybindings.md doc
+- 1 new test (`TestCalendarYearNavigation`)
+
 ## 2026-02-10 Session 29
 
 **User request**: Refactoring pass -- simple and architectural wins.

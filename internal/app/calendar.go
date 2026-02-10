@@ -80,7 +80,7 @@ func calendarGrid(cal calendarState, styles Styles) string {
 	// Navigation hints.
 	hints := lipgloss.NewStyle().
 		Foreground(textDim).
-		Render("h/l day  j/k week  H/L month  enter pick  esc cancel")
+		Render("h/l day  j/k week  H/L month  ctrl+shift+h/l year  enter pick  esc cancel")
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -109,4 +109,9 @@ func calendarMove(cal *calendarState, days int) {
 // calendarMoveMonth adjusts the calendar cursor by the given number of months.
 func calendarMoveMonth(cal *calendarState, months int) {
 	cal.Cursor = cal.Cursor.AddDate(0, months, 0)
+}
+
+// calendarMoveYear adjusts the calendar cursor by the given number of years.
+func calendarMoveYear(cal *calendarState, years int) {
+	cal.Cursor = cal.Cursor.AddDate(years, 0, 0)
 }

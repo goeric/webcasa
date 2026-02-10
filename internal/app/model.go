@@ -455,6 +455,10 @@ func (m *Model) handleCalendarKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		calendarMoveMonth(m.calendar, -1)
 	case "L":
 		calendarMoveMonth(m.calendar, 1)
+	case "ctrl+shift+h":
+		calendarMoveYear(m.calendar, -1)
+	case "ctrl+shift+l":
+		calendarMoveYear(m.calendar, 1)
 	case "enter":
 		m.confirmCalendar()
 	case keyEsc:
