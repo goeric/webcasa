@@ -255,6 +255,7 @@
             name = "capture-screenshots";
             runtimeInputs = [
               self.packages.${system}.capture-one
+              pkgs.fd
               pkgs.parallel
             ];
             text = ''
@@ -267,10 +268,10 @@
               fi
 
               # All tapes in parallel (skip demo -- it has its own command)
-              ntapes=$(find "$TAPES" -name '*.tape' ! -name 'demo.tape' | wc -l)
+              ntapes=$(fd -e tape --exclude demo.tape . "$TAPES" | wc -l)
               nprocs=$(nproc)
               jobs=$(( ntapes < nprocs ? ntapes : nprocs ))
-              find "$TAPES" -name '*.tape' ! -name 'demo.tape' -print0 \
+              fd -e tape --exclude demo.tape -0 . "$TAPES" \
                 | parallel -0 -j"$jobs" --bar capture-one {}
 
               echo ""
