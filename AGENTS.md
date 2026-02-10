@@ -988,12 +988,27 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [DATEPICKER] calendar date picker for inline date editing (68a1fa6)
 - [CAL-YEAR-NAV] calendar year navigation via [/] keys (e611cd9)
 - [CAL-ALIGN] calendar day column alignment preserved when centering grid (6fdc566)
+- [CAL-YEAR-KEYS] year nav switched from ctrl+shift+h/l to [/] (e611cd9)
+- [CAL-LAYOUT] fixed-height grid + left-side key legend (f4c0293)
+- [REF-SCROLL] refactor width/scroll implementation (fb84d4e, a46f34a, 9ca4f6e, 1bfa3cb)
+- [DATEPICKER] calendar date picker for inline date editing (68a1fa6)
+- [HOTNESS-KEYS] ^/$ jump to first/last column (c1c7214)
+- [NORMAL-TO-NAV] NORMAL badge renamed to NAV (c1c7214)
+- [STYLING-TIME-TO-MAINT] 4-tier urgency coloring on Next Due column (c1c7214)
+- [APPLIANCEAGE] computed Age column on Appliances (c1c7214)
+- [VENDORS-TAB] vendors as first-class browsable tab (a330f2d)
+- [WARRANTY-INDICATOR] green/red warranty status coloring (c1c7214)
+- [NOTES-EXPAND] read-only note preview overlay (590a6c0)
+- [SOFT-DELETE-DOCS] verified cross-session persistence + updated docs (c1c7214)
+- [WEBSITE-DESLOP] removed AI-slop from quotes blurb
+- [HELP-OVERLAY] help screen as stacking overlay via bubbletea-overlay
+- [DOCS] project documentation with Hugo, deployed to micasa.dev/docs
+- [ATTRIBUTION] Claude/Cursor credited in website footer + README
+- [NAV-CLAMP] column navigation clamped at edges instead of wrapping
 
 # Remaining work
 
 ## Features
-- [REF-SCROLL] ~~Refactor width/scroll implementation (pure rendering, extract
-  viewport helper, fix left-truncation), one commit per refactor.~~ DONE
 - [WEBSITE] Help me build a `github-pages` website for this project. Modern,
   simple, not AI sloppish, whimsical, funny, perhaps even a bit snarky and
   irreverent. Ideally this wouldn't require a bunch of random javascript crap
@@ -1003,15 +1018,6 @@ in case things crash or otherwise go haywire, be diligent about this.
   The site should include a project overview, installation instructions,
   feature list. Bonus points for a "demo" section with animated GIFs showing
   off the terminal UI.
-- [DATEPICKER] ~~Date picker calendar widget for inline date editing.~~ DONE
-- [HOTNESS-KEYS] ~~in nav mode, ^ should go to the first column, $ to the last~~ DONE
-- [NORMAL-TO-NAV] ~~change the NORMAL label to NAV~~ DONE
-- [STYLING-TIME-TO-MAINT] ~~add a gradient from say green to orange to red (where
-  green means maintenance is not due for a long time, orange means it's coming
-  up, and red means it's overdue) to the background of the "Next Due" column on
-  the maintenance tab.~~ DONE
-- [APPLIANCEAGE] ~~Add an Age column to the Appliances table, it should be
-  read-only and computed from purchase date and the current date.~~ DONE
 - [HIDECOLS-INTERACTIVE] Make the collapsed column stacks interactive: navigate to
   a candy-wrapper pill and press c to unhide just that column (peel it off the
   stack). Currently c hides and C shows all; this would add per-column restore.
@@ -1024,7 +1030,6 @@ in case things crash or otherwise go haywire, be diligent about this.
   model number; doesn't need to be super sophisticated, just plausible
 - [STATUS-MODE-VERBOSITY] is there a kind of verbose status bar we can add that
   shows keystrokes and also more verbose context?
-- [VENDORS-TAB] ~~Vendors as a first-class tab.~~ DONE
 - [PAINT-COLORS] Paint color tracking per room: brand, color name/code, finish,
   room/area. "What paint did we use in the living room?" is a universal
   homeowner question.
@@ -1037,9 +1042,6 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [SEASONAL-CHECKLISTS] Recurring seasonal reminders not tied to a specific
   appliance or interval (e.g. "clean gutters in spring", "check weatherstripping
   before winter"). Could be a lightweight checklist model with season/month tags.
-- [WARRANTY-INDICATOR] ~~Visual indicator on appliances for warranty status: green
-  if still covered, red/dim if expired.~~ DONE
-- [NOTES-EXPAND] ~~Read-only note preview: enter on notes cell opens overlay.~~ DONE
 - [TABLE-FILTER] In-table row filtering: `/` opens a filter input, typed text
   narrows visible rows across all columns, `esc` clears. Essential for tabs
   with more than ~15 rows. (Search was previously removed; this is a simpler,
@@ -1050,27 +1052,8 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [QUICK-ADD-FORM] Lighter-weight add forms: only require essential fields
   (title + status for projects, name + interval for maintenance), let user fill
   in optional details later via edit.
-- [SOFT-DELETE-DOCS] ~~verify that soft deletion works across runs and if it does
-  then note in the soft delete section that this functionality works even
-  across runs~~ DONE
-
-- [WEBSITE-DESLOP] ~~Remove "close the laptop, reopen the laptop" AI-slop from
-  quotes feature blurb on website and README.~~ DONE
 - [DASH-OVERLAY-STYLE] Revisit dashboard overlay styling -- noodle on dim/bg
   approach, make it feel polished.
-- [HELP-OVERLAY] ~~Convert help screen to an overlay using bubbletea-overlay.
-  Must support stacking on top of the dashboard overlay (dimming the layer
-  beneath).~~ DONE
-
-## Docs
-
-- [DOCS] ~~Build out project documentation, deploy to micasa.dev/docs via CI~~ switched to Hugo, screenshots added
-- [ATTRIBUTION] ~~ensure that claude, codex and cursor are ack'd in the built with section~~ DONE (website footer + README)
-
-## Bugs
-
-- [NAV-CLAMP] ~~Remove table column navigation wrapping -- clamp at edges
-  instead of wrapping around.~~ DONE
 
 ## Questions
 - Why are some values pointers to numbers instead of just the number? E.g.,

@@ -4,6 +4,7 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -249,18 +250,14 @@ func TestDashboardViewEmptySections(t *testing.T) {
 	m.dashNav = nil
 	m.dashCursor = 0
 
-	view := m.dashboardView()
-	if !strings.Contains(view, "nice work") {
-		t.Error("expected maintenance all-clear message")
-	}
-	if !strings.Contains(view, "No active projects") {
-		t.Error("expected projects empty message")
-	}
+	view := m.dashboardView(50)
+	// Empty sections are skipped entirely; only the "All clear!" fallback.
 	if !strings.Contains(view, "All clear") {
-		t.Error("expected expiring all-clear message")
+		t.Error("expected all-clear fallback")
 	}
-	if !strings.Contains(view, "No service history") {
-		t.Error("expected activity empty message")
+	// No section headers should appear.
+	if strings.Contains(view, "Overdue") || strings.Contains(view, "Active Projects") {
+		t.Error("empty sections should be skipped, not rendered with headers")
 	}
 }
 
@@ -290,7 +287,7 @@ func TestDashboardViewWithData(t *testing.T) {
 	}
 	m.buildDashNav()
 
-	view := m.dashboardView()
+	view := m.dashboardView(50)
 	if !strings.Contains(view, "HVAC Filter") {
 		t.Error("expected overdue item in view")
 	}
@@ -405,6 +402,147 @@ func TestRenderMiniTable(t *testing.T) {
 	w1 := len(lines[1])
 	if w0 != w1 {
 		t.Errorf("lines have different widths: %d vs %d", w0, w1)
+	}
+}
+
+func TestDistributeDashRows(t *testing.T) {
+	t.Run("everything fits", func(t *testing.T) {
+		sections := []dashSection{
+			{rows: make([]dashRow, 3)},
+			{rows: make([]dashRow, 5)},
+		}
+		got := distributeDashRows(sections, 20)
+		if got[0] != 3 || got[1] != 5 {
+			t.Errorf("expected [3,5], got %v", got)
+		}
+	})
+
+	t.Run("proportional trimming", func(t *testing.T) {
+		sections := []dashSection{
+			{rows: make([]dashRow, 10)},
+			{rows: make([]dashRow, 2)},
+		}
+		got := distributeDashRows(sections, 6)
+		// 6 avail, 2 sections get min 1 each, 4 remaining.
+		// Section 0 has 9 extra, section 1 has 1 extra, total excess = 10.
+		// Proportional: s0 gets 1 + 9*4/10=4 = 5, s1 gets 1 + 1*4/10=1 = 1+0=1.
+		// Rounding leftover: 6-6=0. Total = 6.
+		if got[0]+got[1] != 6 {
+			t.Errorf("expected total 6, got %d (%v)", got[0]+got[1], got)
+		}
+		// Larger section should get more rows.
+		if got[0] <= got[1] {
+			t.Errorf("expected s0 > s1, got %v", got)
+		}
+	})
+
+	t.Run("minimum 1 per section", func(t *testing.T) {
+		sections := []dashSection{
+			{rows: make([]dashRow, 10)},
+			{rows: make([]dashRow, 10)},
+			{rows: make([]dashRow, 10)},
+		}
+		got := distributeDashRows(sections, 3)
+		for i, g := range got {
+			if g < 1 {
+				t.Errorf("section %d got %d rows, expected >= 1", i, g)
+			}
+		}
+	})
+}
+
+func TestDashboardViewSkipsEmptySections(t *testing.T) {
+	m := newTestModel()
+	m.width = 120
+	m.height = 40
+	// Only spending data, no navigable sections.
+	m.dashboard = dashboardData{
+		ServiceSpendCents: 10000,
+	}
+	m.buildDashNav()
+
+	view := m.dashboardView(50)
+	if !strings.Contains(view, "Spending") {
+		t.Error("expected spending section")
+	}
+	if strings.Contains(view, "Overdue") || strings.Contains(view, "Active Projects") {
+		t.Error("empty sections should not appear")
+	}
+}
+
+func TestDashboardViewTrimRows(t *testing.T) {
+	m := newTestModel()
+	m.width = 120
+	m.height = 40
+
+	// Create enough data to exceed a small budget.
+	overdue := make([]maintenanceUrgency, 8)
+	for i := range overdue {
+		overdue[i] = maintenanceUrgency{
+			Item:        data.MaintenanceItem{ID: uint(i + 1), Name: fmt.Sprintf("Task %d", i+1)},
+			DaysFromNow: -(i + 1),
+		}
+	}
+	projects := make([]data.Project, 5)
+	for i := range projects {
+		projects[i] = data.Project{Title: fmt.Sprintf("Proj %d", i+1), Status: "underway"}
+		projects[i].ID = uint(100 + i)
+	}
+	m.dashboard = dashboardData{
+		Overdue:        overdue,
+		ActiveProjects: projects,
+	}
+	m.buildDashNav()
+
+	// With a generous budget, all rows appear.
+	bigView := m.dashboardView(100)
+	for i := 1; i <= 8; i++ {
+		if !strings.Contains(bigView, fmt.Sprintf("Task %d", i)) {
+			t.Errorf("expected Task %d in big-budget view", i)
+		}
+	}
+
+	// With a tiny budget, rows are trimmed but at least 1 per section.
+	m.buildDashNav()
+	m.dashCursor = 0
+	smallView := m.dashboardView(6)
+	// Should still have content from both sections.
+	hasMaint := strings.Contains(smallView, "Task")
+	hasProj := strings.Contains(smallView, "Proj")
+	if !hasMaint || !hasProj {
+		t.Errorf("expected both sections represented, maint=%v proj=%v", hasMaint, hasProj)
+	}
+	// Nav should be trimmed too.
+	if len(m.dashNav) >= 13 {
+		t.Errorf("expected nav trimmed, got %d entries", len(m.dashNav))
+	}
+}
+
+func TestDashboardNavRebuiltFromTrimmedView(t *testing.T) {
+	m := newTestModel()
+	m.width = 120
+	m.height = 40
+
+	overdue := make([]maintenanceUrgency, 10)
+	for i := range overdue {
+		overdue[i] = maintenanceUrgency{
+			Item:        data.MaintenanceItem{ID: uint(i + 1), Name: fmt.Sprintf("Item %d", i+1)},
+			DaysFromNow: -(i + 1),
+		}
+	}
+	m.dashboard = dashboardData{Overdue: overdue}
+	m.buildDashNav()
+	m.dashCursor = 9 // at the end
+
+	// Render with a tiny budget: forces trimming.
+	_ = m.dashboardView(5)
+
+	// Nav should be trimmed and cursor clamped.
+	if len(m.dashNav) > 5 {
+		t.Errorf("expected nav <= 5, got %d", len(m.dashNav))
+	}
+	if m.dashCursor >= len(m.dashNav) {
+		t.Errorf("cursor %d should be < nav length %d", m.dashCursor, len(m.dashNav))
 	}
 }
 

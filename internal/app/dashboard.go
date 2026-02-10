@@ -276,123 +276,319 @@ func (m *Model) dashNavCount() int {
 // Dashboard view (main entry)
 // ---------------------------------------------------------------------------
 
-func (m *Model) dashboardView() string {
-	sel := m.styles.TableSelected
+// dashSection holds one dashboard section's data for height budgeting.
+type dashSection struct {
+	title string
+	rows  []dashRow
+	// Maintenance uses sub-sections (Overdue / Upcoming), adding extra header
+	// lines. Other sections have subCounts == nil.
+	subTitles []string
+	subCounts []int // rows per sub-section (sum == len(rows))
+}
+
+// overhead returns the number of non-data lines this section occupies
+// (headers, blanks between sub-sections).
+func (s dashSection) overhead() int {
+	if len(s.subCounts) <= 1 {
+		return 1 // just the section header
+	}
+	// N sub-headers + (N-1) blanks between them.
+	n := 0
+	for _, c := range s.subCounts {
+		if c > 0 {
+			n++
+		}
+	}
+	if n <= 1 {
+		return 1
+	}
+	return n + (n - 1) // sub-headers + separator blanks
+}
+
+// dashboardView renders the dashboard content, fitting within budget content
+// lines. Empty sections are skipped; rows are trimmed proportionally when the
+// terminal is short.
+func (m *Model) dashboardView(budget int) string {
 	d := m.dashboard
-	cursor := m.dashCursor // running cursor into the flat nav list
+
+	// Collect non-empty sections.
+	var sections []dashSection
+
+	// Maintenance: split into overdue / upcoming sub-sections.
+	if nO, nU := len(d.Overdue), len(d.Upcoming); nO+nU > 0 {
+		allRows := m.dashMaintRows()
+		var subTitles []string
+		var subCounts []int
+		if nO > 0 {
+			subTitles = append(subTitles, "Overdue")
+			subCounts = append(subCounts, nO)
+		}
+		if nU > 0 {
+			subTitles = append(subTitles, "Upcoming")
+			subCounts = append(subCounts, nU)
+		}
+		sections = append(sections, dashSection{
+			title:     "Maintenance",
+			rows:      allRows,
+			subTitles: subTitles,
+			subCounts: subCounts,
+		})
+	}
+
+	if projRows := m.dashProjectRows(); len(projRows) > 0 {
+		sections = append(sections, dashSection{
+			title: "Active Projects", rows: projRows,
+		})
+	}
+
+	if expRows := m.dashExpiringRows(); len(expRows) > 0 {
+		sections = append(sections, dashSection{
+			title: "Expiring Soon", rows: expRows,
+		})
+	}
+
+	if actRows := m.dashActivityRows(); len(actRows) > 0 {
+		sections = append(sections, dashSection{
+			title: "Recent Activity", rows: actRows,
+		})
+	}
+
+	spendLine := m.dashSpendingLine()
+
+	if len(sections) == 0 && spendLine == "" {
+		return m.styles.DashAllClear.Render("  All clear!")
+	}
+
+	// Compute fixed overhead: section headers, sub-headers, inter-section
+	// blanks, and the spending footer.
+	fixedLines := 0
+	for i, s := range sections {
+		fixedLines += s.overhead()
+		if i > 0 {
+			fixedLines++ // blank between sections
+		}
+	}
+	if spendLine != "" {
+		if len(sections) > 0 {
+			fixedLines++ // blank before spending
+		}
+		fixedLines += 2 // header + data
+	}
+
+	// Distribute remaining budget among data rows.
+	totalRaw := 0
+	for _, s := range sections {
+		totalRaw += len(s.rows)
+	}
+	avail := budget - fixedLines
+	if avail < len(sections) {
+		avail = len(sections) // at least 1 row per section
+	}
+
+	limits := distributeDashRows(sections, avail)
+
+	// Trim section rows and sub-counts to limits, then render.
+	sel := m.styles.TableSelected
 	colGap := 3
-
-	type sectionResult struct {
-		lines []string
-		count int // navigable rows consumed from the cursor
-	}
-
-	renderSection := func(
-		header, emptyMsg string,
-		rows []dashRow,
-	) sectionResult {
-		hdr := m.styles.DashSection.Render(header)
-		if len(rows) == 0 {
-			msg := m.styles.DashAllClear.Render("  " + emptyMsg)
-			return sectionResult{lines: []string{hdr, msg}}
-		}
-		localCursor := -1
-		if cursor >= 0 && cursor < len(rows) {
-			localCursor = cursor
-		}
-		rendered := renderMiniTable(rows, colGap, localCursor, sel)
-		cursor -= len(rows)
-		return sectionResult{
-			lines: append([]string{hdr}, rendered...),
-			count: len(rows),
-		}
-	}
-
+	cursor := m.dashCursor
+	var nav []dashNavEntry
 	var allLines []string
 
-	// Maintenance (overdue + upcoming as one navigable block).
-	maintRows := m.dashMaintRows()
-	if len(maintRows) > 0 {
-		// Split into overdue/upcoming sub-headers.
-		nOverdue := len(d.Overdue)
-		nUpcoming := len(d.Upcoming)
-		var mLines []string
+	for i, s := range sections {
+		limit := limits[i]
+		rows := capSlice(s.rows, limit)
 
-		if nOverdue > 0 {
-			subhdr := m.styles.DashSection.Render("Overdue")
-			mLines = append(mLines, subhdr)
+		var sLines []string
+		if len(s.subCounts) > 0 {
+			sLines = m.renderMaintSection(s, limit, cursor, colGap, sel)
+		} else {
+			hdr := m.styles.DashSection.Render(s.title)
 			localCursor := -1
-			if cursor >= 0 && cursor < nOverdue {
+			if cursor >= 0 && cursor < len(rows) {
 				localCursor = cursor
 			}
-			mLines = append(
-				mLines,
-				renderMiniTable(maintRows[:nOverdue], colGap, localCursor, sel)...)
+			sLines = append([]string{hdr},
+				renderMiniTable(rows, colGap, localCursor, sel)...)
 		}
-		if nUpcoming > 0 {
-			if nOverdue > 0 {
-				mLines = append(mLines, "")
+		cursor -= len(rows)
+
+		// Collect nav entries from the rendered rows.
+		for _, r := range rows {
+			if r.Target != nil {
+				nav = append(nav, *r.Target)
 			}
-			subhdr := m.styles.DashSection.Render("Upcoming")
-			mLines = append(mLines, subhdr)
-			localCursor := -1
-			upIdx := cursor - nOverdue
-			if upIdx >= 0 && upIdx < nUpcoming {
-				localCursor = upIdx
-			}
-			mLines = append(
-				mLines,
-				renderMiniTable(maintRows[nOverdue:], colGap, localCursor, sel)...)
 		}
-		if nOverdue == 0 && nUpcoming == 0 {
-			mLines = append(mLines,
-				m.styles.DashSection.Render("Maintenance"),
-				m.styles.DashAllClear.Render(
-					"  Nothing overdue or upcoming -- nice work!"),
-			)
-		}
-		cursor -= len(maintRows)
-		allLines = append(allLines, strings.Join(mLines, "\n"))
-	} else {
-		allLines = append(allLines, strings.Join([]string{
-			m.styles.DashSection.Render("Maintenance"),
-			m.styles.DashAllClear.Render(
-				"  Nothing overdue or upcoming -- nice work!"),
-		}, "\n"))
+
+		allLines = append(allLines, strings.Join(sLines, "\n"))
 	}
 
-	// Projects.
-	projResult := renderSection(
-		"Active Projects",
-		"No active projects. Time to start something?",
-		m.dashProjectRows(),
-	)
-	allLines = append(allLines, strings.Join(projResult.lines, "\n"))
-
-	// Expiring.
-	expRows := m.dashExpiringRows()
-	expResult := renderSection(
-		"Expiring Soon",
-		"All clear for the next 90 days.",
-		expRows,
-	)
-	allLines = append(allLines, strings.Join(expResult.lines, "\n"))
-
-	// Recent activity.
-	actResult := renderSection(
-		"Recent Activity",
-		"No service history yet.",
-		m.dashActivityRows(),
-	)
-	allLines = append(allLines, strings.Join(actResult.lines, "\n"))
-
-	// Spending (not navigable, no cursor tracking needed).
-	if spend := m.dashSpendingLine(); spend != "" {
+	if spendLine != "" {
 		header := m.styles.DashSection.Render("Spending (YTD)")
-		allLines = append(allLines, header+"\n  "+spend)
+		allLines = append(allLines, header+"\n  "+spendLine)
+	}
+
+	// Update nav to match the trimmed view.
+	m.dashNav = nav
+	if m.dashCursor >= len(nav) {
+		m.dashCursor = max(0, len(nav)-1)
 	}
 
 	return strings.Join(allLines, "\n\n")
+}
+
+// renderMaintSection renders the maintenance section with Overdue/Upcoming
+// sub-headers, distributing limit rows across sub-sections proportionally.
+func (m *Model) renderMaintSection(
+	s dashSection, limit, cursor, colGap int, sel lipgloss.Style,
+) []string {
+	// Distribute limit among sub-sections proportionally.
+	subLimits := distributeSubLimits(s.subCounts, limit)
+
+	var lines []string
+	offset := 0
+	rendered := 0
+	for si, subTitle := range s.subTitles {
+		subN := subLimits[si]
+		if subN == 0 {
+			offset += s.subCounts[si]
+			continue
+		}
+		if rendered > 0 {
+			lines = append(lines, "")
+		}
+		lines = append(lines, m.styles.DashSection.Render(subTitle))
+		subRows := capSlice(s.rows[offset:offset+s.subCounts[si]], subN)
+		localCursor := -1
+		if cursor >= 0 && cursor < subN {
+			localCursor = cursor
+		}
+		lines = append(lines,
+			renderMiniTable(subRows, colGap, localCursor, sel)...)
+		cursor -= subN
+		offset += s.subCounts[si]
+		rendered++
+	}
+	return lines
+}
+
+// distributeDashRows allocates avail row slots across sections proportionally,
+// giving each section at least 1 row. Returns per-section limits.
+func distributeDashRows(sections []dashSection, avail int) []int {
+	n := len(sections)
+	if n == 0 {
+		return nil
+	}
+	limits := make([]int, n)
+	totalRaw := 0
+	for _, s := range sections {
+		totalRaw += len(s.rows)
+	}
+
+	if avail >= totalRaw {
+		// Everything fits.
+		for i, s := range sections {
+			limits[i] = len(s.rows)
+		}
+		return limits
+	}
+
+	// Give each section at least 1 row.
+	remaining := avail
+	for i := range sections {
+		limits[i] = 1
+		remaining--
+	}
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	// Distribute the rest proportionally to each section's raw count.
+	excess := totalRaw - n // total "extra" rows beyond the 1 minimum
+	if excess > 0 && remaining > 0 {
+		for i, s := range sections {
+			extra := len(s.rows) - 1
+			share := extra * remaining / excess
+			limits[i] += share
+		}
+	}
+
+	// Rounding may leave us short; give leftover to largest sections first.
+	allocated := 0
+	for _, l := range limits {
+		allocated += l
+	}
+	for allocated < avail {
+		best := -1
+		bestGap := 0
+		for i, s := range sections {
+			gap := len(s.rows) - limits[i]
+			if gap > bestGap {
+				bestGap = gap
+				best = i
+			}
+		}
+		if best < 0 {
+			break
+		}
+		limits[best]++
+		allocated++
+	}
+
+	return limits
+}
+
+// distributeSubLimits splits limit rows across sub-sections proportionally.
+func distributeSubLimits(subCounts []int, limit int) []int {
+	n := len(subCounts)
+	if n == 0 {
+		return nil
+	}
+	total := 0
+	for _, c := range subCounts {
+		total += c
+	}
+	result := make([]int, n)
+	if limit >= total {
+		copy(result, subCounts)
+		return result
+	}
+	// Give each non-empty sub-section at least 1.
+	remaining := limit
+	for i, c := range subCounts {
+		if c > 0 && remaining > 0 {
+			result[i] = 1
+			remaining--
+		}
+	}
+	if remaining > 0 && total > n {
+		for i, c := range subCounts {
+			extra := c - 1
+			share := extra * remaining / (total - n)
+			result[i] += share
+		}
+	}
+	// Distribute rounding leftover.
+	allocated := 0
+	for _, r := range result {
+		allocated += r
+	}
+	for allocated < limit {
+		best := -1
+		bestGap := 0
+		for i, c := range subCounts {
+			gap := c - result[i]
+			if gap > bestGap {
+				bestGap = gap
+				best = i
+			}
+		}
+		if best < 0 {
+			break
+		}
+		result[best]++
+		allocated++
+	}
+	return result
 }
 
 // ---------------------------------------------------------------------------

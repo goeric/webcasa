@@ -115,7 +115,6 @@ func (m *Model) buildDashboardOverlay() string {
 	// Inner width excludes the box padding (2 each side).
 	innerW := contentW - 4
 	header := m.dashboardHeader(innerW)
-	content := m.dashboardView()
 
 	// Navigation hints inside the overlay.
 	items := []string{m.helpItem("j/k", "navigate")}
@@ -128,13 +127,22 @@ func (m *Model) buildDashboardOverlay() string {
 	)
 	hints := joinWithSeparator(m.helpSeparator(), items...)
 
-	boxContent := lipgloss.JoinVertical(
-		lipgloss.Left, header, "", content, "", hints,
-	)
+	// Budget for dashboardView content: outer box height minus chrome.
+	// Chrome: border (2) + padding (2) + header (1) + blank (1) + blank (1)
+	// + hints (1) = 8 lines.
 	maxH := m.effectiveHeight() - 4
 	if maxH < 10 {
 		maxH = 10
 	}
+	contentBudget := maxH - 8
+	if contentBudget < 3 {
+		contentBudget = 3
+	}
+	content := m.dashboardView(contentBudget)
+
+	boxContent := lipgloss.JoinVertical(
+		lipgloss.Left, header, "", content, "", hints,
+	)
 
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
