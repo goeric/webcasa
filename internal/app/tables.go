@@ -205,7 +205,7 @@ func serviceLogColumnSpecs() []columnSpec {
 		{Title: "Date", Min: 10, Max: 12, Kind: cellDate},
 		{Title: "Performed By", Min: 12, Max: 22, Flex: true},
 		{Title: "Cost", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
-		{Title: "Notes", Min: 12, Max: 40, Flex: true},
+		{Title: "Notes", Min: 12, Max: 40, Flex: true, Kind: cellNotes},
 	}
 }
 
@@ -226,7 +226,7 @@ func serviceLogRows(
 			{Value: entry.ServicedAt.Format(data.DateLayout), Kind: cellDate},
 			{Value: performedBy, Kind: cellText},
 			{Value: centsValue(entry.CostCents), Kind: cellMoney},
-			{Value: entry.Notes, Kind: cellText},
+			{Value: entry.Notes, Kind: cellNotes},
 		}
 		rows = append(rows, cellsToRow(rowCells))
 		cells = append(cells, rowCells)

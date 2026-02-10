@@ -131,6 +131,7 @@ const (
 	cellDrilldown // interactive count that opens a detail view
 	cellWarranty  // date with green/red coloring based on expiry
 	cellUrgency   // date colored by proximity (green -> yellow -> red)
+	cellNotes     // text that can be expanded in a read-only overlay
 )
 
 type cell struct {

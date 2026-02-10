@@ -24,6 +24,11 @@ func (m *Model) buildView() string {
 		base = overlay.Composite(fg, dimBackground(base), overlay.Center, overlay.Center, 0, 0)
 	}
 
+	if m.showNotePreview {
+		fg := cancelFaint(m.buildNotePreviewOverlay())
+		base = overlay.Composite(fg, dimBackground(base), overlay.Center, overlay.Center, 0, 0)
+	}
+
 	if m.showHelp {
 		fg := cancelFaint(m.buildHelpOverlay())
 		base = overlay.Composite(fg, dimBackground(base), overlay.Center, overlay.Center, 0, 0)
@@ -336,6 +341,9 @@ func (m *Model) enterHint() string {
 		return ""
 	}
 	spec := tab.Specs[col]
+	if spec.Kind == cellNotes {
+		return "preview"
+	}
 	if spec.Kind == cellDrilldown && m.detail == nil {
 		switch tab.Kind {
 		case tabMaintenance:
@@ -358,6 +366,45 @@ func (m *Model) formFullScreen() string {
 	status := m.statusView()
 	panel := lipgloss.JoinVertical(lipgloss.Left, formContent, "", status)
 	return m.centerPanel(panel, 1)
+}
+
+func (m *Model) buildNotePreviewOverlay() string {
+	contentW := m.effectiveWidth() - 12
+	if contentW > 72 {
+		contentW = 72
+	}
+	if contentW < 30 {
+		contentW = 30
+	}
+
+	var b strings.Builder
+	title := m.notePreviewTitle
+	if title == "" {
+		title = "Notes"
+	}
+	b.WriteString(m.styles.HeaderSection.Render(" " + title + " "))
+	b.WriteString("\n\n")
+
+	// Word-wrap the note text to fit within the box.
+	innerW := contentW - 4 // padding
+	text := m.notePreviewText
+	b.WriteString(wordWrap(text, innerW))
+	b.WriteString("\n\n")
+
+	b.WriteString(m.styles.HeaderHint.Render("Press any key to close"))
+
+	maxH := m.effectiveHeight() - 4
+	if maxH < 10 {
+		maxH = 10
+	}
+
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(accent).
+		Padding(1, 2).
+		Width(contentW).
+		MaxHeight(maxH).
+		Render(b.String())
 }
 
 func (m *Model) buildHelpOverlay() string {
@@ -417,7 +464,7 @@ func (m *Model) helpView() string {
 				{"H", "Toggle house profile"},
 				{"s", "Sort by column (cycle asc/desc/off)"},
 				{"S", "Clear all sorts"},
-				{"enter", "Open detail / follow link"},
+				{"enter", "Open detail / follow link / preview notes"},
 				{"c", "Hide current column"},
 				{"C", "Show all columns"},
 				{"D", "Toggle summary"},
@@ -688,4 +735,41 @@ func truncateLeft(s string, maxW int) string {
 		return ansi.Truncate(s, maxW, "")
 	}
 	return ellipsis + string(runes[cut:])
+}
+
+// wordWrap breaks text into lines of at most maxW visible columns, splitting
+// on word boundaries when possible.
+func wordWrap(text string, maxW int) string {
+	if maxW <= 0 || text == "" {
+		return text
+	}
+	var result strings.Builder
+	for _, paragraph := range strings.Split(text, "\n") {
+		if result.Len() > 0 {
+			result.WriteByte('\n')
+		}
+		words := strings.Fields(paragraph)
+		if len(words) == 0 {
+			continue
+		}
+		lineW := 0
+		for i, word := range words {
+			ww := lipgloss.Width(word)
+			if i == 0 {
+				result.WriteString(word)
+				lineW = ww
+				continue
+			}
+			if lineW+1+ww > maxW {
+				result.WriteByte('\n')
+				result.WriteString(word)
+				lineW = ww
+			} else {
+				result.WriteByte(' ')
+				result.WriteString(word)
+				lineW += 1 + ww
+			}
+		}
+	}
+	return result.String()
 }

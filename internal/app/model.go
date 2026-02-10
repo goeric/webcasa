@@ -26,6 +26,9 @@ type Model struct {
 	showHelp              bool
 	showHouse             bool
 	showDashboard         bool
+	showNotePreview       bool
+	notePreviewText       string
+	notePreviewTitle      string
 	dashboard             dashboardData
 	dashCursor            int
 	dashNav               []dashNavEntry
@@ -100,6 +103,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "esc", "?":
 				m.showHelp = false
 			}
+		}
+		return m, nil
+	}
+
+	// Note preview overlay: any key dismisses it.
+	if m.showNotePreview {
+		if _, ok := msg.(tea.KeyMsg); ok {
+			m.showNotePreview = false
+			m.notePreviewText = ""
+			m.notePreviewTitle = ""
 		}
 		return m, nil
 	}
@@ -332,6 +345,16 @@ func (m *Model) handleNormalEnter() error {
 		return nil
 	}
 	spec := tab.Specs[col]
+
+	// On a notes column, show the note preview overlay.
+	if spec.Kind == cellNotes {
+		if c, ok := m.selectedCell(col); ok && c.Value != "" {
+			m.notePreviewTitle = spec.Title
+			m.notePreviewText = c.Value
+			m.showNotePreview = true
+		}
+		return nil
+	}
 
 	// On a drilldown column, open the detail view for that row.
 	if spec.Kind == cellDrilldown && m.detail == nil {

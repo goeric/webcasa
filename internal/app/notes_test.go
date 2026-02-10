@@ -1,0 +1,193 @@
+// Copyright 2026 Phillip Cloud
+// Licensed under the Apache License, Version 2.0
+
+package app
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/charmbracelet/bubbles/table"
+)
+
+func TestNotePreviewOpensOnEnter(t *testing.T) {
+	m := newTestModel()
+	m.active = tabIndex(tabMaintenance)
+	// Open service log detail (has Notes column).
+	_ = m.openServiceLogDetail(1, "Test")
+	tab := m.effectiveTab()
+	if tab == nil {
+		t.Fatal("expected detail tab")
+	}
+
+	// Seed a row with a note.
+	tab.Table.SetRows(
+		[]table.Row{
+			{"1", "2026-01-15", "Self", "$50.00", "Changed the filter and checked pressure"},
+		},
+	)
+	tab.Rows = []rowMeta{{ID: 1}}
+	tab.CellRows = [][]cell{
+		{
+			{Value: "1", Kind: cellReadonly},
+			{Value: "2026-01-15", Kind: cellDate},
+			{Value: "Self", Kind: cellText},
+			{Value: "$50.00", Kind: cellMoney},
+			{Value: "Changed the filter and checked pressure", Kind: cellNotes},
+		},
+	}
+
+	// Move cursor to Notes column (col 4).
+	tab.ColCursor = 4
+
+	// Press enter in Normal mode.
+	sendKey(m, "enter")
+
+	if !m.showNotePreview {
+		t.Fatal("expected showNotePreview to be true")
+	}
+	if m.notePreviewText != "Changed the filter and checked pressure" {
+		t.Fatalf(
+			"unexpected preview text: %q",
+			m.notePreviewText,
+		)
+	}
+	if m.notePreviewTitle != "Notes" {
+		t.Fatalf("unexpected preview title: %q", m.notePreviewTitle)
+	}
+}
+
+func TestNotePreviewDismissesOnAnyKey(t *testing.T) {
+	m := newTestModel()
+	m.showNotePreview = true
+	m.notePreviewText = "some note"
+	m.notePreviewTitle = "Notes"
+
+	sendKey(m, "q")
+
+	if m.showNotePreview {
+		t.Fatal("expected showNotePreview to be false after key press")
+	}
+	if m.notePreviewText != "" {
+		t.Fatalf("expected empty preview text, got %q", m.notePreviewText)
+	}
+}
+
+func TestNotePreviewDoesNotOpenOnEmptyNote(t *testing.T) {
+	m := newTestModel()
+	m.active = tabIndex(tabMaintenance)
+	_ = m.openServiceLogDetail(1, "Test")
+	tab := m.effectiveTab()
+
+	tab.Table.SetRows([]table.Row{{"1", "2026-01-15", "Self", "", ""}})
+	tab.Rows = []rowMeta{{ID: 1}}
+	tab.CellRows = [][]cell{
+		{
+			{Value: "1", Kind: cellReadonly},
+			{Value: "2026-01-15", Kind: cellDate},
+			{Value: "Self", Kind: cellText},
+			{Value: "", Kind: cellMoney},
+			{Value: "", Kind: cellNotes},
+		},
+	}
+	tab.ColCursor = 4
+
+	sendKey(m, "enter")
+
+	if m.showNotePreview {
+		t.Fatal("expected showNotePreview to be false for empty note")
+	}
+}
+
+func TestNotePreviewRendersInView(t *testing.T) {
+	m := newTestModel()
+	m.width = 120
+	m.height = 40
+	m.showNotePreview = true
+	m.notePreviewText = "This is a test note with some content."
+	m.notePreviewTitle = "Notes"
+
+	view := m.buildView()
+	if !strings.Contains(view, "This is a test note") {
+		t.Fatal("expected note text in view output")
+	}
+	if !strings.Contains(view, "Press any key to close") {
+		t.Fatal("expected dismiss hint in view output")
+	}
+}
+
+func TestNotePreviewBlocksOtherKeys(t *testing.T) {
+	m := newTestModel()
+	m.showNotePreview = true
+	m.notePreviewText = "test"
+	initialTab := m.active
+
+	// These should all be absorbed by the note preview.
+	sendKey(m, "j")
+	if m.active != initialTab {
+		t.Fatal("expected tab not to change while note preview is open")
+	}
+}
+
+func TestWordWrap(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		width int
+		want  string
+	}{
+		{"empty", "", 40, ""},
+		{"fits", "hello world", 40, "hello world"},
+		{"wraps", "hello world foo bar", 11, "hello world\nfoo bar"},
+		{
+			"long word",
+			"superlongword fits",
+			20,
+			"superlongword fits",
+		},
+		{
+			"preserves newlines",
+			"line one\nline two",
+			40,
+			"line one\nline two",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wordWrap(tt.input, tt.width)
+			if got != tt.want {
+				t.Errorf(
+					"wordWrap(%q, %d) = %q, want %q",
+					tt.input,
+					tt.width,
+					got,
+					tt.want,
+				)
+			}
+		})
+	}
+}
+
+func TestEnterHintShowsPreviewOnNotesColumn(t *testing.T) {
+	m := newTestModel()
+	m.active = tabIndex(tabMaintenance)
+	_ = m.openServiceLogDetail(1, "Test")
+	tab := m.effectiveTab()
+	tab.ColCursor = 4 // Notes column
+	tab.Table.SetRows([]table.Row{{"1", "2026-01-15", "Self", "", "some note"}})
+	tab.Rows = []rowMeta{{ID: 1}}
+	tab.CellRows = [][]cell{
+		{
+			{Value: "1", Kind: cellReadonly},
+			{Value: "2026-01-15", Kind: cellDate},
+			{Value: "Self", Kind: cellText},
+			{Value: "", Kind: cellMoney},
+			{Value: "some note", Kind: cellNotes},
+		},
+	}
+
+	hint := m.enterHint()
+	if hint != "preview" {
+		t.Fatalf("expected 'preview', got %q", hint)
+	}
+}
