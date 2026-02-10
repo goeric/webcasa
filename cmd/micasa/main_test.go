@@ -186,6 +186,11 @@ func TestPrintPath_ExitCodeZero(t *testing.T) {
 }
 
 func TestVersion_DevShowsCommitHash(t *testing.T) {
+	// Skip when there is no .git directory (e.g. Nix sandbox builds from a
+	// source tarball), since Go won't embed VCS info without one.
+	if _, err := os.Stat(".git"); err != nil {
+		t.Skip("no .git directory; VCS info unavailable (e.g. Nix sandbox)")
+	}
 	bin := buildTestBinary(t)
 	out, err := exec.Command(bin, "--version").Output()
 	if err != nil {
