@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 const testDate = "2026-02-15"
@@ -295,6 +297,56 @@ func TestCalendarGridColumnAlignment(t *testing.T) {
 			"column misalignment: Mo at col %d but 30 at col %d\nlabels: %q\nlast:   %q",
 			moPos, pos30, lines[labelIdx], lines[lastDayIdx],
 		)
+	}
+}
+
+func TestCalendarFixedHeight(t *testing.T) {
+	styles := DefaultStyles()
+	// Feb 2026 (28 days starting Sun) uses 4 rows.
+	feb := calendarGrid(calendarState{
+		Cursor: time.Date(2026, 2, 1, 0, 0, 0, 0, time.Local),
+	}, styles)
+	// Aug 2026 (31 days starting Sat) uses 6 rows.
+	aug := calendarGrid(calendarState{
+		Cursor: time.Date(2026, 8, 1, 0, 0, 0, 0, time.Local),
+	}, styles)
+
+	febH := lipgloss.Height(feb)
+	augH := lipgloss.Height(aug)
+	if febH != augH {
+		t.Errorf("calendar height should be fixed: Feb=%d, Aug=%d", febH, augH)
+	}
+}
+
+func TestCalendarHintsOnLeft(t *testing.T) {
+	styles := DefaultStyles()
+	grid := calendarGrid(calendarState{
+		Cursor: time.Date(2026, 2, 15, 0, 0, 0, 0, time.Local),
+	}, styles)
+
+	lines := strings.Split(grid, "\n")
+	// The hint keys (like "h/l") should appear to the left of "Su Mo".
+	foundHint := false
+	foundDays := false
+	for _, line := range lines {
+		hintIdx := strings.Index(line, "h/l")
+		daysIdx := strings.Index(line, "Su Mo")
+		if hintIdx >= 0 {
+			foundHint = true
+		}
+		if daysIdx >= 0 {
+			foundDays = true
+		}
+		// If both appear on the same line, hint must be left of days.
+		if hintIdx >= 0 && daysIdx >= 0 && hintIdx >= daysIdx {
+			t.Errorf("hints should be left of day grid: hint=%d, days=%d", hintIdx, daysIdx)
+		}
+	}
+	if !foundHint {
+		t.Error("expected hint keys in calendar output")
+	}
+	if !foundDays {
+		t.Error("expected day labels in calendar output")
 	}
 }
 

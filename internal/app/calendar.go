@@ -20,12 +20,18 @@ type calendarState struct {
 	OnConfirm func()    // called after writing the picked date to FieldPtr
 }
 
-// calendarGrid renders a single month calendar with the cursor highlighted.
+// calendarMaxRows is the maximum number of week-rows a month can span.
+// A 31-day month starting on Saturday needs 6 rows.
+const calendarMaxRows = 6
+
+// calendarGrid renders a single month calendar with the cursor highlighted
+// and a key-hint column on the left. The grid is always calendarMaxRows tall
+// so the overlay never changes size when switching months.
 func calendarGrid(cal calendarState, styles Styles) string {
 	cursor := cal.Cursor
 	year, month := cursor.Year(), cursor.Month()
 
-	// Header: month name + year.
+	// Header: month name + year, centered over the day grid.
 	header := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(accent).
@@ -36,15 +42,18 @@ func calendarGrid(cal calendarState, styles Styles) string {
 		Foreground(textDim).
 		Render("Su Mo Tu We Th Fr Sa")
 
+	calW := lipgloss.Width(dayLabels) // 20
+
 	// Build the day grid.
 	first := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
 	startDow := int(first.Weekday()) // 0=Sun
 	daysInMonth := daysIn(year, month)
 
-	var grid strings.Builder
+	var gridRows []string
+	var row strings.Builder
 	// Leading blanks.
 	for i := 0; i < startDow; i++ {
-		grid.WriteString("   ")
+		row.WriteString("   ")
 	}
 
 	for day := 1; day <= daysInMonth; day++ {
@@ -67,65 +76,80 @@ func calendarGrid(cal calendarState, styles Styles) string {
 			style = lipgloss.NewStyle()
 		}
 
-		grid.WriteString(style.Render(label))
+		row.WriteString(style.Render(label))
 
 		dow := (startDow + day - 1) % 7
 		if dow == 6 && day < daysInMonth {
-			grid.WriteString("\n")
+			gridRows = append(gridRows, row.String())
+			row.Reset()
 		} else if day < daysInMonth {
-			grid.WriteString(" ")
+			row.WriteString(" ")
 		}
 	}
-
-	// Navigation hints split into two lines to keep the box compact.
-	hintStyle := lipgloss.NewStyle().Foreground(textDim)
-	hints := lipgloss.JoinVertical(lipgloss.Left,
-		hintStyle.Render("h/l day · j/k week · H/L month · [/] year"),
-		hintStyle.Render("enter pick · esc cancel"),
-	)
-
-	// The day-label row defines the grid's intrinsic width (20 visible cols).
-	// Pad every grid line to that width so the block is rectangular, then
-	// center the whole block within the wider hint line.
-	calW := lipgloss.Width(dayLabels)
-	gridBlock := padLines(grid.String(), calW)
-
-	hintW := lipgloss.Width(hints)
-	boxW := calW
-	if hintW > boxW {
-		boxW = hintW
+	// Flush the last partial row.
+	if row.Len() > 0 {
+		gridRows = append(gridRows, row.String())
+	}
+	// Pad to fixed height so the overlay never resizes.
+	for len(gridRows) < calendarMaxRows {
+		gridRows = append(gridRows, "")
 	}
 
-	// centerBlock centers a pre-padded rectangular block (all lines same
-	// width) by indenting every line uniformly. Unlike PlaceHorizontal this
-	// preserves internal column alignment.
-	centerBlock := func(s string, blockW int) string {
-		pad := (boxW - blockW) / 2
-		if pad <= 0 {
-			return s
-		}
-		indent := strings.Repeat(" ", pad)
-		lines := strings.Split(s, "\n")
-		for i, line := range lines {
-			lines[i] = indent + line
-		}
-		return strings.Join(lines, "\n")
-	}
+	gridBlock := padLines(strings.Join(gridRows, "\n"), calW)
 
-	// Single-line items can use PlaceHorizontal safely.
-	centerLine := func(s string) string {
-		return lipgloss.PlaceHorizontal(boxW, lipgloss.Center, s)
-	}
-
-	return lipgloss.JoinVertical(
+	// Right panel: centered header + day labels + fixed-height grid.
+	rightPanel := lipgloss.JoinVertical(
 		lipgloss.Left,
-		centerLine(header),
+		lipgloss.PlaceHorizontal(calW, lipgloss.Center, header),
 		"",
-		centerBlock(dayLabels, calW),
-		centerBlock(gridBlock, calW),
-		"",
-		centerLine(hints),
+		dayLabels,
+		gridBlock,
 	)
+
+	// Left panel: key hints stacked vertically, right-aligned keys.
+	hints := calendarHints(styles)
+	hintsH := lipgloss.Height(hints)
+	rightH := lipgloss.Height(rightPanel)
+	// Vertically center hints against the right panel.
+	topPad := (rightH - hintsH) / 2
+	if topPad < 0 {
+		topPad = 0
+	}
+	paddedHints := strings.Repeat("\n", topPad) + hints
+
+	return lipgloss.JoinHorizontal(lipgloss.Top, paddedHints, "   ", rightPanel)
+}
+
+// calendarHints renders the key legend as a two-column vertical list.
+func calendarHints(styles Styles) string {
+	dim := lipgloss.NewStyle().Foreground(textDim)
+	key := lipgloss.NewStyle().Foreground(accent).Bold(true)
+
+	type hint struct{ k, v string }
+	items := []hint{
+		{"h/l", "day"},
+		{"j/k", "week"},
+		{"H/L", "month"},
+		{"[/]", "year"},
+		{"enter", "pick"},
+		{"esc", "cancel"},
+	}
+
+	// Right-align the key column.
+	maxKeyW := 0
+	for _, h := range items {
+		if len(h.k) > maxKeyW {
+			maxKeyW = len(h.k)
+		}
+	}
+
+	lines := make([]string, len(items))
+	for i, h := range items {
+		k := fmt.Sprintf("%*s", maxKeyW, h.k)
+		lines[i] = key.Render(k) + " " + dim.Render(h.v)
+	}
+	_ = styles // reserved for future styling
+	return strings.Join(lines, "\n")
 }
 
 func daysIn(year int, month time.Month) int {

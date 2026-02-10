@@ -986,6 +986,8 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [VENDORS-TAB] vendors as first-class browsable tab with CRUD + aggregate counts (a330f2d)
 - [NOTES-EXPAND] read-only note preview overlay on cellNotes columns (590a6c0)
 - [DATEPICKER] calendar date picker for inline date editing (68a1fa6)
+- [CAL-YEAR-NAV] calendar year navigation via [/] keys (e611cd9)
+- [CAL-ALIGN] calendar day column alignment preserved when centering grid (6fdc566)
 
 # Remaining work
 
@@ -1075,8 +1077,6 @@ in case things crash or otherwise go haywire, be diligent about this.
   HOAFeeCents and PropertyTaxCents. Why aren't those just plain int64s?
 
 ## Moar
-- ~~for the calendar widget, let's make ctrl+shift+h/l moves years~~ DONE
-- calendar widget day column alignment bug: centering shifted short last rows (6fdc566)
 - let's make sure that deleting, even soft deleting doesn't break the model,
   e.g., if i try to delete a quote that's linked to a project, i get
   a reasonable error message, probably in the status bar but open to thoughts
