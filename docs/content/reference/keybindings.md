@@ -45,6 +45,7 @@ Complete reference of every keybinding in micasa, organized by mode.
 |-----|--------|
 | `s` | Cycle sort on current column (none -> asc -> desc -> none) |
 | `S` | Clear all sorts |
+| `/` | Jump to column (fuzzy find) |
 | `c` | Hide current column |
 | `C` | Show all hidden columns |
 

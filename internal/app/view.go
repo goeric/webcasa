@@ -34,6 +34,11 @@ func (m *Model) buildView() string {
 		base = overlay.Composite(fg, dimBackground(base), overlay.Center, overlay.Center, 0, 0)
 	}
 
+	if m.columnFinder != nil {
+		fg := cancelFaint(m.buildColumnFinderOverlay())
+		base = overlay.Composite(fg, dimBackground(base), overlay.Center, overlay.Center, 0, 0)
+	}
+
 	if m.showHelp {
 		fg := cancelFaint(m.buildHelpOverlay())
 		base = overlay.Composite(fg, dimBackground(base), overlay.Center, overlay.Center, 0, 0)
@@ -242,6 +247,7 @@ func (m *Model) statusView() string {
 			items = append(items, m.helpItem("enter", hint))
 		}
 		items = append(items,
+			m.helpItem("/", "find col"),
 			m.helpItem("c", "hide col"),
 		)
 		if hint := m.hiddenHint(); hint != "" {
@@ -484,6 +490,7 @@ func (m *Model) helpView() string {
 				{"s", "Sort by column (cycle asc/desc/off)"},
 				{"S", "Clear all sorts"},
 				{"enter", "Open detail / follow link / preview notes"},
+				{"/", "Jump to column (fuzzy find)"},
 				{"c", "Hide current column"},
 				{"C", "Show all columns"},
 				{"D", "Toggle summary"},

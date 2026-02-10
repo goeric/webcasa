@@ -885,6 +885,22 @@ in case things crash or otherwise go haywire, be diligent about this.
 
 ## 2026-02-10 Session 31
 
+**User request**: `/` in Nav mode opens a fuzzy column finder to jump to any column.
+
+**Work done**:
+- [COL-JUMP] Fuzzy column finder overlay: `/` in Normal mode opens a centered overlay with live fuzzy filtering
+  - `column_finder.go`: `columnFinderState`, `fuzzyMatch` scorer (case-insensitive, consecutive/boundary/prefix bonuses), `sortFuzzyMatches`, `highlightFuzzyMatch` (accent-colored matched chars)
+  - Input: type to filter, backspace to delete, ctrl+u to clear, up/down to navigate, enter to jump, esc to cancel
+  - Jumping to a hidden column auto-unhides it
+  - Blocked on dashboard (no table visible)
+  - Overlay dimmed behind, styled with accent border like other overlays
+  - 26 new tests (`column_finder_test.go`): fuzzy scoring, sorting, refiltering, cursor clamping, open/close/jump/unhide, key handling, overlay rendering, dashboard blocking, mode integration
+  - Updated help overlay, status bar (`/` find col), keybindings.md, navigation.md
+
+**Also committed**: [WEBSITE-SMOKE-SCATTER] shockwave scatter for chimney smoke on house destruction
+
+## 2026-02-10 Session 31a
+
 **User request**: Chimney smoke vanishes instantly on house destruction -- make it more realistic. User chose option 3 (shockwave scatter).
 
 **Work done**:
@@ -1062,6 +1078,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [SAFE-DELETE] FK guards on soft-delete: projects with quotes and maintenance with service logs are refused with actionable error messages
 - [WEBSITE-REBUILD-ANIM] fixed house rebuild animation snap: smooth deceleration easing + cross-fade replaces hard DOM swap
 - [WEBSITE-SMOKE-SCATTER] shockwave scatter for chimney smoke on house destruction
+- [COL-JUMP] fuzzy column finder via `/` in Nav mode
 
 # Remaining work
 

@@ -25,6 +25,7 @@ have full table navigation:
 | `tab` / `shift+tab` | Next / previous tab |
 | `enter`     | Drilldown or follow link |
 | `s` / `S`   | Sort column / clear sorts |
+| `/`         | Jump to column (fuzzy find) |
 | `c` / `C`   | Hide column / show all |
 | `H`         | Toggle house profile |
 | `D`         | Toggle dashboard     |

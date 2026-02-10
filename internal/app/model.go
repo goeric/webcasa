@@ -15,7 +15,10 @@ import (
 	"gorm.io/gorm"
 )
 
-const keyEsc = "esc"
+const (
+	keyEsc   = "esc"
+	keyEnter = "enter"
+)
 
 type Model struct {
 	store                 *data.Store
@@ -33,6 +36,7 @@ type Model struct {
 	notePreviewText       string
 	notePreviewTitle      string
 	calendar              *calendarState
+	columnFinder          *columnFinderState
 	dashboard             dashboardData
 	dashCursor            int
 	dashNav               []dashNavEntry
@@ -125,6 +129,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.calendar != nil {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
 			return m.handleCalendarKey(keyMsg)
+		}
+		return m, nil
+	}
+
+	// Column finder overlay: absorb all keys.
+	if m.columnFinder != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			return m, m.handleColumnFinderKey(keyMsg)
 		}
 		return m, nil
 	}
@@ -224,13 +236,13 @@ func (m *Model) handleDashboardKeys(key tea.KeyMsg) (tea.Cmd, bool) {
 	case "G":
 		m.dashBottom()
 		return nil, true
-	case "enter":
+	case keyEnter:
 		m.dashJump()
 		return nil, true
 	case "h", "l", "left", "right":
 		// Block column movement on dashboard.
 		return nil, true
-	case "s", "S", "c", "C", "i":
+	case "s", "S", "c", "C", "i", "/":
 		// Block table-specific keys on dashboard.
 		return nil, true
 	}
@@ -315,10 +327,13 @@ func (m *Model) handleNormalKeys(key tea.KeyMsg) (tea.Cmd, bool) {
 	case "C":
 		m.showAllColumns()
 		return nil, true
+	case "/":
+		m.openColumnFinder()
+		return nil, true
 	case "i":
 		m.enterEditMode()
 		return nil, true
-	case "enter":
+	case keyEnter:
 		if err := m.handleNormalEnter(); err != nil {
 			m.setStatusError(err.Error())
 			return nil, true
@@ -459,7 +474,7 @@ func (m *Model) handleCalendarKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		calendarMoveYear(m.calendar, -1)
 	case "]":
 		calendarMoveYear(m.calendar, 1)
-	case "enter":
+	case keyEnter:
 		m.confirmCalendar()
 	case keyEsc:
 		m.calendar = nil
