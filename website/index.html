@@ -114,10 +114,12 @@ micasa --print-path   # show where the database lives</code></pre>
         <ul class="key-list">
           <li><kbd>j / k</kbd> <span class="desc">Row up / down</span></li>
           <li><kbd>h / l</kbd> <span class="desc">Column left / right</span></li>
+          <li><kbd>^ / $</kbd> <span class="desc">First / last column</span></li>
           <li><kbd>g / G</kbd> <span class="desc">First / last row</span></li>
           <li><kbd>d / u</kbd> <span class="desc">Half-page down / up</span></li>
           <li><kbd>tab</kbd> <span class="desc">Next tab</span></li>
           <li><kbd>s / S</kbd> <span class="desc">Sort / clear sorts</span></li>
+          <li><kbd>/</kbd> <span class="desc">Fuzzy column finder</span></li>
           <li><kbd>enter</kbd> <span class="desc">Drilldown or follow link</span></li>
           <li><kbd>c / C</kbd> <span class="desc">Hide / show columns</span></li>
           <li><kbd>i</kbd> <span class="desc">Enter Edit mode</span></li>
@@ -492,6 +494,18 @@ micasa --print-path   # show where the database lives</code></pre>
             els[k].el.style.color = '#a04e30';
           }
           rubbleEls = els;
+
+          // Attach direct click handlers so blocks outside the scene's
+          // bounding box are still clickable (they may land under other
+          // page elements like the heading or CTA buttons).
+          var rubbleClick = function (e) {
+            e.stopPropagation();
+            if (!animating && destroyed) rebuildHouse();
+          };
+          for (var k2 = 0; k2 < els.length; k2++) {
+            els[k2].el.addEventListener('click', rubbleClick);
+          }
+
           if (caption) caption.classList.add('visible');
 
           // Ember flicker: aggressive -- blocks pulse hot like a fresh collapse

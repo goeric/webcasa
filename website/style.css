@@ -169,6 +169,7 @@ section + section {
   line-height: 1;
   color: var(--terracotta);
   cursor: pointer;
+  z-index: 10;
   will-change: transform, opacity;
 }
 
