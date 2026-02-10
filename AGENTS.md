@@ -820,6 +820,15 @@ in case things crash or otherwise go haywire, be diligent about this.
 - Created `renovate.json` with `config:recommended` + `pinDigests: true` for github-actions manager
 - Verified: docker, DeterminateSystems, trufflesecurity are GitHub verified creators; cycjimmy is not
 
+## 2026-02-09 Session 25
+
+**User request**: Clean up dead `actions:read` CodeQL permission commit (`0dbfbcf`) since no releases have been pushed since.
+
+**Work done**:
+- Rebased to drop `0dbfbcf` (ci: add actions:read permission to CodeQL job) -- now dead weight since CodeQL was removed in the next commit
+- Resolved trivial conflict in `ci.yml` (CodeQL block removed in both sides)
+- 4 unpushed commits reduced to 3: hard rule → security policy → remove CodeQL
+
 # Completed work
 
 - [REF-SCROLL] Refactor width/scroll implementation (fb84d4e, a46f34a, 9ca4f6e, 1bfa3cb)
