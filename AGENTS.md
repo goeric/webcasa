@@ -328,6 +328,17 @@ These have been repeatedly requested. Violating them wastes the user's time.
   script to only run a single capture (e.g. just `dashboard`) and inspect the
   result before committing to a full 9-screenshot run (~2 min each). Don't
   re-run all 9 just to check a theme change.
+- **Composable soft-delete/restore for new FK relationships**: When adding a
+  new model or FK link between soft-deletable entities, add both delete guards
+  (parent refuses deletion while active children exist) and restore guards
+  (child refuses restore while parent is deleted). This applies to ALL FKs
+  where a value is set -- including nullable FKs: nullable means "you don't
+  have to link one", not "the link doesn't matter once it exists". For
+  nullable FKs, only check when the value is non-nil. Write composition tests
+  covering the full lifecycle: bottom-up delete, wrong-order restore blocked,
+  correct-order restore succeeds. See existing tests
+  (`TestThreeLevelDeleteRestoreChain`, `TestRestoreMaintenanceBlockedByDeletedAppliance`,
+  `TestRestoreMaintenanceAllowedWithoutAppliance`, etc.) as templates.
 
 If the user asks you to learn something, add it to this "Hard rules" section
 so it survives context resets. This file is always injected; external files
@@ -850,6 +861,28 @@ in case things crash or otherwise go haywire, be diligent about this.
   - Fixed chimney smoke after rebuild: smoke particle system re-queries `smoke-bed` DOM element on each spawn instead of caching stale reference
   - Removed all stick figure / side door CSS (`.stick-figure`, `.side-door`, `.walking`)
 
+## 2026-02-10 Session 31
+
+**User request**: Verify soft-delete/restore composability across all FK relationships and add tests for gaps. Then: learn that nullable FKs with a set value should also be guarded on restore.
+
+**Analysis round 1**: Mapped all FK relationships. Initially thought nullable FKs (Maintenance→Appliance) needed no restore guard since the relationship is optional.
+
+**User correction**: Nullable means "you don't have to link one", not "the link doesn't matter once it exists." If a maintenance item was created with an appliance link, restoring it while the appliance is deleted creates a dangling reference.
+
+**Work done**:
+- `RestoreMaintenance` now checks `ApplianceID` when non-nil: refuses restore if appliance is soft-deleted
+- 4 new + 1 updated composition tests in `store_test.go`:
+  - `TestPartialQuoteDeletionStillBlocksProjectDelete`: 1 of 2 quotes deleted, project delete still blocked
+  - `TestRestoreMaintenanceBlockedByDeletedAppliance`: non-nil nullable FK blocked, restore appliance first then maintenance succeeds
+  - `TestRestoreMaintenanceAllowedWithoutAppliance`: nil ApplianceID restores freely
+  - `TestThreeLevelDeleteRestoreChain`: full Appliance→Maintenance→ServiceLog lifecycle with wrong-order restores blocked at every level
+- Updated hard rule: nullable FKs are guarded when value is set, skipped when nil
+- [WEBSITE-REBUILD-ANIM] Fixed house rebuild animation snap:
+  - Root cause: `cubic-bezier(0.2, 0.8, 0.3, 1)` reached target by 30% of duration (blocks appeared frozen), then hard DOM swap from rubble elements to house element caused visible pop from sub-pixel positioning differences
+  - Fix 1: switched to Material decelerate easing `cubic-bezier(0.0, 0.0, 0.2, 1.0)` -- visible motion throughout the full duration
+  - Fix 2: replaced hard DOM swap with cross-fade -- at 85% of flight, rubble fades out while real house fades in simultaneously over 250ms
+  - Smoke suppressed during cross-fade, re-enabled after cleanup
+
 ## 2026-02-10 Session 30
 
 **User request**: Add `ctrl+shift+h/l` to move whole years in the calendar date picker.
@@ -1014,6 +1047,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 - [DASH-RESIZE] dashboard dynamically resizes for terminal height (2b322cd)
 - [DASH-NO-ACTIVITY] removed recent activity from dashboard summary (a818e44)
 - [SAFE-DELETE] FK guards on soft-delete: projects with quotes and maintenance with service logs are refused with actionable error messages
+- [WEBSITE-REBUILD-ANIM] fixed house rebuild animation snap: smooth deceleration easing + cross-fade replaces hard DOM swap
 
 # Remaining work
 
@@ -1077,6 +1111,3 @@ in case things crash or otherwise go haywire, be diligent about this.
   but i think it will still be useful as a standalone feature
 - [VENDOR-DRILLDOWN] vendors should have a drilldown link to quotes, that
   would effectively show the quote history for a vendor
-- [WEBSITE-REBUILD-ANIM] house brick animation on the main website: the
-  reanimation of the fallen bricks kind of snaps back into place at the last
-  step

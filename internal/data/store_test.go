@@ -661,6 +661,98 @@ func TestDeleteProjectBlockedByQuotes(t *testing.T) {
 	}
 }
 
+func TestRestoreQuoteBlockedByDeletedProject(t *testing.T) {
+	store := newTestStore(t)
+	types, _ := store.ProjectTypes()
+	project := Project{
+		Title: "Doomed Project", ProjectTypeID: types[0].ID,
+		Status: ProjectStatusPlanned,
+	}
+	if err := store.CreateProject(project); err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	projects, _ := store.ListProjects(false)
+	projID := projects[0].ID
+
+	quote := Quote{ProjectID: projID, TotalCents: 500}
+	if err := store.CreateQuote(quote, Vendor{Name: "V2"}); err != nil {
+		t.Fatalf("CreateQuote: %v", err)
+	}
+	quotes, _ := store.ListQuotes(false)
+	quoteID := quotes[0].ID
+
+	// Delete quote, then project.
+	if err := store.DeleteQuote(quoteID); err != nil {
+		t.Fatalf("DeleteQuote: %v", err)
+	}
+	if err := store.DeleteProject(projID); err != nil {
+		t.Fatalf("DeleteProject: %v", err)
+	}
+
+	// Restoring the quote should be refused while project is deleted.
+	err := store.RestoreQuote(quoteID)
+	if err == nil {
+		t.Fatal("expected error restoring quote with deleted project")
+	}
+	if !strings.Contains(err.Error(), "project is deleted") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Restore the project, then quote restore should succeed.
+	if err := store.RestoreProject(projID); err != nil {
+		t.Fatalf("RestoreProject: %v", err)
+	}
+	if err := store.RestoreQuote(quoteID); err != nil {
+		t.Fatalf("RestoreQuote after project restored: %v", err)
+	}
+}
+
+func TestRestoreServiceLogBlockedByDeletedMaintenance(t *testing.T) {
+	store := newTestStore(t)
+	cats, _ := store.MaintenanceCategories()
+	item := MaintenanceItem{
+		Name: "Doomed Maint", CategoryID: cats[0].ID, IntervalMonths: 6,
+	}
+	if err := store.CreateMaintenance(item); err != nil {
+		t.Fatalf("CreateMaintenance: %v", err)
+	}
+	items, _ := store.ListMaintenance(false)
+	maintID := items[0].ID
+
+	now := time.Now()
+	entry := ServiceLogEntry{MaintenanceItemID: maintID, ServicedAt: now}
+	if err := store.CreateServiceLog(entry, Vendor{Name: "SL2"}); err != nil {
+		t.Fatalf("CreateServiceLog: %v", err)
+	}
+	logs, _ := store.ListServiceLog(maintID, false)
+	logID := logs[0].ID
+
+	// Delete service log, then maintenance.
+	if err := store.DeleteServiceLog(logID); err != nil {
+		t.Fatalf("DeleteServiceLog: %v", err)
+	}
+	if err := store.DeleteMaintenance(maintID); err != nil {
+		t.Fatalf("DeleteMaintenance: %v", err)
+	}
+
+	// Restoring the service log should be refused.
+	err := store.RestoreServiceLog(logID)
+	if err == nil {
+		t.Fatal("expected error restoring service log with deleted maintenance")
+	}
+	if !strings.Contains(err.Error(), "maintenance item is deleted") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Restore maintenance, then service log restore should succeed.
+	if err := store.RestoreMaintenance(maintID); err != nil {
+		t.Fatalf("RestoreMaintenance: %v", err)
+	}
+	if err := store.RestoreServiceLog(logID); err != nil {
+		t.Fatalf("RestoreServiceLog after maintenance restored: %v", err)
+	}
+}
+
 func TestDeleteMaintenanceBlockedByServiceLogs(t *testing.T) {
 	store := newTestStore(t)
 	cats, _ := store.MaintenanceCategories()
@@ -696,6 +788,216 @@ func TestDeleteMaintenanceBlockedByServiceLogs(t *testing.T) {
 	}
 	if err := store.DeleteMaintenance(maintID); err != nil {
 		t.Fatalf("DeleteMaintenance after logs removed: %v", err)
+	}
+}
+
+func TestPartialQuoteDeletionStillBlocksProjectDelete(t *testing.T) {
+	store := newTestStore(t)
+	types, _ := store.ProjectTypes()
+	project := Project{
+		Title: "Multi-Quote", ProjectTypeID: types[0].ID,
+		Status: ProjectStatusPlanned,
+	}
+	if err := store.CreateProject(project); err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	projects, _ := store.ListProjects(false)
+	projID := projects[0].ID
+
+	// Attach two quotes.
+	for _, name := range []string{"Vendor A", "Vendor B"} {
+		q := Quote{ProjectID: projID, TotalCents: 1000}
+		if err := store.CreateQuote(q, Vendor{Name: name}); err != nil {
+			t.Fatalf("CreateQuote: %v", err)
+		}
+	}
+	quotes, _ := store.ListQuotes(false)
+	if len(quotes) != 2 {
+		t.Fatalf("expected 2 quotes, got %d", len(quotes))
+	}
+
+	// Delete one quote; project delete should still be blocked.
+	if err := store.DeleteQuote(quotes[0].ID); err != nil {
+		t.Fatalf("DeleteQuote: %v", err)
+	}
+	err := store.DeleteProject(projID)
+	if err == nil {
+		t.Fatal("expected error: one active quote remains")
+	}
+	if !strings.Contains(err.Error(), "1 active quote") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Delete the second quote; project delete should now succeed.
+	if err := store.DeleteQuote(quotes[1].ID); err != nil {
+		t.Fatalf("DeleteQuote: %v", err)
+	}
+	if err := store.DeleteProject(projID); err != nil {
+		t.Fatalf("DeleteProject: %v", err)
+	}
+}
+
+func TestRestoreMaintenanceBlockedByDeletedAppliance(t *testing.T) {
+	store := newTestStore(t)
+	appliance := Appliance{Name: "Doomed Fridge"}
+	if err := store.CreateAppliance(appliance); err != nil {
+		t.Fatalf("CreateAppliance: %v", err)
+	}
+	appliances, _ := store.ListAppliances(false)
+	appID := appliances[0].ID
+
+	cats, _ := store.MaintenanceCategories()
+	item := MaintenanceItem{
+		Name: "Coil Cleaning", CategoryID: cats[0].ID, IntervalMonths: 6,
+		ApplianceID: &appID,
+	}
+	if err := store.CreateMaintenance(item); err != nil {
+		t.Fatalf("CreateMaintenance: %v", err)
+	}
+	items, _ := store.ListMaintenance(false)
+	maintID := items[0].ID
+
+	// Delete maintenance then appliance.
+	if err := store.DeleteMaintenance(maintID); err != nil {
+		t.Fatalf("DeleteMaintenance: %v", err)
+	}
+	if err := store.DeleteAppliance(appID); err != nil {
+		t.Fatalf("DeleteAppliance: %v", err)
+	}
+
+	// Restore maintenance should be blocked -- the link existed, so the
+	// appliance must be alive.
+	err := store.RestoreMaintenance(maintID)
+	if err == nil {
+		t.Fatal("expected error restoring maintenance with deleted appliance")
+	}
+	if !strings.Contains(err.Error(), "appliance is deleted") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Restore appliance, then maintenance restore should succeed.
+	if err := store.RestoreAppliance(appID); err != nil {
+		t.Fatalf("RestoreAppliance: %v", err)
+	}
+	if err := store.RestoreMaintenance(maintID); err != nil {
+		t.Fatalf("RestoreMaintenance after appliance restored: %v", err)
+	}
+}
+
+func TestRestoreMaintenanceAllowedWithoutAppliance(t *testing.T) {
+	// Maintenance items with no appliance link (nil ApplianceID) should
+	// restore freely -- the nullable FK means "no link", not "broken link".
+	store := newTestStore(t)
+	cats, _ := store.MaintenanceCategories()
+	item := MaintenanceItem{
+		Name: "Gutter Cleaning", CategoryID: cats[0].ID, IntervalMonths: 6,
+	}
+	if err := store.CreateMaintenance(item); err != nil {
+		t.Fatalf("CreateMaintenance: %v", err)
+	}
+	items, _ := store.ListMaintenance(false)
+	maintID := items[0].ID
+
+	if err := store.DeleteMaintenance(maintID); err != nil {
+		t.Fatalf("DeleteMaintenance: %v", err)
+	}
+	if err := store.RestoreMaintenance(maintID); err != nil {
+		t.Fatalf("RestoreMaintenance should succeed with nil ApplianceID: %v", err)
+	}
+}
+
+func TestThreeLevelDeleteRestoreChain(t *testing.T) {
+	// Full Appliance → Maintenance → ServiceLog lifecycle exercising guards
+	// at every level.
+	store := newTestStore(t)
+
+	// Set up the three-level chain.
+	appliance := Appliance{Name: "HVAC Unit"}
+	if err := store.CreateAppliance(appliance); err != nil {
+		t.Fatalf("CreateAppliance: %v", err)
+	}
+	appliances, _ := store.ListAppliances(false)
+	appID := appliances[0].ID
+
+	cats, _ := store.MaintenanceCategories()
+	item := MaintenanceItem{
+		Name: "Filter Change", CategoryID: cats[0].ID, IntervalMonths: 3,
+		ApplianceID: &appID,
+	}
+	if err := store.CreateMaintenance(item); err != nil {
+		t.Fatalf("CreateMaintenance: %v", err)
+	}
+	items, _ := store.ListMaintenance(false)
+	maintID := items[0].ID
+
+	entry := ServiceLogEntry{
+		MaintenanceItemID: maintID,
+		ServicedAt:        time.Now(),
+	}
+	if err := store.CreateServiceLog(entry, Vendor{}); err != nil {
+		t.Fatalf("CreateServiceLog: %v", err)
+	}
+	logs, _ := store.ListServiceLog(maintID, false)
+	logID := logs[0].ID
+
+	// --- Delete bottom-up ---
+	// Can't delete maintenance while service log is active.
+	err := store.DeleteMaintenance(maintID)
+	if err == nil {
+		t.Fatal("expected error: active service log blocks maintenance delete")
+	}
+
+	if err := store.DeleteServiceLog(logID); err != nil {
+		t.Fatalf("DeleteServiceLog: %v", err)
+	}
+	if err := store.DeleteMaintenance(maintID); err != nil {
+		t.Fatalf("DeleteMaintenance: %v", err)
+	}
+	if err := store.DeleteAppliance(appID); err != nil {
+		t.Fatalf("DeleteAppliance: %v", err)
+	}
+
+	// --- Attempt wrong-order restores ---
+	// Can't restore service log while maintenance is deleted.
+	err = store.RestoreServiceLog(logID)
+	if err == nil {
+		t.Fatal("expected error: maintenance is deleted")
+	}
+	if !strings.Contains(err.Error(), "maintenance item is deleted") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Can't restore maintenance while its linked appliance is deleted.
+	err = store.RestoreMaintenance(maintID)
+	if err == nil {
+		t.Fatal("expected error: appliance is deleted")
+	}
+	if !strings.Contains(err.Error(), "appliance is deleted") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// --- Restore correct order: appliance → maintenance → service log ---
+	if err := store.RestoreAppliance(appID); err != nil {
+		t.Fatalf("RestoreAppliance: %v", err)
+	}
+	if err := store.RestoreMaintenance(maintID); err != nil {
+		t.Fatalf("RestoreMaintenance: %v", err)
+	}
+	if err := store.RestoreServiceLog(logID); err != nil {
+		t.Fatalf("RestoreServiceLog: %v", err)
+	}
+
+	// Verify everything is alive and linked.
+	fetched, err := store.GetMaintenance(maintID)
+	if err != nil {
+		t.Fatalf("GetMaintenance: %v", err)
+	}
+	if fetched.ApplianceID == nil || *fetched.ApplianceID != appID {
+		t.Fatal("maintenance should still reference restored appliance")
+	}
+	restoredLogs, err := store.ListServiceLog(maintID, false)
+	if err != nil || len(restoredLogs) != 1 {
+		t.Fatalf("expected 1 service log, got %d err %v", len(restoredLogs), err)
 	}
 }
 

@@ -825,6 +825,13 @@ func (s *Store) DeleteServiceLog(id uint) error {
 }
 
 func (s *Store) RestoreServiceLog(id uint) error {
+	var entry ServiceLogEntry
+	if err := s.db.Unscoped().First(&entry, id).Error; err != nil {
+		return err
+	}
+	if err := s.requireParentAlive(&MaintenanceItem{}, entry.MaintenanceItemID); err != nil {
+		return fmt.Errorf("maintenance item is deleted -- restore it first")
+	}
 	return s.restoreEntity(&ServiceLogEntry{}, DeletionEntityServiceLog, id)
 }
 
@@ -875,15 +882,39 @@ func (s *Store) RestoreProject(id uint) error {
 }
 
 func (s *Store) RestoreQuote(id uint) error {
+	// Look up the quote (including soft-deleted) to find its project.
+	var quote Quote
+	if err := s.db.Unscoped().First(&quote, id).Error; err != nil {
+		return err
+	}
+	if err := s.requireParentAlive(&Project{}, quote.ProjectID); err != nil {
+		return fmt.Errorf("project is deleted -- restore it first")
+	}
 	return s.restoreEntity(&Quote{}, DeletionEntityQuote, id)
 }
 
 func (s *Store) RestoreMaintenance(id uint) error {
+	var item MaintenanceItem
+	if err := s.db.Unscoped().First(&item, id).Error; err != nil {
+		return err
+	}
+	if item.ApplianceID != nil {
+		if err := s.requireParentAlive(&Appliance{}, *item.ApplianceID); err != nil {
+			return fmt.Errorf("appliance is deleted -- restore it first or clear the link")
+		}
+	}
 	return s.restoreEntity(&MaintenanceItem{}, DeletionEntityMaintenance, id)
 }
 
 func (s *Store) RestoreAppliance(id uint) error {
 	return s.restoreEntity(&Appliance{}, DeletionEntityAppliance, id)
+}
+
+// requireParentAlive returns an error if the given parent record is
+// soft-deleted (or doesn't exist). Uses the default GORM scope which
+// excludes soft-deleted rows.
+func (s *Store) requireParentAlive(model any, id uint) error {
+	return s.db.First(model, id).Error
 }
 
 // countDependents counts non-deleted rows in model where fkColumn equals id.
