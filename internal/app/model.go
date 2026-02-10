@@ -30,6 +30,7 @@ type Model struct {
 	width                 int
 	height                int
 	showHelp              bool
+	helpScroll            int
 	showHouse             bool
 	showDashboard         bool
 	showNotePreview       bool
@@ -104,12 +105,31 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Help overlay: esc or ? dismisses it.
+	// Help overlay: scrollable, esc or ? dismisses it.
 	if m.showHelp {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
 			switch keyMsg.String() {
 			case keyEsc, "?":
 				m.showHelp = false
+				m.helpScroll = 0
+			case "j", "down":
+				m.helpScroll++
+			case "k", "up":
+				if m.helpScroll > 0 {
+					m.helpScroll--
+				}
+			case "g":
+				m.helpScroll = 0
+			case "G":
+				// Jump to bottom; clamped in view rendering.
+				m.helpScroll = 9999
+			case "d":
+				m.helpScroll += 10
+			case "u":
+				m.helpScroll -= 10
+				if m.helpScroll < 0 {
+					m.helpScroll = 0
+				}
 			}
 		}
 		return m, nil

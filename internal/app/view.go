@@ -480,21 +480,19 @@ func (m *Model) helpView() string {
 		{
 			title: "Nav Mode",
 			bindings: []binding{
-				{"j/k", "Move through rows"},
-				{"h/l", "Move through columns"},
-				{"^/$", "Jump to first/last column"},
-				{"g/G", "Jump to first/last row"},
+				{"j/k", "Rows"},
+				{"h/l", "Columns"},
+				{"^/$", "First/last column"},
+				{"g/G", "First/last row"},
 				{"d/u", "Half page down/up"},
-				{"tab/shift+tab", "Switch tabs"},
-				{"H", "Toggle house profile"},
-				{"s", "Sort by column (cycle asc/desc/off)"},
-				{"S", "Clear all sorts"},
-				{"enter", "Open detail / follow link / preview notes"},
-				{"/", "Jump to column (fuzzy find)"},
-				{"c", "Hide current column"},
-				{"C", "Show all columns"},
-				{"D", "Toggle summary"},
-				{"i", "Enter Edit mode"},
+				{"tab", "Switch tabs"},
+				{"s/S", "Sort / clear sorts"},
+				{"/", "Find column"},
+				{"c/C", "Hide / show columns"},
+				{"enter", "Drilldown / follow link / preview"},
+				{"H", "House profile"},
+				{"D", "Summary"},
+				{"i", "Edit mode"},
 				{"?", "Help"},
 				{"q", "Quit"},
 			},
@@ -502,32 +500,31 @@ func (m *Model) helpView() string {
 		{
 			title: "Edit Mode",
 			bindings: []binding{
-				{"a", "Add new entry"},
-				{"e", "Edit cell (or full row on ID column)"},
-				{"d", "Toggle delete/restore"},
-				{"u", "Undo last edit"},
-				{"r", "Redo last undo"},
-				{"x", "Toggle showing deleted items"},
-				{"p", "Edit house profile"},
-				{"esc", "Back to Normal mode"},
+				{"a", "Add entry"},
+				{"e", "Edit cell or row"},
+				{"d", "Delete / restore"},
+				{"u/r", "Undo / redo"},
+				{"x", "Show deleted"},
+				{"p", "House profile"},
+				{"esc", "Nav mode"},
 			},
 		},
 		{
 			title: "Forms",
 			bindings: []binding{
-				{"1-9", "Jump to Nth option (selects only)"},
-				{"ctrl+s", "Save immediately"},
-				{"esc", "Cancel and discard"},
+				{"1-9", "Jump to Nth option"},
+				{"ctrl+s", "Save"},
+				{"esc", "Cancel"},
 			},
 		},
 		{
 			title: "Date Picker",
 			bindings: []binding{
-				{"h/l", "Previous/next day"},
-				{"j/k", "Next/previous week"},
-				{"H/L", "Previous/next month"},
-				{"[/]", "Previous/next year"},
-				{"enter", "Pick date"},
+				{"h/l", "Day"},
+				{"j/k", "Week"},
+				{"H/L", "Month"},
+				{"[/]", "Year"},
+				{"enter", "Pick"},
 				{"esc", "Cancel"},
 			},
 		},
@@ -548,18 +545,99 @@ func (m *Model) helpView() string {
 			b.WriteString("\n")
 		}
 	}
-	b.WriteString("\n")
-	b.WriteString(m.styles.HeaderHint.Render("Press "))
-	b.WriteString(m.renderKeys("esc"))
-	b.WriteString(m.styles.HeaderHint.Render(" or "))
-	b.WriteString(m.renderKeys("?"))
-	b.WriteString(m.styles.HeaderHint.Render(" to close"))
+	// Viewport: border (2) + padding (2) + close hint (2) = 6 lines of chrome.
+	maxH := m.effectiveHeight() - 2
+	if maxH < 10 {
+		maxH = 10
+	}
+	chrome := 6
+	viewH := maxH - chrome
+	if viewH < 3 {
+		viewH = 3
+	}
+
+	content := b.String()
+	lines := strings.Split(content, "\n")
+
+	// Close hint is always visible at the bottom.
+	closeHintStr := joinWithSeparator(
+		m.helpSeparator(),
+		m.helpItem("j/k", "scroll"),
+		m.helpItem("esc", "close"),
+	)
+
+	if len(lines) <= viewH {
+		// Everything fits -- no scrolling needed.
+		m.helpScroll = 0
+		box := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(accent).
+			Padding(1, 2).
+			Render(content + "\n" + closeHintStr)
+		return box
+	}
+
+	// Clamp scroll offset.
+	maxScroll := len(lines) - viewH
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if m.helpScroll > maxScroll {
+		m.helpScroll = maxScroll
+	}
+	if m.helpScroll < 0 {
+		m.helpScroll = 0
+	}
+
+	visible := lines[m.helpScroll : m.helpScroll+viewH]
+
+	// Scrollbar: thin track with accent thumb proportional to viewport.
+	totalLines := len(lines)
+	thumbSize := viewH * viewH / totalLines
+	if thumbSize < 1 {
+		thumbSize = 1
+	}
+	thumbPos := 0
+	if maxScroll > 0 {
+		thumbPos = m.helpScroll * (viewH - thumbSize) / maxScroll
+	}
+
+	trackStyle := lipgloss.NewStyle().Foreground(border)
+	thumbStyle := lipgloss.NewStyle().Foreground(accent)
+
+	// Find the widest visible line so the scrollbar column is flush right.
+	maxW := 0
+	for _, line := range visible {
+		if w := lipgloss.Width(line); w > maxW {
+			maxW = w
+		}
+	}
+
+	var out strings.Builder
+	for i, line := range visible {
+		w := lipgloss.Width(line)
+		if pad := maxW - w; pad > 0 {
+			line += strings.Repeat(" ", pad)
+		}
+		out.WriteString(line)
+		out.WriteString(" ")
+		if i >= thumbPos && i < thumbPos+thumbSize {
+			out.WriteString(thumbStyle.Render("┃"))
+		} else {
+			out.WriteString(trackStyle.Render("│"))
+		}
+		if i < len(visible)-1 {
+			out.WriteString("\n")
+		}
+	}
+	out.WriteString("\n")
+	out.WriteString(closeHintStr)
 
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(accent).
 		Padding(1, 2).
-		Render(b.String())
+		Render(out.String())
 	return box
 }
 
