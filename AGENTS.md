@@ -268,6 +268,8 @@ These have been repeatedly requested. Violating them wastes the user's time.
 - **Use `writeShellApplication`** for all Nix shell scripts, not
   `writeShellScriptBin`. `writeShellApplication` runs `shellcheck` at build
   time and sets `set -euo pipefail` automatically.
+- **Use `pkgs.python3.pkgs`** not `pkgs.python3Packages` for Python
+  packages in Nix expressions.
 - **Run `go mod tidy` before committing** to keep `go.mod`/`go.sum` clean.
 - **Record every user request** in the "Remaining work" section of this file
   (with a unique ID) if it is not already there. Mark it done when complete.

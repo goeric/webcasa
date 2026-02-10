@@ -161,7 +161,7 @@
             name = "micasa-website";
             runtimeInputs = [
               self.packages.${system}.build-docs
-              pkgs.python3Packages.livereload
+              pkgs.python3.pkgs.livereload
             ];
             text = ''
               micasa-build-docs >/dev/null 2>&1
