@@ -177,6 +177,7 @@ func (m *Model) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.formInitCmd()
 		}
 		m.exitForm()
+	default:
 	}
 	return m, cmd
 }
@@ -347,6 +348,7 @@ func (m *Model) handleNormalEnter() error {
 				return fmt.Errorf("load appliance: %w", err)
 			}
 			return m.openApplianceMaintenanceDetail(meta.ID, appliance.Name)
+		default:
 		}
 		return nil
 	}

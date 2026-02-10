@@ -85,7 +85,7 @@ func renderHiddenBadges(
 	}
 	for i, name := range rightParts {
 		if i == len(rightParts)-1 {
-			name = name + " \u25b6" // trailing ▶
+			name += " \u25b6" // trailing ▶
 		}
 		allParts = append(allParts, styles.HiddenRight.Render(name))
 	}

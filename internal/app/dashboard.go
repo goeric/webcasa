@@ -386,7 +386,9 @@ func (m *Model) dashboardView() string {
 
 func (m *Model) dashMaintRows() []dashRow {
 	d := m.dashboard
-	all := append(d.Overdue, d.Upcoming...)
+	all := make([]maintenanceUrgency, 0, len(d.Overdue)+len(d.Upcoming))
+	all = append(all, d.Overdue...)
+	all = append(all, d.Upcoming...)
 	if len(all) == 0 {
 		return nil
 	}

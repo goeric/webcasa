@@ -331,6 +331,7 @@ func (m *Model) enterHint() string {
 			return "service log"
 		case tabAppliances:
 			return "maintenance"
+		default:
 		}
 	}
 	if spec.Link != nil {
