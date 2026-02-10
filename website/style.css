@@ -168,7 +168,7 @@ section + section {
   font-size: 0.9rem;
   line-height: 1;
   color: var(--terracotta);
-  pointer-events: none;
+  cursor: pointer;
   will-change: transform, opacity;
 }
 

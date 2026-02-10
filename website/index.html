@@ -237,17 +237,17 @@ micasa --print-path   # show where the database lives</code></pre>
   var emberInterval = 0;
   var originalHTML = house.innerHTML;
 
-  scene.addEventListener('click', function () {
+  scene.addEventListener('click', function (evt) {
     if (animating) return;
 
     if (destroyed) {
       rebuildHouse();
     } else {
-      destroyHouse();
+      destroyHouse(evt);
     }
   });
 
-  function destroyHouse() {
+  function destroyHouse(evt) {
     animating = true;
 
     // Kill smoke
@@ -256,28 +256,58 @@ micasa --print-path   # show where the database lives</code></pre>
 
     var houseRect = house.getBoundingClientRect();
     var sceneRect = scene.getBoundingClientRect();
-    var text = house.innerText;
-    var lines = text.split('\n');
-    var blocks = [];
 
-    var charW = houseRect.width / Math.max.apply(null, lines.map(function (l) { return l.length; }));
-    var charH = houseRect.height / lines.length;
-
+    // Measure exact browser-rendered position of each block character.
+    // Wrap each char in an inline span, measure, restore -- synchronous,
+    // so no flicker. Inline spans don't affect text layout.
     var blockChars = /[\u2580-\u259F]/;
-    for (var row = 0; row < lines.length; row++) {
-      for (var col = 0; col < lines[row].length; col++) {
-        var ch = lines[row][col];
-        if (blockChars.test(ch)) {
-          blocks.push({
-            ch: ch,
-            x: (houseRect.left - sceneRect.left) + col * charW,
-            y: (houseRect.top - sceneRect.top) + row * charH,
-            row: row
-          });
+    var spans = [];
+    var row = 0;
+
+    function wrapChars(node) {
+      if (node.nodeType === 3) {
+        var text = node.textContent;
+        if (!text) return;
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < text.length; i++) {
+          var ch = text[i];
+          if (blockChars.test(ch)) {
+            var s = document.createElement('span');
+            s.textContent = ch;
+            s._row = row;
+            frag.appendChild(s);
+            spans.push(s);
+          } else {
+            frag.appendChild(document.createTextNode(ch));
+          }
         }
+        node.parentNode.replaceChild(frag, node);
+      } else if (node.nodeType === 1) {
+        if (node.tagName === 'BR') { row++; return; }
+        // Skip hidden elements -- smoke-bed (display:none) may contain
+        // smoke particles with block chars that measure at viewport origin
+        if (node.style && node.style.display === 'none') return;
+        var kids = [].slice.call(node.childNodes);
+        for (var j = 0; j < kids.length; j++) wrapChars(kids[j]);
       }
     }
 
+    var kids = [].slice.call(house.childNodes);
+    for (var ci = 0; ci < kids.length; ci++) wrapChars(kids[ci]);
+
+    var blocks = [];
+    for (var si = 0; si < spans.length; si++) {
+      var rect = spans[si].getBoundingClientRect();
+      blocks.push({
+        ch: spans[si].textContent,
+        x: rect.left - sceneRect.left,
+        y: rect.top - sceneRect.top,
+        row: spans[si]._row
+      });
+    }
+
+    // Restore original HTML and hide
+    house.innerHTML = originalHTML;
     house.style.visibility = 'hidden';
 
     var els = [];
@@ -289,49 +319,113 @@ micasa --print-path   # show where the database lives</code></pre>
       el.style.left = b.x + 'px';
       el.style.top = b.y + 'px';
       scene.appendChild(el);
-      els.push({ el: el, b: b, vx: 0, vy: 0, va: 0, fallen: false });
+      els.push({
+        el: el, b: b,
+        x: 0, y: 0, angle: 0,      // offsets from original position
+        vx: 0, vy: 0, va: 0,
+        active: false, settled: false, bounces: 0
+      });
     }
 
-    // Ground = top of the last row, in scene-relative coordinates
-    var houseTopInScene = houseRect.top - sceneRect.top;
-    var groundY = houseTopInScene + (lines.length - 1) * charH;
-    var gravity = 800;
+    // Ground = bottom row of the house (where blocks pile up)
+    var groundY = 0;
+    for (var gi = 0; gi < blocks.length; gi++) {
+      if (blocks[gi].y > groundY) groundY = blocks[gi].y;
+    }
+    var gravity = 1400;
+    var restitution = 0.3;
+    var bounceFriction = 0.5;
     var started = performance.now();
-    var rowDelay = 120;
+    var lastTime = started;
+
+    // Click position = explosion epicenter (relative to scene)
+    var clickX = evt.clientX - sceneRect.left;
+    var clickY = evt.clientY - sceneRect.top;
+
+    // Measure blast radius (diagonal of house) for distance scaling
+    var blastRadius = Math.sqrt(houseRect.width * houseRect.width + houseRect.height * houseRect.height);
+
+    // Sort blocks by distance from click -- nearest break first
+    var blockDists = [];
+    for (var di = 0; di < els.length; di++) {
+      var bx = els[di].b.x, by = els[di].b.y;
+      var dx = bx - clickX, dy = by - clickY;
+      blockDists.push(Math.sqrt(dx * dx + dy * dy));
+    }
+    var maxDist = 0;
+    for (var di = 0; di < blockDists.length; di++) {
+      if (blockDists[di] > maxDist) maxDist = blockDists[di];
+    }
+
+    // Per-block stagger: nearest blocks break first
+    var minDelay = 0;
+    var maxDelay = 0.25; // seconds spread
 
     function tick(now) {
-      var t = (now - started) / 1000;
+      var dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      var elapsed = (now - started) / 1000;
       var allDone = true;
 
       for (var j = 0; j < els.length; j++) {
         var item = els[j];
-        if (item.fallen) continue;
+        if (item.settled) continue;
 
-        var delay = item.b.row * rowDelay / 1000;
-        var localT = t - delay;
-        if (localT < 0) { allDone = false; continue; }
+        // Delay based on distance from click -- closer blocks break first
+        var distFrac = maxDist > 0 ? blockDists[j] / maxDist : 0;
+        var delay = minDelay + distFrac * maxDelay;
+        if (elapsed < delay) { allDone = false; continue; }
 
-        if (localT < 0.016 && item.vx === 0) {
-          item.vx = (Math.random() - 0.5) * 120;
-          item.va = (Math.random() - 0.5) * 400;
+        // Initialize velocity on first active frame
+        if (!item.active) {
+          var bx = item.b.x, by = item.b.y;
+          var dx = bx - clickX, dy = by - clickY;
+          var dist = blockDists[j];
+
+          // Closer blocks get blasted harder (inverse distance)
+          var proximity = 1 - Math.min(dist / blastRadius, 1);
+          var force = 0.3 + proximity * 0.7; // 0.3..1.0
+
+          // Direction away from click, normalized
+          var len = Math.max(dist, 1);
+          var nx = dx / len, ny = dy / len;
+
+          // Blast velocity: radial + upward bias + randomness
+          var speed = 350 * force;
+          item.vx = nx * speed + (Math.random() - 0.5) * 100;
+          item.vy = ny * speed - Math.random() * 300 * force; // upward bias
+          item.va = (Math.random() - 0.5) * 900 * force;
+          item.active = true;
         }
 
-        var dx = item.vx * localT;
-        var dy = 0.5 * gravity * localT * localT;
-        var angle = item.va * localT;
+        // Velocity-based physics (supports bouncing)
+        item.vy += gravity * dt;
+        item.x += item.vx * dt;
+        item.y += item.vy * dt;
+        item.angle += item.va * dt;
 
-        var newY = item.b.y + dy;
-        if (newY > groundY) {
-          newY = groundY;
-          item.fallen = true;
-        } else {
-          allDone = false;
+        // Ground collision
+        if (item.b.y + item.y >= groundY) {
+          item.y = groundY - item.b.y;
+          if (Math.abs(item.vy) < 50 || item.bounces >= 3) {
+            item.settled = true;
+          } else {
+            item.vy = -Math.abs(item.vy) * restitution;
+            item.vx *= bounceFriction;
+            item.va *= 0.3;
+            item.bounces++;
+          }
         }
 
-        var opacity = item.fallen ? Math.max(0, 1 - (localT - 0.5)) : 1;
+        if (!item.settled) allDone = false;
+
+        // Fade slightly as blocks fly outward
+        var age = elapsed - delay;
+        var alpha = Math.max(0.4, 1 - age * 0.3);
+
         item.el.style.transform =
-          'translate(' + dx.toFixed(1) + 'px, ' + (newY - item.b.y).toFixed(1) + 'px) rotate(' + angle.toFixed(0) + 'deg)';
-        item.el.style.opacity = opacity;
+          'translate(' + item.x.toFixed(1) + 'px, ' + item.y.toFixed(1) + 'px) rotate(' + item.angle.toFixed(0) + 'deg)';
+        item.el.style.opacity = alpha.toFixed(2);
       }
 
       if (!allDone) {
@@ -348,52 +442,54 @@ micasa --print-path   # show where the database lives</code></pre>
           rubbleEls = els;
           if (caption) caption.classList.add('visible');
 
-          // Ember flicker: randomly pulse a few blocks brighter
+          // Ember flicker: aggressive -- blocks pulse hot like a fresh collapse
           emberInterval = setInterval(function () {
             for (var e = 0; e < rubbleEls.length; e++) {
-              if (Math.random() < 0.08) {
+              if (Math.random() < 0.15) {
                 var el = rubbleEls[e].el;
-                el.style.color = Math.random() < 0.5 ? '#c05e3c' : '#d4783c';
-                el.style.opacity = '0.7';
+                var r = Math.random();
+                el.style.color = r < 0.3 ? '#e07040' : r < 0.6 ? '#d4783c' : '#c05e3c';
+                el.style.opacity = (0.5 + Math.random() * 0.4).toFixed(2);
                 setTimeout((function (ref) {
                   return function () {
                     ref.style.color = '#a04e30';
-                    ref.style.opacity = '0.4';
+                    ref.style.opacity = '0.35';
                   };
-                })(el), 300 + Math.random() * 400);
+                })(el), 200 + Math.random() * 500);
               }
             }
-          }, 150);
+          }, 100);
 
-          // Rubble smoke: wispy particles rising from the pile
+          // Rubble smoke: thick plumes rising from the wreckage
           var pileCenterX = houseRect.width / 2;
           var pileY = groundY;
+          var smokeGlyphs = ['\u2591', '\u2591', '\u2592', '\u2592', '\u2593'];
           function spawnRubbleSmoke() {
             if (!destroyed && rubbleSmokeParticles.length === 0) return;
             var el = document.createElement('span');
             el.className = 'smoke-particle';
-            el.textContent = Math.random() < 0.7 ? '\u2591' : '\u2592';
+            el.textContent = smokeGlyphs[Math.floor(Math.random() * smokeGlyphs.length)];
             el.style.position = 'absolute';
-            el.style.left = (pileCenterX + (Math.random() - 0.5) * houseRect.width * 0.6) + 'px';
+            el.style.left = (pileCenterX + (Math.random() - 0.5) * houseRect.width * 1.2) + 'px';
             el.style.top = pileY + 'px';
             el.style.color = '#9e958a';
-            el.style.fontSize = '0.7em';
+            el.style.fontSize = (0.6 + Math.random() * 0.4) + 'em';
             el.style.opacity = '0';
             scene.appendChild(el);
 
             var p = {
               el: el, age: 0,
-              lifetime: 1500 + Math.random() * 2000,
+              lifetime: 2000 + Math.random() * 3000,
               startX: parseFloat(el.style.left),
-              drift: (Math.random() - 0.5) * 30,
-              rise: 30 + Math.random() * 25
+              drift: (Math.random() - 0.5) * 50,
+              rise: 40 + Math.random() * 40
             };
             rubbleSmokeParticles.push(p);
           }
 
           var rubbleSmokeSpawnTimer = setInterval(function () {
-            if (rubbleSmokeParticles.length < 6) spawnRubbleSmoke();
-          }, 400);
+            if (rubbleSmokeParticles.length < 10) spawnRubbleSmoke();
+          }, 250);
 
           var lastT = 0;
           function tickRubbleSmoke(now) {
@@ -460,14 +556,16 @@ micasa --print-path   # show where the database lives</code></pre>
     }
 
     var rowDelay = 100; // ms per row
-    var flightDuration = 0.5; // seconds
+    var flightDuration = 0.6; // seconds
+    // Material decelerate: fast start, gradual slow-down, smooth arrival
+    var easing = 'cubic-bezier(0.0, 0.0, 0.2, 1.0)';
 
-    // Restore color/opacity and animate each block back to its original position
+    // Fly blocks back to original positions
     for (var k = 0; k < rubbleEls.length; k++) {
       var item = rubbleEls[k];
       var delay = (maxRow - item.b.row) * rowDelay; // bottom rows first
       item.el.style.transition =
-        'transform ' + flightDuration + 's cubic-bezier(0.2, 0.8, 0.3, 1) ' + delay + 'ms, ' +
+        'transform ' + flightDuration + 's ' + easing + ' ' + delay + 'ms, ' +
         'opacity 0.3s ease ' + delay + 'ms, ' +
         'color 0.3s ease ' + delay + 'ms';
       item.el.style.opacity = '1';
@@ -475,27 +573,44 @@ micasa --print-path   # show where the database lives</code></pre>
       item.el.style.transform = 'translate(0, 0) rotate(0deg)';
     }
 
-    // Total animation time: slowest row delay + flight
-    var totalMs = maxRow * rowDelay + flightDuration * 1000 + 100;
+    // After blocks have flown back, dissolve them to reveal the real house.
+    // Blocks are at exact browser-measured positions, so alignment is perfect.
+    var lastRowDelay = maxRow * rowDelay;
+    var flightEnd = lastRowDelay + flightDuration * 1000 + 50;
+    var dissolveDuration = 200;
 
     setTimeout(function () {
-      // Remove rubble, swap to real house
-      for (var k = 0; k < rubbleEls.length; k++) {
-        rubbleEls[k].el.remove();
-      }
-      rubbleEls = [];
-
+      // Place house behind the opaque blocks
       house.innerHTML = originalHTML;
       house.style.visibility = 'visible';
       house.style.opacity = '1';
+      house.style.transition = 'none';
+      var smokeBed = document.getElementById('smoke-bed');
+      if (smokeBed) smokeBed.style.display = 'none';
 
-      // Restart smoke
-      var newSmokeBed = document.getElementById('smoke-bed');
-      if (newSmokeBed) newSmokeBed.style.display = '';
+      // Force paint so house is rendered before dissolve
+      void house.offsetHeight;
 
-      destroyed = false;
-      animating = false;
-    }, totalMs);
+      // Quick dissolve -- fast enough to hide sub-pixel misalignment
+      for (var k = 0; k < rubbleEls.length; k++) {
+        rubbleEls[k].el.style.transition = 'opacity ' + dissolveDuration + 'ms ease';
+        rubbleEls[k].el.style.opacity = '0';
+      }
+
+      setTimeout(function () {
+        for (var k = 0; k < rubbleEls.length; k++) {
+          rubbleEls[k].el.remove();
+        }
+        rubbleEls = [];
+
+        // Restart smoke
+        var bed = document.getElementById('smoke-bed');
+        if (bed) bed.style.display = '';
+
+        destroyed = false;
+        animating = false;
+      }, dissolveDuration + 50);
+    }, flightEnd);
   }
 })();
 </script>
