@@ -202,7 +202,7 @@ micasa --print-path   # show where the database lives</code></pre>
 </script>
 
 <script>
-// Easter egg: click the house to crumble it
+// Easter egg: click the house to crumble it, click rubble to rebuild.
 (function () {
   var scene = document.getElementById('house-scene');
   var house = document.getElementById('hero-house');
@@ -210,170 +210,323 @@ micasa --print-path   # show where the database lives</code></pre>
   if (!scene || !house) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+  // ── Physics constants ──
+  var GRAVITY       = 1400;
+  var RESTITUTION   = 0.3;
+  var BOUNCE_DRAG   = 0.5;
+  var MAX_BOUNCES   = 3;
+  var BLAST_SPEED   = 350;
+  var STAGGER_SEC   = 0.25;  // max delay spread for directional collapse
+  var SETTLE_FADE   = 0.3;   // opacity decay per second while airborne
+
+  // ── Rebuild constants ──
+  var ROW_DELAY_MS      = 100;
+  var FLIGHT_SEC        = 0.6;
+  var DISSOLVE_MS       = 200;
+  var REBUILD_EASING    = 'cubic-bezier(0.0, 0.0, 0.2, 1.0)';
+
+  // ── Ember/rubble smoke constants ──
+  var EMBER_BASE     = '#a04e30';
+  var EMBER_COLORS   = ['#e07040', '#d4783c', '#c05e3c'];
+  var EMBER_CHANCE   = 0.15;
+  var SMOKE_GLYPHS   = ['\u2591', '\u2591', '\u2592', '\u2592', '\u2593'];
+  var MAX_RUBBLE_SMOKE = 10;
+
+  // ── State ──
   var animating = false;
   var destroyed = false;
   var rubbleEls = [];
-  var rubbleSmokeId = 0;
-  var rubbleSmokeParticles = [];
-  var emberInterval = 0;
   var originalHTML = house.innerHTML;
 
-  scene.addEventListener('click', function (evt) {
-    if (animating) return;
+  // Smolder effect handles (cleared on rebuild)
+  var emberTimer = 0;
+  var rubbleSmokeAnimId = 0;
+  var rubbleSmokeSpawnTimer = 0;
+  var rubbleSmokeParticles = [];
 
-    if (destroyed) {
-      rebuildHouse();
-    } else {
-      destroyHouse(evt);
-    }
-  });
+  // ── Utilities ──
 
-  function destroyHouse(evt) {
-    animating = true;
+  function rand(lo, hi) { return lo + Math.random() * (hi - lo); }
 
-    var smoke = document.getElementById('smoke-bed');
-    var houseRect = house.getBoundingClientRect();
-    var sceneRect = scene.getBoundingClientRect();
+  function dist(ax, ay, bx, by) {
+    var dx = ax - bx, dy = ay - by;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
 
-    // Shockwave scatter: grab existing smoke particles, clone them into
-    // the scene at their current visual positions, then hide the originals.
-    var clickX = evt.clientX - sceneRect.left;
-    var clickY = evt.clientY - sceneRect.top;
-    var scatteredSmoke = [];
-    if (smoke) {
-      var smokeEls = smoke.querySelectorAll('.smoke-particle');
-      for (var si = 0; si < smokeEls.length; si++) {
-        var sRect = smokeEls[si].getBoundingClientRect();
-        var sx = sRect.left - sceneRect.left;
-        var sy = sRect.top - sceneRect.top;
-        var sAlpha = parseFloat(smokeEls[si].style.opacity) || 0;
-        if (sAlpha < 0.05) continue;
-
-        var clone = document.createElement('span');
-        clone.className = 'smoke-particle';
-        clone.textContent = smokeEls[si].textContent;
-        clone.style.position = 'absolute';
-        clone.style.left = sx + 'px';
-        clone.style.top = sy + 'px';
-        clone.style.opacity = String(sAlpha);
-        clone.style.fontSize = '0.9rem';
-        clone.style.transform = 'none';
-        scene.appendChild(clone);
-
-        var dx = sx - clickX, dy = sy - clickY;
-        var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        var speed = 200 + Math.random() * 150;
-        scatteredSmoke.push({
-          el: clone, x: 0, y: 0,
-          vx: (dx / dist) * speed + (Math.random() - 0.5) * 80,
-          vy: (dy / dist) * speed - Math.random() * 100,
-          startAlpha: sAlpha,
-          maxLife: 0.4 + Math.random() * 0.3,
-          age: 0
-        });
-      }
-      smoke.style.display = 'none';
-    }
-
-    // Measure exact browser-rendered position of each block character.
-    // Wrap each char in an inline span, measure, restore -- synchronous,
-    // so no flicker. Inline spans don't affect text layout.
-    var blockChars = /[\u2580-\u259F]/;
+  // Wrap each block character (U+2580..U+259F) in an inline <span> so we
+  // can measure its exact rendered position. Returns an array of spans.
+  // Mutates the DOM in place (caller restores via originalHTML).
+  var BLOCK_RE = /[\u2580-\u259F]/;
+  function wrapBlockChars(root) {
     var spans = [];
     var row = 0;
 
-    function wrapChars(node) {
+    function walk(node) {
       if (node.nodeType === 3) {
         var text = node.textContent;
         if (!text) return;
         var frag = document.createDocumentFragment();
         for (var i = 0; i < text.length; i++) {
-          var ch = text[i];
-          if (blockChars.test(ch)) {
+          if (BLOCK_RE.test(text[i])) {
             var s = document.createElement('span');
-            s.textContent = ch;
+            s.textContent = text[i];
             s._row = row;
             frag.appendChild(s);
             spans.push(s);
           } else {
-            frag.appendChild(document.createTextNode(ch));
+            frag.appendChild(document.createTextNode(text[i]));
           }
         }
         node.parentNode.replaceChild(frag, node);
       } else if (node.nodeType === 1) {
         if (node.tagName === 'BR') { row++; return; }
-        // Skip hidden elements -- smoke-bed (display:none) may contain
-        // smoke particles with block chars that measure at viewport origin
         if (node.style && node.style.display === 'none') return;
         var kids = [].slice.call(node.childNodes);
-        for (var j = 0; j < kids.length; j++) wrapChars(kids[j]);
+        for (var j = 0; j < kids.length; j++) walk(kids[j]);
       }
     }
 
-    var kids = [].slice.call(house.childNodes);
-    for (var ci = 0; ci < kids.length; ci++) wrapChars(kids[ci]);
+    var kids = [].slice.call(root.childNodes);
+    for (var i = 0; i < kids.length; i++) walk(kids[i]);
+    return spans;
+  }
 
+  // Measure block positions relative to the scene, then restore the
+  // original house HTML and hide it. Returns {blocks, groundY}.
+  function measureAndHide(sceneRect) {
+    var spans = wrapBlockChars(house);
     var blocks = [];
-    for (var si = 0; si < spans.length; si++) {
-      var rect = spans[si].getBoundingClientRect();
-      blocks.push({
-        ch: spans[si].textContent,
-        x: rect.left - sceneRect.left,
-        y: rect.top - sceneRect.top,
-        row: spans[si]._row
-      });
+    var groundY = 0;
+    for (var i = 0; i < spans.length; i++) {
+      var r = spans[i].getBoundingClientRect();
+      var b = {
+        ch: spans[i].textContent,
+        x: r.left - sceneRect.left,
+        y: r.top - sceneRect.top,
+        row: spans[i]._row
+      };
+      if (b.y > groundY) groundY = b.y;
+      blocks.push(b);
     }
-
-    // Restore original HTML and hide
     house.innerHTML = originalHTML;
     house.style.visibility = 'hidden';
+    return { blocks: blocks, groundY: groundY };
+  }
 
-    var els = [];
+  // Clone visible smoke particles into the scene with blast velocity
+  // away from the click point, then hide the smoke bed.
+  function scatterSmoke(smokeBed, sceneRect, clickX, clickY) {
+    var scattered = [];
+    if (!smokeBed) return scattered;
+
+    var els = smokeBed.querySelectorAll('.smoke-particle');
+    for (var i = 0; i < els.length; i++) {
+      var r = els[i].getBoundingClientRect();
+      var sx = r.left - sceneRect.left;
+      var sy = r.top - sceneRect.top;
+      var alpha = parseFloat(els[i].style.opacity) || 0;
+      if (alpha < 0.05) continue;
+
+      var clone = document.createElement('span');
+      clone.className = 'smoke-particle';
+      clone.textContent = els[i].textContent;
+      clone.style.position = 'absolute';
+      clone.style.left = sx + 'px';
+      clone.style.top = sy + 'px';
+      clone.style.opacity = String(alpha);
+      clone.style.fontSize = '0.9rem';
+      clone.style.transform = 'none';
+      scene.appendChild(clone);
+
+      var d = dist(sx, sy, clickX, clickY) || 1;
+      var speed = rand(200, 350);
+      scattered.push({
+        el: clone, x: 0, y: 0,
+        vx: ((sx - clickX) / d) * speed + rand(-40, 40),
+        vy: ((sy - clickY) / d) * speed - rand(0, 100),
+        startAlpha: alpha,
+        maxLife: rand(0.4, 0.7),
+        age: 0
+      });
+    }
+    smokeBed.style.display = 'none';
+    return scattered;
+  }
+
+  // Create absolutely-positioned block elements in the scene.
+  // Returns an array of {el, b, x, y, angle, vx, vy, va, ...} items.
+  function createBlockEls(blocks) {
+    var items = [];
     for (var i = 0; i < blocks.length; i++) {
-      var b = blocks[i];
       var el = document.createElement('span');
       el.className = 'crumble-block';
-      el.textContent = b.ch;
-      el.style.left = b.x + 'px';
-      el.style.top = b.y + 'px';
+      el.textContent = blocks[i].ch;
+      el.style.left = blocks[i].x + 'px';
+      el.style.top = blocks[i].y + 'px';
       scene.appendChild(el);
-      els.push({
-        el: el, b: b,
-        x: 0, y: 0, angle: 0,      // offsets from original position
+      items.push({
+        el: el, b: blocks[i],
+        x: 0, y: 0, angle: 0,
         vx: 0, vy: 0, va: 0,
         active: false, settled: false, bounces: 0
       });
     }
+    return items;
+  }
 
-    // Ground = bottom row of the house (where blocks pile up)
-    var groundY = 0;
-    for (var gi = 0; gi < blocks.length; gi++) {
-      if (blocks[gi].y > groundY) groundY = blocks[gi].y;
+  // Compute per-block distances from click and the overall max.
+  function blockDistances(items, clickX, clickY) {
+    var dists = [];
+    var max = 0;
+    for (var i = 0; i < items.length; i++) {
+      var d = dist(items[i].b.x, items[i].b.y, clickX, clickY);
+      dists.push(d);
+      if (d > max) max = d;
     }
-    var gravity = 1400;
-    var restitution = 0.3;
-    var bounceFriction = 0.5;
-    var started = performance.now();
-    var lastTime = started;
+    return { dists: dists, max: max };
+  }
 
-    // Measure blast radius (diagonal of house) for distance scaling
+  // Set initial blast velocity for a block based on distance/direction.
+  function initBlastVelocity(item, clickX, clickY, d, blastRadius) {
+    var proximity = 1 - Math.min(d / blastRadius, 1);
+    var force = 0.3 + proximity * 0.7;
+    var len = Math.max(d, 1);
+    var nx = (item.b.x - clickX) / len;
+    var ny = (item.b.y - clickY) / len;
+    var speed = BLAST_SPEED * force;
+    item.vx = nx * speed + rand(-50, 50);
+    item.vy = ny * speed - rand(0, 300) * force;
+    item.va = rand(-450, 450) * force;
+    item.active = true;
+  }
+
+  // Step one block's physics. Returns true if still moving.
+  function stepBlock(item, dt, groundY) {
+    if (item.settled) return false;
+    item.vy += GRAVITY * dt;
+    item.x += item.vx * dt;
+    item.y += item.vy * dt;
+    item.angle += item.va * dt;
+
+    if (item.b.y + item.y >= groundY) {
+      item.y = groundY - item.b.y;
+      if (Math.abs(item.vy) < 50 || item.bounces >= MAX_BOUNCES) {
+        item.settled = true;
+      } else {
+        item.vy = -Math.abs(item.vy) * RESTITUTION;
+        item.vx *= BOUNCE_DRAG;
+        item.va *= 0.3;
+        item.bounces++;
+      }
+    }
+    return !item.settled;
+  }
+
+  // Step one scattered smoke particle. Returns true if still alive.
+  function stepScatteredSmoke(sp, dt) {
+    sp.age += dt;
+    if (sp.age >= sp.maxLife) { sp.el.remove(); return false; }
+    sp.x += sp.vx * dt;
+    sp.y += sp.vy * dt;
+    sp.vx *= (1 - 1.5 * dt);
+    sp.vy *= (1 - 1.5 * dt);
+    var fade = 1 - sp.age / sp.maxLife;
+    sp.el.style.transform = 'translate(' + sp.x.toFixed(1) + 'px,' + sp.y.toFixed(1) + 'px)';
+    sp.el.style.opacity = (sp.startAlpha * fade).toFixed(2);
+    return true;
+  }
+
+  // ── Smolder effects (ember flicker + rubble smoke) ──
+
+  function startSmolder(houseRect, groundY) {
+    // Dim all rubble blocks to ember base color
+    for (var i = 0; i < rubbleEls.length; i++) {
+      rubbleEls[i].el.style.transition = 'opacity 0.8s, color 0.8s';
+      rubbleEls[i].el.style.opacity = '0.5';
+      rubbleEls[i].el.style.color = EMBER_BASE;
+    }
+
+    // Ember flicker: random blocks pulse hot
+    emberTimer = setInterval(function () {
+      for (var i = 0; i < rubbleEls.length; i++) {
+        if (Math.random() < EMBER_CHANCE) {
+          var el = rubbleEls[i].el;
+          el.style.color = EMBER_COLORS[Math.floor(Math.random() * EMBER_COLORS.length)];
+          el.style.opacity = rand(0.5, 0.9).toFixed(2);
+          setTimeout((function (ref) {
+            return function () { ref.style.color = EMBER_BASE; ref.style.opacity = '0.35'; };
+          })(el), rand(200, 700));
+        }
+      }
+    }, 100);
+
+    // Rubble smoke rising from wreckage
+    var centerX = houseRect.width / 2;
+    rubbleSmokeSpawnTimer = setInterval(function () {
+      if (rubbleSmokeParticles.length >= MAX_RUBBLE_SMOKE) return;
+      var el = document.createElement('span');
+      el.className = 'smoke-particle';
+      el.textContent = SMOKE_GLYPHS[Math.floor(Math.random() * SMOKE_GLYPHS.length)];
+      el.style.position = 'absolute';
+      el.style.left = (centerX + rand(-0.6, 0.6) * houseRect.width) + 'px';
+      el.style.top = groundY + 'px';
+      el.style.color = '#9e958a';
+      el.style.fontSize = rand(0.6, 1.0) + 'em';
+      el.style.opacity = '0';
+      scene.appendChild(el);
+      rubbleSmokeParticles.push({
+        el: el, age: 0,
+        lifetime: rand(2000, 5000),
+        drift: rand(-25, 25),
+        rise: rand(40, 80)
+      });
+    }, 250);
+
+    var lastT = 0;
+    function tickSmoke(now) {
+      if (!lastT) lastT = now;
+      var dt = Math.min((now - lastT) / 1000, 0.1);
+      lastT = now;
+      for (var i = rubbleSmokeParticles.length - 1; i >= 0; i--) {
+        var p = rubbleSmokeParticles[i];
+        p.age += dt * 1000;
+        var t = p.age / p.lifetime;
+        if (t >= 1) { p.el.remove(); rubbleSmokeParticles.splice(i, 1); continue; }
+        var alpha = t < 0.15 ? (t / 0.15) * 0.4 : 0.4 * (1 - (t - 0.15) / 0.85);
+        p.el.style.transform = 'translate(' + (p.drift * t).toFixed(1) + 'px, -' + (p.rise * t).toFixed(1) + 'px)';
+        p.el.style.opacity = alpha.toFixed(3);
+      }
+      rubbleSmokeAnimId = requestAnimationFrame(tickSmoke);
+    }
+    rubbleSmokeAnimId = requestAnimationFrame(tickSmoke);
+  }
+
+  function stopSmolder() {
+    clearInterval(emberTimer);    emberTimer = 0;
+    clearInterval(rubbleSmokeSpawnTimer); rubbleSmokeSpawnTimer = 0;
+    cancelAnimationFrame(rubbleSmokeAnimId); rubbleSmokeAnimId = 0;
+    for (var i = 0; i < rubbleSmokeParticles.length; i++) rubbleSmokeParticles[i].el.remove();
+    rubbleSmokeParticles = [];
+  }
+
+  // ── Destroy ──
+
+  function destroyHouse(evt) {
+    animating = true;
+
+    var sceneRect = scene.getBoundingClientRect();
+    var houseRect = house.getBoundingClientRect();
+    var clickX = evt.clientX - sceneRect.left;
+    var clickY = evt.clientY - sceneRect.top;
+
+    var scattered = scatterSmoke(document.getElementById('smoke-bed'), sceneRect, clickX, clickY);
+    var measured = measureAndHide(sceneRect);
+    var items = createBlockEls(measured.blocks);
+    var bd = blockDistances(items, clickX, clickY);
     var blastRadius = Math.sqrt(houseRect.width * houseRect.width + houseRect.height * houseRect.height);
 
-    // Sort blocks by distance from click -- nearest break first
-    var blockDists = [];
-    for (var di = 0; di < els.length; di++) {
-      var bx = els[di].b.x, by = els[di].b.y;
-      var dx = bx - clickX, dy = by - clickY;
-      blockDists.push(Math.sqrt(dx * dx + dy * dy));
-    }
-    var maxDist = 0;
-    for (var di = 0; di < blockDists.length; di++) {
-      if (blockDists[di] > maxDist) maxDist = blockDists[di];
-    }
-
-    // Per-block stagger: nearest blocks break first
-    var minDelay = 0;
-    var maxDelay = 0.25; // seconds spread
+    var started = performance.now();
+    var lastTime = started;
 
     function tick(now) {
       var dt = Math.min((now - lastTime) / 1000, 0.05);
@@ -381,282 +534,106 @@ micasa --print-path   # show where the database lives</code></pre>
       var elapsed = (now - started) / 1000;
       var allDone = true;
 
-      for (var j = 0; j < els.length; j++) {
-        var item = els[j];
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
         if (item.settled) continue;
 
-        // Delay based on distance from click -- closer blocks break first
-        var distFrac = maxDist > 0 ? blockDists[j] / maxDist : 0;
-        var delay = minDelay + distFrac * maxDelay;
+        var delay = (bd.max > 0 ? bd.dists[i] / bd.max : 0) * STAGGER_SEC;
         if (elapsed < delay) { allDone = false; continue; }
 
-        // Initialize velocity on first active frame
-        if (!item.active) {
-          var bx = item.b.x, by = item.b.y;
-          var dx = bx - clickX, dy = by - clickY;
-          var dist = blockDists[j];
+        if (!item.active) initBlastVelocity(item, clickX, clickY, bd.dists[i], blastRadius);
+        if (stepBlock(item, dt, measured.groundY)) allDone = false;
 
-          // Closer blocks get blasted harder (inverse distance)
-          var proximity = 1 - Math.min(dist / blastRadius, 1);
-          var force = 0.3 + proximity * 0.7; // 0.3..1.0
-
-          // Direction away from click, normalized
-          var len = Math.max(dist, 1);
-          var nx = dx / len, ny = dy / len;
-
-          // Blast velocity: radial + upward bias + randomness
-          var speed = 350 * force;
-          item.vx = nx * speed + (Math.random() - 0.5) * 100;
-          item.vy = ny * speed - Math.random() * 300 * force; // upward bias
-          item.va = (Math.random() - 0.5) * 900 * force;
-          item.active = true;
-        }
-
-        // Velocity-based physics (supports bouncing)
-        item.vy += gravity * dt;
-        item.x += item.vx * dt;
-        item.y += item.vy * dt;
-        item.angle += item.va * dt;
-
-        // Ground collision
-        if (item.b.y + item.y >= groundY) {
-          item.y = groundY - item.b.y;
-          if (Math.abs(item.vy) < 50 || item.bounces >= 3) {
-            item.settled = true;
-          } else {
-            item.vy = -Math.abs(item.vy) * restitution;
-            item.vx *= bounceFriction;
-            item.va *= 0.3;
-            item.bounces++;
-          }
-        }
-
-        if (!item.settled) allDone = false;
-
-        // Fade slightly as blocks fly outward
-        var age = elapsed - delay;
-        var alpha = Math.max(0.4, 1 - age * 0.3);
-
+        var alpha = Math.max(0.4, 1 - (elapsed - delay) * SETTLE_FADE);
         item.el.style.transform =
-          'translate(' + item.x.toFixed(1) + 'px, ' + item.y.toFixed(1) + 'px) rotate(' + item.angle.toFixed(0) + 'deg)';
+          'translate(' + item.x.toFixed(1) + 'px,' + item.y.toFixed(1) + 'px) rotate(' + item.angle.toFixed(0) + 'deg)';
         item.el.style.opacity = alpha.toFixed(2);
       }
 
-      // Animate scattered smoke particles (shockwave scatter)
-      for (var si = scatteredSmoke.length - 1; si >= 0; si--) {
-        var sp = scatteredSmoke[si];
-        sp.age += dt;
-        if (sp.age >= sp.maxLife) {
-          sp.el.remove();
-          scatteredSmoke.splice(si, 1);
-          continue;
-        }
-        sp.x += sp.vx * dt;
-        sp.y += sp.vy * dt;
-        // Light drag so they slow down naturally
-        sp.vx *= (1 - 1.5 * dt);
-        sp.vy *= (1 - 1.5 * dt);
-        var fade = 1 - sp.age / sp.maxLife;
-        sp.el.style.transform = 'translate(' + sp.x.toFixed(1) + 'px,' + sp.y.toFixed(1) + 'px)';
-        sp.el.style.opacity = (sp.startAlpha * fade).toFixed(2);
+      // Scattered chimney smoke (shockwave)
+      for (var j = scattered.length - 1; j >= 0; j--) {
+        if (!stepScatteredSmoke(scattered[j], dt)) scattered.splice(j, 1);
       }
 
-      if (!allDone || scatteredSmoke.length > 0) {
+      if (!allDone || scattered.length > 0) {
         requestAnimationFrame(tick);
-      } else {
-        // Settle into smoldering rubble
-        setTimeout(function () {
-          // Dim blocks and tint warm to look like embers
-          for (var k = 0; k < els.length; k++) {
-            els[k].el.style.transition = 'opacity 0.8s, color 0.8s';
-            els[k].el.style.opacity = '0.5';
-            els[k].el.style.color = '#a04e30';
-          }
-          rubbleEls = els;
-
-          // Attach direct click handlers so blocks outside the scene's
-          // bounding box are still clickable (they may land under other
-          // page elements like the heading or CTA buttons).
-          var rubbleClick = function (e) {
-            e.stopPropagation();
-            if (!animating && destroyed) rebuildHouse();
-          };
-          for (var k2 = 0; k2 < els.length; k2++) {
-            els[k2].el.addEventListener('click', rubbleClick);
-          }
-
-          if (caption) caption.classList.add('visible');
-
-          // Ember flicker: aggressive -- blocks pulse hot like a fresh collapse
-          emberInterval = setInterval(function () {
-            for (var e = 0; e < rubbleEls.length; e++) {
-              if (Math.random() < 0.15) {
-                var el = rubbleEls[e].el;
-                var r = Math.random();
-                el.style.color = r < 0.3 ? '#e07040' : r < 0.6 ? '#d4783c' : '#c05e3c';
-                el.style.opacity = (0.5 + Math.random() * 0.4).toFixed(2);
-                setTimeout((function (ref) {
-                  return function () {
-                    ref.style.color = '#a04e30';
-                    ref.style.opacity = '0.35';
-                  };
-                })(el), 200 + Math.random() * 500);
-              }
-            }
-          }, 100);
-
-          // Rubble smoke: thick plumes rising from the wreckage
-          var pileCenterX = houseRect.width / 2;
-          var pileY = groundY;
-          var smokeGlyphs = ['\u2591', '\u2591', '\u2592', '\u2592', '\u2593'];
-          function spawnRubbleSmoke() {
-            if (!destroyed && rubbleSmokeParticles.length === 0) return;
-            var el = document.createElement('span');
-            el.className = 'smoke-particle';
-            el.textContent = smokeGlyphs[Math.floor(Math.random() * smokeGlyphs.length)];
-            el.style.position = 'absolute';
-            el.style.left = (pileCenterX + (Math.random() - 0.5) * houseRect.width * 1.2) + 'px';
-            el.style.top = pileY + 'px';
-            el.style.color = '#9e958a';
-            el.style.fontSize = (0.6 + Math.random() * 0.4) + 'em';
-            el.style.opacity = '0';
-            scene.appendChild(el);
-
-            var p = {
-              el: el, age: 0,
-              lifetime: 2000 + Math.random() * 3000,
-              startX: parseFloat(el.style.left),
-              drift: (Math.random() - 0.5) * 50,
-              rise: 40 + Math.random() * 40
-            };
-            rubbleSmokeParticles.push(p);
-          }
-
-          var rubbleSmokeSpawnTimer = setInterval(function () {
-            if (rubbleSmokeParticles.length < 10) spawnRubbleSmoke();
-          }, 250);
-
-          var lastT = 0;
-          function tickRubbleSmoke(now) {
-            if (!lastT) lastT = now;
-            var dt = Math.min((now - lastT) / 1000, 0.1);
-            lastT = now;
-
-            for (var i = rubbleSmokeParticles.length - 1; i >= 0; i--) {
-              var sp = rubbleSmokeParticles[i];
-              sp.age += dt * 1000;
-              var t = sp.age / sp.lifetime;
-              if (t >= 1) {
-                sp.el.remove();
-                rubbleSmokeParticles.splice(i, 1);
-                continue;
-              }
-              var rise = sp.rise * t;
-              var drift = sp.drift * t;
-              var alpha = t < 0.15 ? (t / 0.15) * 0.4 : 0.4 * (1 - (t - 0.15) / 0.85);
-              sp.el.style.transform = 'translate(' + drift.toFixed(1) + 'px, -' + rise.toFixed(1) + 'px)';
-              sp.el.style.opacity = alpha.toFixed(3);
-            }
-
-            rubbleSmokeId = requestAnimationFrame(tickRubbleSmoke);
-          }
-          rubbleSmokeId = requestAnimationFrame(tickRubbleSmoke);
-
-          // Store spawn timer for cleanup
-          scene._rubbleSmokeSpawnTimer = rubbleSmokeSpawnTimer;
-
-          destroyed = true;
-          animating = false;
-        }, 200);
+        return;
       }
+
+      // All blocks settled -- transition to smoldering rubble
+      setTimeout(function () {
+        rubbleEls = items;
+        startSmolder(houseRect, measured.groundY);
+
+        // Make rubble blocks clickable even if they landed outside the scene
+        var onClick = function (e) { e.stopPropagation(); if (!animating && destroyed) rebuildHouse(); };
+        for (var i = 0; i < items.length; i++) items[i].el.addEventListener('click', onClick);
+
+        if (caption) caption.classList.add('visible');
+        destroyed = true;
+        animating = false;
+      }, 200);
     }
 
     requestAnimationFrame(tick);
   }
 
+  // ── Rebuild ──
+
   function rebuildHouse() {
     animating = true;
-
-    // Stop smolder effects
-    clearInterval(emberInterval);
-    emberInterval = 0;
-    cancelAnimationFrame(rubbleSmokeId);
-    rubbleSmokeId = 0;
-    if (scene._rubbleSmokeSpawnTimer) {
-      clearInterval(scene._rubbleSmokeSpawnTimer);
-      scene._rubbleSmokeSpawnTimer = 0;
-    }
-    for (var s = 0; s < rubbleSmokeParticles.length; s++) {
-      rubbleSmokeParticles[s].el.remove();
-    }
-    rubbleSmokeParticles = [];
-
-    // Hide caption
+    stopSmolder();
     if (caption) caption.classList.remove('visible');
 
-    // Find max row for reverse stagger (bottom rows rebuild first)
     var maxRow = 0;
-    for (var k = 0; k < rubbleEls.length; k++) {
-      if (rubbleEls[k].b.row > maxRow) maxRow = rubbleEls[k].b.row;
+    for (var i = 0; i < rubbleEls.length; i++) {
+      if (rubbleEls[i].b.row > maxRow) maxRow = rubbleEls[i].b.row;
     }
 
-    var rowDelay = 100; // ms per row
-    var flightDuration = 0.6; // seconds
-    // Material decelerate: fast start, gradual slow-down, smooth arrival
-    var easing = 'cubic-bezier(0.0, 0.0, 0.2, 1.0)';
-
-    // Fly blocks back to original positions
-    for (var k = 0; k < rubbleEls.length; k++) {
-      var item = rubbleEls[k];
-      var delay = (maxRow - item.b.row) * rowDelay; // bottom rows first
-      item.el.style.transition =
-        'transform ' + flightDuration + 's ' + easing + ' ' + delay + 'ms, ' +
-        'opacity 0.3s ease ' + delay + 'ms, ' +
-        'color 0.3s ease ' + delay + 'ms';
-      item.el.style.opacity = '1';
-      item.el.style.color = '';
-      item.el.style.transform = 'translate(0, 0) rotate(0deg)';
+    // Fly blocks home (bottom rows first)
+    for (var i = 0; i < rubbleEls.length; i++) {
+      var delay = (maxRow - rubbleEls[i].b.row) * ROW_DELAY_MS;
+      rubbleEls[i].el.style.transition =
+        'transform ' + FLIGHT_SEC + 's ' + REBUILD_EASING + ' ' + delay + 'ms, ' +
+        'opacity 0.3s ease ' + delay + 'ms, color 0.3s ease ' + delay + 'ms';
+      rubbleEls[i].el.style.opacity = '1';
+      rubbleEls[i].el.style.color = '';
+      rubbleEls[i].el.style.transform = 'translate(0,0) rotate(0deg)';
     }
 
-    // After blocks have flown back, dissolve them to reveal the real house.
-    // Blocks are at exact browser-measured positions, so alignment is perfect.
-    var lastRowDelay = maxRow * rowDelay;
-    var flightEnd = lastRowDelay + flightDuration * 1000 + 50;
-    var dissolveDuration = 200;
+    // After flight, dissolve blocks to reveal the real house underneath
+    var flightEnd = maxRow * ROW_DELAY_MS + FLIGHT_SEC * 1000 + 50;
 
     setTimeout(function () {
-      // Place house behind the opaque blocks
       house.innerHTML = originalHTML;
       house.style.visibility = 'visible';
       house.style.opacity = '1';
       house.style.transition = 'none';
-      var smokeBed = document.getElementById('smoke-bed');
-      if (smokeBed) smokeBed.style.display = 'none';
+      var bed = document.getElementById('smoke-bed');
+      if (bed) bed.style.display = 'none';
+      void house.offsetHeight; // force paint
 
-      // Force paint so house is rendered before dissolve
-      void house.offsetHeight;
-
-      // Quick dissolve -- fast enough to hide sub-pixel misalignment
-      for (var k = 0; k < rubbleEls.length; k++) {
-        rubbleEls[k].el.style.transition = 'opacity ' + dissolveDuration + 'ms ease';
-        rubbleEls[k].el.style.opacity = '0';
+      for (var i = 0; i < rubbleEls.length; i++) {
+        rubbleEls[i].el.style.transition = 'opacity ' + DISSOLVE_MS + 'ms ease';
+        rubbleEls[i].el.style.opacity = '0';
       }
 
       setTimeout(function () {
-        for (var k = 0; k < rubbleEls.length; k++) {
-          rubbleEls[k].el.remove();
-        }
+        for (var i = 0; i < rubbleEls.length; i++) rubbleEls[i].el.remove();
         rubbleEls = [];
-
-        // Restart smoke
         var bed = document.getElementById('smoke-bed');
         if (bed) bed.style.display = '';
-
         destroyed = false;
         animating = false;
-      }, dissolveDuration + 50);
+      }, DISSOLVE_MS + 50);
     }, flightEnd);
   }
+
+  // ── Entry point ──
+  scene.addEventListener('click', function (evt) {
+    if (animating) return;
+    if (destroyed) rebuildHouse(); else destroyHouse(evt);
+  });
 })();
 </script>
 

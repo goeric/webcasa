@@ -13,16 +13,16 @@ No cloud. No account. No subscriptions.
 
 ## What it does
 
-- **Maintenance tracking** with auto-computed due dates, service log history,
+- **[Maintenance tracking]({{< ref "/guide/maintenance" >}})** with auto-computed due dates, service log history,
   and vendor records
-- **Project management** from ideating through completion (or graceful
+- **[Project management]({{< ref "/guide/projects" >}})** from ideating through completion (or graceful
   abandonment), with budget tracking
-- **Quote comparison** across vendors, with cost breakdowns
-- **Appliance inventory** with warranty windows, purchase dates, and
+- **[Quote comparison]({{< ref "/guide/quotes" >}})** across vendors, with cost breakdowns
+- **[Appliance inventory]({{< ref "/guide/appliances" >}})** with warranty windows, purchase dates, and
   maintenance history tied to each one
-- **Dashboard** showing overdue maintenance, active projects, expiring
+- **[Dashboard]({{< ref "/guide/dashboard" >}})** showing overdue maintenance, active projects, expiring
   warranties, and YTD spending at a glance
-- **Vim-style modal navigation** with Normal and Edit modes, multi-column
+- **[Vim-style modal navigation]({{< ref "/guide/navigation" >}})** with Normal and Edit modes, multi-column
   sorting, column hiding, and cross-tab FK links
 
 ## What it doesn't do
