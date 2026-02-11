@@ -4,9 +4,9 @@ Output images/demo.gif
 
 Set Shell bash
 Set FontFamily "JetBrains Mono"
-Set FontSize 22
-Set Width 2000
-Set Height 1400
+Set FontSize 28
+Set Width 2400
+Set Height 1250
 Set Padding 20
 Set Theme "Dracula"
 Set CursorBlink false
@@ -20,11 +20,12 @@ Env COLORFGBG "15;0"
 Hide
 Type "micasa --demo"
 Enter
-Sleep 4s
+Sleep 5s
 # Dismiss dashboard
 Type "D"
-Sleep 1s
+Sleep 2s
 Show
+Sleep 0.5s
 
 # Projects tab -- browse rows
 Sleep 1.5s

@@ -158,6 +158,7 @@
             text = ''
               mkdir -p website/images docs/static/images
               cp images/favicon.svg website/images/favicon.svg
+              cp images/demo.gif website/images/demo.gif
               cp images/favicon.svg docs/static/images/favicon.svg
               rm -rf website/docs
               hugo --source docs --baseURL /docs/ --destination ../website/docs

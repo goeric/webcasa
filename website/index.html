@@ -35,6 +35,11 @@
   </div>
 </header>
 
+<!-- ─── Demo ─── -->
+<div class="container demo-container">
+  <img src="images/demo.gif" alt="micasa demo showing terminal UI" class="demo-gif" loading="lazy">
+</div>
+
 <!-- ─── Pitch ─── -->
 <div class="container">
   <p class="pitch">
@@ -42,7 +47,7 @@
     you&rsquo;re dreaming about redoing the kitchen.
   </p>
   <p class="pitch pitch-follow">
-    <strong class="brand">micasa</strong> tracks both from your terminal.
+    <strong class="brand">micasa</strong> tracks maintenance, projects, appliances, vendors, and quotes&mdash;all from your terminal.
   </p>
 </div>
 
@@ -69,12 +74,12 @@
 
       <div class="feature">
         <p class="feature-q">Is the dishwasher still under warranty?</p>
-        <p class="feature-a">Appliance tracking with purchase dates, warranty windows, and linked maintenance.</p>
+        <p class="feature-a">Appliance tracking with purchase dates, warranty status, and maintenance history tied to each one.</p>
       </div>
 
       <div class="feature">
         <p class="feature-q">Who did we use last time?</p>
-        <p class="feature-a">A vendor directory with contact info, quote counts, and job history across everything.</p>
+        <p class="feature-a">A vendor directory with contact info, quote history, and every job they've done for you.</p>
       </div>
 
     </div>
@@ -92,13 +97,13 @@
       </div>
       <p class="install-or">or grab a binary from the <a href="https://github.com/cpcloud/micasa/releases/latest">latest release</a></p>
       <div>
-        <p>Then run it:</p>
+        <p>Try it in 30 seconds:</p>
         <pre><code>micasa --demo         # poke around with sample data
 micasa                # start fresh with your own house
 micasa --print-path   # show where the database lives</code></pre>
       </div>
     </div>
-    <p class="install-data">One SQLite file. Your data, your machine. Back it up with <code>cp</code>.</p>
+    <p class="install-data">Linux, macOS, Windows. Pure Go, zero CGO. One SQLite file, your machine. Back it up with <code>cp</code>.</p>
   </div>
 </section>
 
@@ -106,43 +111,16 @@ micasa --print-path   # show where the database lives</code></pre>
 <section id="keys">
   <div class="container">
     <h2>Keyboard <span class="accent">driven</span></h2>
-    <p class="section-note">No mouse required.</p>
-    <div class="keys-modes">
+    <p class="keys-pitch">Vim-style modal keys. <span class="mode-badge mode-normal">nav</span> to browse, <span class="mode-badge mode-edit">edit</span> to change things. Sort by any column, jump to columns with fuzzy search, hide what you don't need, drill into related records. The full list is in the <a href="/docs/reference/keybindings/">keybinding reference</a>.</p>
+  </div>
+</section>
 
-      <div>
-        <h3>Normal <span class="mode-badge mode-normal">normal</span></h3>
-        <ul class="key-list">
-          <li><kbd>j / k</kbd> <span class="desc">Row up / down</span></li>
-          <li><kbd>h / l</kbd> <span class="desc">Column left / right</span></li>
-          <li><kbd>^ / $</kbd> <span class="desc">First / last column</span></li>
-          <li><kbd>g / G</kbd> <span class="desc">First / last row</span></li>
-          <li><kbd>d / u</kbd> <span class="desc">Half-page down / up</span></li>
-          <li><kbd>tab</kbd> <span class="desc">Next tab</span></li>
-          <li><kbd>s / S</kbd> <span class="desc">Sort / clear sorts</span></li>
-          <li><kbd>/</kbd> <span class="desc">Fuzzy column finder</span></li>
-          <li><kbd>enter</kbd> <span class="desc">Drilldown or follow link</span></li>
-          <li><kbd>c / C</kbd> <span class="desc">Hide / show columns</span></li>
-          <li><kbd>i</kbd> <span class="desc">Enter Edit mode</span></li>
-          <li><kbd>?</kbd> <span class="desc">Help</span></li>
-          <li><kbd>q</kbd> <span class="desc">Quit</span></li>
-        </ul>
-      </div>
-
-      <div>
-        <h3>Edit <span class="mode-badge mode-edit">edit</span></h3>
-        <ul class="key-list">
-          <li><kbd>a</kbd> <span class="desc">Add entry</span></li>
-          <li><kbd>e</kbd> <span class="desc">Edit cell or row</span></li>
-          <li><kbd>d</kbd> <span class="desc">Delete / restore</span></li>
-          <li><kbd>x</kbd> <span class="desc">Show / hide deleted</span></li>
-          <li><kbd>p</kbd> <span class="desc">Edit house profile</span></li>
-          <li><kbd>u / r</kbd> <span class="desc">Undo / redo</span></li>
-          <li><kbd>1&ndash;9</kbd> <span class="desc">Jump to Nth option</span></li>
-          <li><kbd>esc</kbd> <span class="desc">Back to Normal</span></li>
-        </ul>
-      </div>
-
-    </div>
+<!-- ─── Origin ─── -->
+<section id="origin">
+  <div class="container">
+    <h2>Why <span class="accent">this</span> exists</h2>
+    <p class="origin-quote">&ldquo;I built this to get rid of all these binders full of manuals.&rdquo;</p>
+    <p class="origin-body"><strong class="brand">micasa</strong> replaces the binders, the filing cabinet, and the sticky note on the fridge with one SQLite file and a terminal you already have open.</p>
   </div>
 </section>
 
@@ -160,7 +138,8 @@ micasa --print-path   # show where the database lives</code></pre>
     <div class="footer-links">
       <a href="/docs/">Docs</a>
       <a href="https://github.com/cpcloud/micasa">GitHub</a>
-      <a href="https://github.com/cpcloud/micasa/releases/latest">Releases</a>
+      <a href="https://github.com/cpcloud/micasa/releases">Changelog</a>
+      <a href="https://github.com/cpcloud/micasa/releases/latest">Latest Release</a>
       <a href="https://github.com/cpcloud/micasa/blob/main/LICENSE">Apache-2.0</a>
     </div>
     <p>&copy; 2026 Phillip Cloud</p>
