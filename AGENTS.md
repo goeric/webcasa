@@ -12,6 +12,12 @@ a coding agent on a user's computer.
 > `working_directory` parameter on the Shell tool. Doing `cd $PWD` is a no-op
 > and wastes time.
 
+# Git history
+
+- Make sure before you run your first command that you take a look at recent
+  Git history to get a rough idea of where the repo is at. You can find
+  remaining context from GitHub issues and pull requests.
+
 # General
 
 - When searching for text or files, prefer using `rg` or `rg --files`
@@ -20,8 +26,8 @@ a coding agent on a user's computer.
 - Default expectation: deliver working code, not just a plan. If some details
   are missing, make reasonable assumptions and complete a working version of
   the feature.
-- If you need to count lines feel free to use `tokei`. Not a hard requirement, but
-  may help.
+- If you need to count lines feel free to use `tokei`. Not a hard requirement,
+  but may help.
 
 # Autonomy and Persistence
 
@@ -336,25 +342,6 @@ If the user asks you to learn something, add it to this "Hard rules" section
 so it survives context resets. This file is always injected; external files
 like `LEARNINGS.md` are not.
 
-## Agent log
-
-Every time the user asks you to do something, append a record to the "Session
-log" section at the bottom of this file:
-
-1. What they asked
-2. A compact version of your thought processes
-3. Actions taken
-
-Avoid duplication with the git log (feel free to add an instruction like "look
-at the git log for details" for that case).
-
-Make the records maximally consumable by another agent, trying to minimize
-token use but not insanely so.
-
-Pause work at a good stopping point if it seems like token percentage is
-getting too high and things are slowing down or you're repeating yourself or
-doing the same thing in a loop and not making progress.
-
 ## Development best practices
 
 - At each point where you have the next stage of the application, pause and let
@@ -380,12 +367,10 @@ doing the same thing in a loop and not making progress.
   `website/index.html`, Nix expressions, CI workflows, Hugo templates, etc.
   Don't skip inline `<script>` blocks in HTML just because they're not `.go`.
 
-Look at the [GitHub issues](https://github.com/cpcloud/micasa/issues) and
-work through them. When you complete a task, pause and wait for the
-developer's input before continuing on. Be prepared for the user to veer
-off into other tasks.
-That's fine, go with the flow and soft nudges to get back to the original work
-stream are appreciated.
+When you complete a task, pause and wait for the developer's input before
+continuing on. Be prepared for the user to veer off into other tasks. That's
+fine, go with the flow and soft nudges to get back to the original work stream
+are appreciated.
 
 Once allowed to move on, commit the current change set (fixing any pre-commit
 issues that show up).
@@ -402,7 +387,7 @@ in case things crash or otherwise go haywire, be diligent about this.
 
 # Session log
 
-Session history is in the git log. Run `git log --oneline` for an overview.
+Session history is in the git log.
 
 # Remaining work
 
