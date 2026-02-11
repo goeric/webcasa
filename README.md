@@ -20,8 +20,8 @@ Your house is quietly plotting to break while you sleep -- and you're dreaming a
 - **When did I last change the furnace filter?** Maintenance schedules, auto-computed due dates, full service history.
 - **What if we finally did the backyard?** Projects from napkin sketch to completion -- or graceful abandonment.
 - **How much would it actually cost to...** Quotes side by side, vendor history, and the math you need to actually decide.
-- **Is the dishwasher still under warranty?** Appliance tracking with purchase dates, warranty windows, and linked maintenance.
-- **Who did we use last time?** A dedicated vendor directory with contact info, quote counts, and job history across all your projects and maintenance.
+- **Is the dishwasher still under warranty?** Appliance tracking with purchase dates, warranty status, and maintenance history tied to each one.
+- **Who did we use last time?** A vendor directory with contact info, quote history, and every job they've done for you.
 
 ## Install
 

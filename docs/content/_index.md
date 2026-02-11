@@ -18,8 +18,8 @@ No cloud. No account. No subscriptions.
 - **Project management** from ideating through completion (or graceful
   abandonment), with budget tracking
 - **Quote comparison** across vendors, with cost breakdowns
-- **Appliance inventory** with warranty windows, purchase dates, and linked
-  maintenance
+- **Appliance inventory** with warranty windows, purchase dates, and
+  maintenance history tied to each one
 - **Dashboard** showing overdue maintenance, active projects, expiring
   warranties, and YTD spending at a glance
 - **Vim-style modal navigation** with Normal and Edit modes, multi-column
