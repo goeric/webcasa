@@ -118,6 +118,24 @@
           };
         };
 
+        # Shared fontconfig setup for VHS recordings (JetBrains Mono)
+        vhsFontSetup = ''
+          _vhs_tmp=$(mktemp -d)
+          trap 'rm -rf "$_vhs_tmp"' EXIT
+
+          FC_CONF="$_vhs_tmp/fonts.conf"
+          cat > "$FC_CONF" <<FCXML
+          <?xml version="1.0"?>
+          <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+          <fontconfig>
+            <include>/etc/fonts/fonts.conf</include>
+            <dir>${pkgs.jetbrains-mono}/share/fonts</dir>
+            <cachedir>$_vhs_tmp/fc-cache</cachedir>
+          </fontconfig>
+          FCXML
+          export FONTCONFIG_FILE="$FC_CONF"
+        '';
+
         root = pkgs.buildEnv {
           name = "micasa-root";
           paths = [ micasa ];
@@ -172,8 +190,9 @@
               python3 -m http.server 0 -d website
             '';
           };
-          record-demo = pkgs.writeShellApplication {
-            name = "record-demo";
+          # Records any VHS tape and converts the GIF output to WebP
+          record-tape = pkgs.writeShellApplication {
+            name = "record-tape";
             runtimeInputs = [
               micasa
               pkgs.vhs
@@ -181,33 +200,43 @@
               pkgs.libwebp
             ];
             text = ''
-              TMPDIR=$(mktemp -d)
-              trap 'rm -rf "$TMPDIR"' EXIT
+              if [[ $# -ne 1 ]]; then
+                echo "usage: record-tape <tape-file>" >&2
+                exit 1
+              fi
 
-              # Make JetBrains Mono visible to Chrome inside VHS
-              FC_CONF="$TMPDIR/fonts.conf"
-              cat > "$FC_CONF" <<FCXML
-              <?xml version="1.0"?>
-              <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-              <fontconfig>
-                <include>/etc/fonts/fonts.conf</include>
-                <dir>${pkgs.jetbrains-mono}/share/fonts</dir>
-                <cachedir>$TMPDIR/fc-cache</cachedir>
-              </fontconfig>
-              FCXML
-              export FONTCONFIG_FILE="$FC_CONF"
+              tape="$1"
 
-              vhs docs/tapes/demo.tape
-              gif2webp -m 6 images/demo.gif -o images/demo.webp
-              rm images/demo.gif
+              gif_path=$(grep -m1 '^Output ' "$tape" | awk '{print $2}')
+              if [[ -z "$gif_path" || "$gif_path" != *.gif ]]; then
+                echo "error: tape must contain an Output directive ending in .gif" >&2
+                exit 1
+              fi
+
+              webp_path="''${gif_path%.gif}.webp"
+
+              ${vhsFontSetup}
+
+              mkdir -p "$(dirname "$gif_path")"
+              vhs "$tape"
+              gif2webp -m 6 "$gif_path" -o "$webp_path"
+              rm "$gif_path"
             '';
           };
-          # Captures a single VHS tape to PNG: capture-one <tape-file>
+          record-demo = pkgs.writeShellApplication {
+            name = "record-demo";
+            runtimeInputs = [ self.packages.${system}.record-tape ];
+            text = ''
+              record-tape docs/tapes/demo.tape
+            '';
+          };
+          # Captures a single VHS tape to a WebP screenshot: capture-one <tape-file>
           capture-one = pkgs.writeShellApplication {
             name = "capture-one";
             runtimeInputs = [
               micasa
               pkgs.vhs
+              pkgs.jetbrains-mono
               pkgs.imagemagick
             ];
             text = ''
@@ -221,27 +250,13 @@
               OUT="docs/static/images"
               mkdir -p "$OUT"
 
-              TMPDIR=$(mktemp -d)
-              trap 'rm -rf "$TMPDIR"' EXIT
-
-              # Make JetBrains Mono visible to Chrome inside VHS
-              FC_CONF="$TMPDIR/fonts.conf"
-              cat > "$FC_CONF" <<FCXML
-              <?xml version="1.0"?>
-              <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-              <fontconfig>
-                <include>/etc/fonts/fonts.conf</include>
-                <dir>${pkgs.jetbrains-mono}/share/fonts</dir>
-                <cachedir>$TMPDIR/fc-cache</cachedir>
-              </fontconfig>
-              FCXML
-              export FONTCONFIG_FILE="$FC_CONF"
+              ${vhsFontSetup}
 
               vhs "$tape"
 
               # Extract last frame from GIF as lossless WebP
-              magick "$OUT/$name.gif" -coalesce "$TMPDIR/$name-frame-%04d.png"
-              last=$(printf '%s\n' "$TMPDIR/$name-frame"-*.png | sort -t- -k3 -n | tail -1)
+              magick "$OUT/$name.gif" -coalesce "$_vhs_tmp/$name-frame-%04d.png"
+              last=$(printf '%s\n' "$_vhs_tmp/$name-frame"-*.png | sort -t- -k3 -n | tail -1)
               magick "$last" -quality 100 -define webp:lossless=true "$OUT/$name.webp"
               rm -f "$OUT/$name.gif"
 
@@ -320,6 +335,7 @@
         apps = {
           default = flake-utils.lib.mkApp { drv = micasa; };
           website = flake-utils.lib.mkApp { drv = self.packages.${system}.website; };
+          record-tape = flake-utils.lib.mkApp { drv = self.packages.${system}.record-tape; };
           record-demo = flake-utils.lib.mkApp { drv = self.packages.${system}.record-demo; };
           build-docs = flake-utils.lib.mkApp { drv = self.packages.${system}.build-docs; };
           capture-one = flake-utils.lib.mkApp { drv = self.packages.${system}.capture-one; };
