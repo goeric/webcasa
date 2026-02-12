@@ -223,26 +223,26 @@ type ProjectCommitment struct {
 }
 
 type ProjectInvoice struct {
-	ID             uint `gorm:"primaryKey"`
-	ProjectID      uint
-	Project        Project `gorm:"constraint:OnDelete:RESTRICT;"`
-	CommitmentID   *uint
-	Commitment     ProjectCommitment `gorm:"constraint:OnDelete:SET NULL;"`
-	VendorID       *uint
-	Vendor         Vendor `gorm:"constraint:OnDelete:SET NULL;"`
-	InvoiceNumber  string
-	IssuedDate     *time.Time
-	DueDate        *time.Time
-	SubtotalCents  int64  `gorm:"column:sub_ct"`
-	TaxCents       *int64 `gorm:"column:tax_ct"`
-	ShippingCents  *int64 `gorm:"column:ship_ct"`
+	ID              uint `gorm:"primaryKey"`
+	ProjectID       uint
+	Project         Project `gorm:"constraint:OnDelete:RESTRICT;"`
+	CommitmentID    *uint
+	Commitment      ProjectCommitment `gorm:"constraint:OnDelete:SET NULL;"`
+	VendorID        *uint
+	Vendor          Vendor `gorm:"constraint:OnDelete:SET NULL;"`
+	InvoiceNumber   string
+	IssuedDate      *time.Time
+	DueDate         *time.Time
+	SubtotalCents   int64  `gorm:"column:sub_ct"`
+	TaxCents        *int64 `gorm:"column:tax_ct"`
+	ShippingCents   *int64 `gorm:"column:ship_ct"`
 	AdjustmentCents *int64 `gorm:"column:adj_ct"`
-	TotalCents     int64 `gorm:"column:tot_ct"`
-	Status         string
-	Notes          string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	DeletedAt      gorm.DeletedAt `gorm:"index"`
+	TotalCents      int64  `gorm:"column:tot_ct"`
+	Status          string
+	Notes           string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       gorm.DeletedAt `gorm:"index"`
 }
 
 type ProjectPayment struct {
@@ -253,7 +253,7 @@ type ProjectPayment struct {
 	Invoice     ProjectInvoice `gorm:"constraint:OnDelete:SET NULL;"`
 	VendorID    *uint
 	Vendor      Vendor `gorm:"constraint:OnDelete:SET NULL;"`
-	AmountCents int64 `gorm:"column:amt_ct"`
+	AmountCents int64  `gorm:"column:amt_ct"`
 	PaidAt      time.Time
 	Method      string
 	Reference   string

@@ -662,9 +662,9 @@ func (s *Store) CountMaintenanceByAppliance(applianceIDs []uint) (map[uint]int, 
 }
 
 type ProjectFinanceSummary struct {
-	CommittedCents  int64
-	InvoicedCents   int64
-	PaidCents       int64
+	CommittedCents   int64
+	InvoicedCents    int64
+	PaidCents        int64
 	OutstandingCents int64
 }
 
@@ -920,9 +920,9 @@ func (s *Store) ProjectFinanceSummary(projectID uint) (ProjectFinanceSummary, er
 		return ProjectFinanceSummary{}, err
 	}
 	return ProjectFinanceSummary{
-		CommittedCents:  committed,
-		InvoicedCents:   invoiced,
-		PaidCents:       paid,
+		CommittedCents:   committed,
+		InvoicedCents:    invoiced,
+		PaidCents:        paid,
 		OutstandingCents: invoiced - paid,
 	}, nil
 }
@@ -1238,7 +1238,7 @@ func (s *Store) sumProjectColumn(
 ) (int64, error) {
 	var total int64
 	db := s.db.Model(model).
-		Select("COALESCE(SUM(" + column + "), 0)").
+		Select("COALESCE(SUM("+column+"), 0)").
 		Where("project_id = ?", projectID)
 	if extraWhere != "" {
 		db = db.Where(extraWhere)
