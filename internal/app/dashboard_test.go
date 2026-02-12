@@ -331,7 +331,7 @@ func TestRenderMiniTable(t *testing.T) {
 			{Text: "7", Style: lipgloss.NewStyle(), Align: alignRight},
 		}},
 	}
-	lines := renderMiniTable(rows, 3, -1, lipgloss.NewStyle())
+	lines := renderMiniTable(rows, 3, 0, -1, lipgloss.NewStyle())
 	require.Len(t, lines, 2)
 	// Both lines should have the same visible width due to column alignment.
 	assert.Equal(t, lipgloss.Width(lines[0]), lipgloss.Width(lines[1]))
@@ -351,7 +351,7 @@ func TestRenderMiniTableUnicode(t *testing.T) {
 				{Text: "in 14 days", Style: plain, Align: alignRight},
 			}},
 		}
-		lines := renderMiniTable(rows, 3, -1, plain)
+		lines := renderMiniTable(rows, 3, 0, -1, plain)
 		require.Len(t, lines, 2)
 		assert.Equal(t, lipgloss.Width(lines[0]), lipgloss.Width(lines[1]),
 			"rows with accented characters should align")
@@ -369,7 +369,7 @@ func TestRenderMiniTableUnicode(t *testing.T) {
 				{Text: "$1,000", Style: plain, Align: alignRight},
 			}},
 		}
-		lines := renderMiniTable(rows, 3, -1, plain)
+		lines := renderMiniTable(rows, 3, 0, -1, plain)
 		require.Len(t, lines, 2)
 		assert.Equal(t, lipgloss.Width(lines[0]), lipgloss.Width(lines[1]),
 			"rows with CJK characters should align")
@@ -386,11 +386,104 @@ func TestRenderMiniTableUnicode(t *testing.T) {
 				{Text: "pending", Style: plain},
 			}},
 		}
-		lines := renderMiniTable(rows, 3, -1, plain)
+		lines := renderMiniTable(rows, 3, 0, -1, plain)
 		require.Len(t, lines, 2)
 		assert.Equal(t, lipgloss.Width(lines[0]), lipgloss.Width(lines[1]),
 			"rows with emoji should align")
 	})
+}
+
+func TestRenderMiniTableTruncatesOnNarrowWidth(t *testing.T) {
+	plain := lipgloss.NewStyle()
+	rows := []dashRow{
+		{Cells: []dashCell{
+			{Text: "Very long maintenance item name here", Style: plain},
+			{Text: "3 days overdue", Style: plain, Align: alignRight},
+		}},
+		{Cells: []dashCell{
+			{Text: "Another long name for testing", Style: plain},
+			{Text: "in 14 days", Style: plain, Align: alignRight},
+		}},
+	}
+
+	// Without width cap, rows are as wide as content demands.
+	uncapped := renderMiniTable(rows, 3, 0, -1, plain)
+	require.Len(t, uncapped, 2)
+	uncappedWidth := lipgloss.Width(uncapped[0])
+
+	// With a tight width cap, rows should be truncated.
+	capped := renderMiniTable(rows, 3, 40, -1, plain)
+	require.Len(t, capped, 2)
+	for i, line := range capped {
+		w := lipgloss.Width(line)
+		assert.LessOrEqual(t, w, 40,
+			"line %d width %d exceeds maxWidth 40", i, w)
+	}
+
+	// Capped should be narrower than uncapped.
+	assert.Less(t, lipgloss.Width(capped[0]), uncappedWidth,
+		"capped lines should be narrower")
+
+	// Truncated first column should contain an ellipsis.
+	assert.Contains(t, capped[0], "\u2026", "truncated line should contain ellipsis")
+}
+
+func TestTruncateToWidth(t *testing.T) {
+	tests := []struct {
+		name  string
+		text  string
+		maxW  int
+		check func(t *testing.T, result string)
+	}{
+		{
+			name: "fits within width",
+			text: "hello",
+			maxW: 10,
+			check: func(t *testing.T, result string) {
+				assert.Equal(t, "hello", result)
+			},
+		},
+		{
+			name: "truncated with ellipsis",
+			text: "very long text here",
+			maxW: 10,
+			check: func(t *testing.T, result string) {
+				assert.LessOrEqual(t, lipgloss.Width(result), 10)
+				assert.Contains(t, result, "\u2026")
+			},
+		},
+		{
+			name: "CJK truncation",
+			text: "\u6771\u829d\u88fd\u54c1\u682a\u5f0f\u4f1a\u793e", // 東芝製品株式会社
+			maxW: 8,
+			check: func(t *testing.T, result string) {
+				assert.LessOrEqual(t, lipgloss.Width(result), 8)
+				assert.Contains(t, result, "\u2026")
+			},
+		},
+		{
+			name: "width 1 returns ellipsis",
+			text: "hello",
+			maxW: 1,
+			check: func(t *testing.T, result string) {
+				assert.Equal(t, "\u2026", result)
+			},
+		},
+		{
+			name: "width 0 returns empty",
+			text: "hello",
+			maxW: 0,
+			check: func(t *testing.T, result string) {
+				assert.Empty(t, result)
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := truncateToWidth(tt.text, tt.maxW)
+			tt.check(t, result)
+		})
+	}
 }
 
 func TestDistributeDashRows(t *testing.T) {
