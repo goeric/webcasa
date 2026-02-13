@@ -26,6 +26,7 @@ const (
 	DeletionEntityAppliance   = "appliance"
 	DeletionEntityServiceLog  = "service_log"
 	DeletionEntityVendor      = "vendor"
+	DeletionEntityPayment     = "project_payment"
 )
 
 // Column name constants for use in raw SQL queries. Centralising these
@@ -48,6 +49,9 @@ const (
 	ColProjectID         = "project_id"
 	ColApplianceID       = "appliance_id"
 	ColMaintenanceItemID = "maintenance_item_id"
+	ColAcceptedAt        = "accepted_at"
+	ColPaidAt            = "paid_at"
+	ColAmountCents       = "amount_cents"
 	ColEntity            = "entity"
 	ColTargetID          = "target_id"
 	ColContactName       = "contact_name"
@@ -56,6 +60,10 @@ const (
 	ColWebsite           = "website"
 	ColNotes             = "notes"
 )
+
+func PaymentMethods() []string {
+	return []string{"check", "card", "transfer", "cash", "other"}
+}
 
 func ProjectStatuses() []string {
 	return []string{
@@ -152,6 +160,7 @@ type Quote struct {
 	MaterialsCents *int64
 	OtherCents     *int64
 	ReceivedDate   *time.Time
+	AcceptedAt     *time.Time
 	Notes          string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -211,6 +220,22 @@ type ServiceLogEntry struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 	DeletedAt         gorm.DeletedAt `gorm:"index"`
+}
+
+type ProjectPayment struct {
+	ID          uint `gorm:"primaryKey"`
+	ProjectID   uint
+	Project     Project `gorm:"constraint:OnDelete:RESTRICT;"`
+	VendorID    *uint
+	Vendor      Vendor `gorm:"constraint:OnDelete:SET NULL;"`
+	AmountCents int64
+	PaidAt      time.Time
+	Method      string
+	Reference   string
+	Notes       string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 type DeletionRecord struct {

@@ -1200,3 +1200,202 @@ func TestListServiceLogsByVendor(t *testing.T) {
 	assert.Equal(t, "Filter", entries[0].MaintenanceItem.Name,
 		"preloaded MaintenanceItem should be available")
 }
+
+// ---------------------------------------------------------------------------
+// Quote acceptance tests
+// ---------------------------------------------------------------------------
+
+func TestAcceptQuoteOnlyOnePerProject(t *testing.T) {
+	store := newTestStore(t)
+	types, _ := store.ProjectTypes()
+
+	require.NoError(t, store.CreateProject(Project{
+		Title: "P1", ProjectTypeID: types[0].ID, Status: ProjectStatusPlanned,
+	}))
+	projects, _ := store.ListProjects(false)
+	pid := projects[0].ID
+
+	require.NoError(t, store.CreateVendor(Vendor{Name: "V1"}))
+	require.NoError(t, store.CreateVendor(Vendor{Name: "V2"}))
+	vendors, _ := store.ListVendors(false)
+
+	require.NoError(t, store.CreateQuote(
+		Quote{ProjectID: pid, TotalCents: 10000}, Vendor{Name: vendors[0].Name},
+	))
+	require.NoError(t, store.CreateQuote(
+		Quote{ProjectID: pid, TotalCents: 20000}, Vendor{Name: vendors[1].Name},
+	))
+	quotes, _ := store.ListQuotes(false)
+	q1 := quotes[0].ID
+	q2 := quotes[1].ID
+
+	// Accept first.
+	require.NoError(t, store.AcceptQuote(q1))
+	got1, _ := store.GetQuote(q1)
+	assert.NotNil(t, got1.AcceptedAt)
+
+	// Accept second clears first.
+	require.NoError(t, store.AcceptQuote(q2))
+	got1, _ = store.GetQuote(q1)
+	got2, _ := store.GetQuote(q2)
+	assert.Nil(t, got1.AcceptedAt, "first quote should be unaccepted")
+	assert.NotNil(t, got2.AcceptedAt, "second quote should be accepted")
+
+	// Unaccept.
+	require.NoError(t, store.UnacceptQuote(q2))
+	got2, _ = store.GetQuote(q2)
+	assert.Nil(t, got2.AcceptedAt)
+}
+
+// ---------------------------------------------------------------------------
+// ProjectPayment CRUD tests
+// ---------------------------------------------------------------------------
+
+func newTestProjectAndVendor(t *testing.T, store *Store) (uint, uint) {
+	t.Helper()
+	types, _ := store.ProjectTypes()
+	require.NoError(t, store.CreateProject(Project{
+		Title: "PayProj", ProjectTypeID: types[0].ID, Status: ProjectStatusInProgress,
+	}))
+	projects, _ := store.ListProjects(false)
+	require.NoError(t, store.CreateVendor(Vendor{Name: "PayVendor"}))
+	vendors, _ := store.ListVendors(false)
+	return projects[0].ID, vendors[0].ID
+}
+
+func TestProjectPaymentCRUD(t *testing.T) {
+	store := newTestStore(t)
+	pid, _ := newTestProjectAndVendor(t, store)
+
+	// Create with vendor lookup.
+	require.NoError(t, store.CreateProjectPayment(
+		ProjectPayment{
+			ProjectID:   pid,
+			AmountCents: 50000,
+			PaidAt:      time.Now(),
+			Method:      "check",
+		},
+		Vendor{Name: "PayVendor"},
+	))
+
+	payments, err := store.ListProjectPayments(pid, false)
+	require.NoError(t, err)
+	require.Len(t, payments, 1)
+	assert.Equal(t, int64(50000), payments[0].AmountCents)
+	assert.Equal(t, "PayVendor", payments[0].Vendor.Name)
+
+	// Update.
+	p := payments[0]
+	p.AmountCents = 60000
+	p.Method = "card"
+	require.NoError(t, store.UpdateProjectPayment(p, Vendor{Name: "PayVendor"}))
+	got, err := store.GetProjectPayment(p.ID)
+	require.NoError(t, err)
+	assert.Equal(t, int64(60000), got.AmountCents)
+	assert.Equal(t, "card", got.Method)
+}
+
+func TestProjectPaymentDeleteRestore(t *testing.T) {
+	store := newTestStore(t)
+	pid, _ := newTestProjectAndVendor(t, store)
+
+	require.NoError(t, store.CreateProjectPayment(
+		ProjectPayment{
+			ProjectID: pid, AmountCents: 10000, PaidAt: time.Now(), Method: "cash",
+		},
+		Vendor{},
+	))
+	payments, _ := store.ListProjectPayments(pid, false)
+	payID := payments[0].ID
+
+	require.NoError(t, store.DeleteProjectPayment(payID))
+	after, _ := store.ListProjectPayments(pid, false)
+	assert.Len(t, after, 0, "deleted payment should not appear")
+
+	require.NoError(t, store.RestoreProjectPayment(payID))
+	restored, _ := store.ListProjectPayments(pid, false)
+	assert.Len(t, restored, 1, "restored payment should reappear")
+}
+
+func TestProjectDeleteBlockedByPayments(t *testing.T) {
+	store := newTestStore(t)
+	pid, _ := newTestProjectAndVendor(t, store)
+
+	require.NoError(t, store.CreateProjectPayment(
+		ProjectPayment{
+			ProjectID: pid, AmountCents: 10000, PaidAt: time.Now(), Method: "check",
+		},
+		Vendor{},
+	))
+
+	err := store.DeleteProject(pid)
+	assert.ErrorContains(t, err, "active payment")
+}
+
+func TestRestorePaymentBlockedByDeletedProject(t *testing.T) {
+	store := newTestStore(t)
+	pid, _ := newTestProjectAndVendor(t, store)
+
+	require.NoError(t, store.CreateProjectPayment(
+		ProjectPayment{
+			ProjectID: pid, AmountCents: 10000, PaidAt: time.Now(), Method: "cash",
+		},
+		Vendor{},
+	))
+	payments, _ := store.ListProjectPayments(pid, false)
+	payID := payments[0].ID
+
+	require.NoError(t, store.DeleteProjectPayment(payID))
+	require.NoError(t, store.DeleteProject(pid))
+
+	err := store.RestoreProjectPayment(payID)
+	assert.ErrorContains(t, err, "project is deleted")
+}
+
+func TestCountAndSumPaymentsByProject(t *testing.T) {
+	store := newTestStore(t)
+	pid, _ := newTestProjectAndVendor(t, store)
+
+	require.NoError(t, store.CreateProjectPayment(
+		ProjectPayment{
+			ProjectID: pid, AmountCents: 30000, PaidAt: time.Now(), Method: "check",
+		},
+		Vendor{},
+	))
+	require.NoError(t, store.CreateProjectPayment(
+		ProjectPayment{
+			ProjectID: pid, AmountCents: 20000, PaidAt: time.Now(), Method: "card",
+		},
+		Vendor{},
+	))
+
+	counts, err := store.CountPaymentsByProject([]uint{pid})
+	require.NoError(t, err)
+	assert.Equal(t, 2, counts[pid])
+
+	sums, err := store.SumPaymentsByProject([]uint{pid})
+	require.NoError(t, err)
+	assert.Equal(t, int64(50000), sums[pid])
+}
+
+func TestRestorePaymentBlockedByDeletedVendor(t *testing.T) {
+	store := newTestStore(t)
+	pid, vid := newTestProjectAndVendor(t, store)
+
+	require.NoError(t, store.CreateProjectPayment(
+		ProjectPayment{
+			ProjectID: pid, AmountCents: 10000, PaidAt: time.Now(), Method: "cash",
+		},
+		Vendor{Name: "PayVendor"},
+	))
+	payments, _ := store.ListProjectPayments(pid, false)
+	payID := payments[0].ID
+
+	require.NoError(t, store.DeleteProjectPayment(payID))
+	// Delete the vendor (need to clear its quote dependents first, but we
+	// have none here).
+	require.NoError(t, store.DeleteVendor(vid))
+
+	err := store.RestoreProjectPayment(payID)
+	assert.ErrorContains(t, err, "vendor is deleted")
+}

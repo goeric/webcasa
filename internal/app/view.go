@@ -639,6 +639,8 @@ func (m *Model) drilldownHint(tab *Tab, spec columnSpec) string {
 		return "vendor jobs"
 	case tab.Kind == tabProjects && spec.Title == tabQuotes.String():
 		return "project quotes"
+	case tab.Kind == tabProjects && spec.Title == "Pay":
+		return "payments"
 	default:
 		return drilldownArrow + " drilldown"
 	}

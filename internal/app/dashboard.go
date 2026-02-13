@@ -41,6 +41,7 @@ type dashboardData struct {
 	Overdue            []maintenanceUrgency
 	Upcoming           []maintenanceUrgency
 	ActiveProjects     []data.Project
+	ProjectPaidCents   map[uint]int64 // paid total per project ID
 	ExpiringWarranties []warrantyStatus
 	InsuranceRenewal   *insuranceStatus
 	ServiceSpendCents  int64
@@ -227,6 +228,16 @@ func (m *Model) loadDashboardAt(now time.Time) error {
 	d.ActiveProjects, err = m.store.ListActiveProjects()
 	if err != nil {
 		return fmt.Errorf("load active projects: %w", err)
+	}
+
+	// Payment totals per active project.
+	projIDs := make([]uint, len(d.ActiveProjects))
+	for i, p := range d.ActiveProjects {
+		projIDs[i] = p.ID
+	}
+	d.ProjectPaidCents, err = m.store.SumPaymentsByProject(projIDs)
+	if err != nil {
+		d.ProjectPaidCents = map[uint]int64{}
 	}
 
 	// Expiring warranties (expired within 30 days or expiring within 90).
@@ -638,18 +649,18 @@ func (m *Model) dashProjectRows() []dashRow {
 		statusText := statusLabel(p.Status)
 		budgetText := ""
 		budgetStyle := m.styles.Money
+		fmtCents := data.FormatCompactCents
+		if m.magMode {
+			fmtCents = magCents
+		}
+
+		// Show paid / budget when budget is set.
 		if p.BudgetCents != nil {
-			fmtCents := data.FormatCompactCents
-			fmtOpt := data.FormatCompactOptionalCents
-			if m.magMode {
-				fmtCents = magCents
-				fmtOpt = magOptionalCents
-			}
-			act := fmtOpt(p.ActualCents)
 			bud := fmtCents(*p.BudgetCents)
-			if act != "" {
-				budgetText = act + " / " + bud
-				if p.ActualCents != nil && *p.ActualCents > *p.BudgetCents {
+			paid := d.ProjectPaidCents[p.ID]
+			if paid > 0 {
+				budgetText = fmtCents(paid) + " / " + bud
+				if paid > *p.BudgetCents {
 					budgetStyle = m.styles.DashOverdue
 				}
 			} else {

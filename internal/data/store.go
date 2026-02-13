@@ -113,6 +113,7 @@ func (s *Store) AutoMigrate() error {
 		&Appliance{},
 		&MaintenanceItem{},
 		&ServiceLogEntry{},
+		&ProjectPayment{},
 		&DeletionRecord{},
 	)
 }
@@ -223,6 +224,8 @@ func (s *Store) SeedDemoDataFrom(h *fake.HomeFaker) error {
 	}
 
 	// Quotes: 1-2 for each non-ideating, non-abandoned project.
+	// Track quotes per project so we can accept one.
+	projectQuoteIDs := map[uint][]uint{}
 	for i := range projects {
 		if projects[i].Status == ProjectStatusIdeating ||
 			projects[i].Status == ProjectStatusAbandoned {
@@ -243,6 +246,52 @@ func (s *Store) SeedDemoDataFrom(h *fake.HomeFaker) error {
 			}
 			if err := s.db.Create(&quote).Error; err != nil {
 				return fmt.Errorf("seed quote: %w", err)
+			}
+			projectQuoteIDs[projects[i].ID] = append(
+				projectQuoteIDs[projects[i].ID], quote.ID,
+			)
+		}
+	}
+
+	// Accept one quote per underway/completed project.
+	for i := range projects {
+		ids := projectQuoteIDs[projects[i].ID]
+		if len(ids) == 0 {
+			continue
+		}
+		if projects[i].Status == ProjectStatusInProgress ||
+			projects[i].Status == ProjectStatusCompleted {
+			if err := s.AcceptQuote(ids[0]); err != nil {
+				return fmt.Errorf("seed quote acceptance: %w", err)
+			}
+		}
+	}
+
+	// Payments: 1-3 for underway/completed projects.
+	methods := PaymentMethods()
+	for i := range projects {
+		if projects[i].Status != ProjectStatusInProgress &&
+			projects[i].Status != ProjectStatusCompleted {
+			continue
+		}
+		nPayments := 1 + h.IntN(3)
+		for p := 0; p < nPayments; p++ {
+			vi := h.IntN(len(vendors))
+			amountCents := int64(h.IntN(500000) + 10000)
+			paidAt := h.Quote().ReceivedDate
+			if paidAt == nil {
+				now := time.Now()
+				paidAt = &now
+			}
+			payment := ProjectPayment{
+				ProjectID:   projects[i].ID,
+				VendorID:    &vendors[vi].ID,
+				AmountCents: amountCents,
+				PaidAt:      *paidAt,
+				Method:      methods[h.IntN(len(methods))],
+			}
+			if err := s.db.Create(&payment).Error; err != nil {
+				return fmt.Errorf("seed payment: %w", err)
 			}
 		}
 	}
@@ -730,6 +779,145 @@ func (s *Store) CountMaintenanceByAppliance(applianceIDs []uint) (map[uint]int, 
 	return s.countByFK(&MaintenanceItem{}, ColApplianceID, applianceIDs)
 }
 
+// ---------------------------------------------------------------------------
+// Quote acceptance
+// ---------------------------------------------------------------------------
+
+// AcceptQuote marks a quote as accepted and clears acceptance on any other
+// quote for the same project. Only one quote per project can be accepted.
+func (s *Store) AcceptQuote(id uint) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		var quote Quote
+		if err := tx.First(&quote, id).Error; err != nil {
+			return err
+		}
+		// Clear any existing acceptance for this project.
+		if err := tx.Model(&Quote{}).
+			Where(ColProjectID+" = ? AND "+ColAcceptedAt+" IS NOT NULL", quote.ProjectID).
+			Update(ColAcceptedAt, nil).Error; err != nil {
+			return err
+		}
+		now := time.Now()
+		return tx.Model(&Quote{}).Where(ColID+" = ?", id).
+			Update(ColAcceptedAt, now).Error
+	})
+}
+
+// UnacceptQuote clears the acceptance timestamp on a quote.
+func (s *Store) UnacceptQuote(id uint) error {
+	return s.db.Model(&Quote{}).Where(ColID+" = ?", id).
+		Update(ColAcceptedAt, nil).Error
+}
+
+// ---------------------------------------------------------------------------
+// ProjectPayment CRUD
+// ---------------------------------------------------------------------------
+
+func (s *Store) ListProjectPayments(
+	projectID uint,
+	includeDeleted bool,
+) ([]ProjectPayment, error) {
+	var payments []ProjectPayment
+	db := s.db.Where(ColProjectID+" = ?", projectID).
+		Preload("Vendor", func(q *gorm.DB) *gorm.DB {
+			return q.Unscoped()
+		}).
+		Order(ColPaidAt + " desc, " + ColID + " desc")
+	if includeDeleted {
+		db = db.Unscoped()
+	}
+	if err := db.Find(&payments).Error; err != nil {
+		return nil, err
+	}
+	return payments, nil
+}
+
+func (s *Store) GetProjectPayment(id uint) (ProjectPayment, error) {
+	var payment ProjectPayment
+	err := s.db.Preload("Vendor", func(q *gorm.DB) *gorm.DB {
+		return q.Unscoped()
+	}).First(&payment, id).Error
+	return payment, err
+}
+
+func (s *Store) CreateProjectPayment(payment ProjectPayment, vendor Vendor) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if strings.TrimSpace(vendor.Name) != "" {
+			found, err := findOrCreateVendor(tx, vendor)
+			if err != nil {
+				return err
+			}
+			payment.VendorID = &found.ID
+		}
+		return tx.Create(&payment).Error
+	})
+}
+
+func (s *Store) UpdateProjectPayment(payment ProjectPayment, vendor Vendor) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if strings.TrimSpace(vendor.Name) != "" {
+			found, err := findOrCreateVendor(tx, vendor)
+			if err != nil {
+				return err
+			}
+			payment.VendorID = &found.ID
+		} else {
+			payment.VendorID = nil
+		}
+		return updateByIDWith(tx, &ProjectPayment{}, payment.ID, payment)
+	})
+}
+
+func (s *Store) DeleteProjectPayment(id uint) error {
+	return s.softDelete(&ProjectPayment{}, DeletionEntityPayment, id)
+}
+
+func (s *Store) RestoreProjectPayment(id uint) error {
+	var payment ProjectPayment
+	if err := s.db.Unscoped().First(&payment, id).Error; err != nil {
+		return err
+	}
+	if err := s.requireParentAlive(&Project{}, payment.ProjectID); err != nil {
+		return fmt.Errorf("project is deleted -- restore it first")
+	}
+	if payment.VendorID != nil {
+		if err := s.requireParentAlive(&Vendor{}, *payment.VendorID); err != nil {
+			return fmt.Errorf("vendor is deleted -- restore it first")
+		}
+	}
+	return s.restoreEntity(&ProjectPayment{}, DeletionEntityPayment, id)
+}
+
+// CountPaymentsByProject returns the number of non-deleted payments per project ID.
+func (s *Store) CountPaymentsByProject(projectIDs []uint) (map[uint]int, error) {
+	return s.countByFK(&ProjectPayment{}, ColProjectID, projectIDs)
+}
+
+// SumPaymentsByProject returns the total paid cents per project for active payments.
+func (s *Store) SumPaymentsByProject(projectIDs []uint) (map[uint]int64, error) {
+	if len(projectIDs) == 0 {
+		return map[uint]int64{}, nil
+	}
+	type row struct {
+		FK  uint  `gorm:"column:fk"`
+		Sum int64 `gorm:"column:total"`
+	}
+	var results []row
+	err := s.db.Model(&ProjectPayment{}).
+		Select(ColProjectID+" as fk, coalesce(sum("+ColAmountCents+"), 0) as total").
+		Where(ColProjectID+" IN ?", projectIDs).
+		Group(ColProjectID).
+		Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+	sums := make(map[uint]int64, len(results))
+	for _, r := range results {
+		sums[r.FK] = r.Sum
+	}
+	return sums, nil
+}
+
 func (s *Store) DeleteVendor(id uint) error {
 	n, err := s.countDependents(&Quote{}, ColVendorID, id)
 	if err != nil {
@@ -752,6 +940,13 @@ func (s *Store) DeleteProject(id uint) error {
 	}
 	if n > 0 {
 		return fmt.Errorf("project has %d active quote(s) -- delete them first", n)
+	}
+	np, err := s.countDependents(&ProjectPayment{}, ColProjectID, id)
+	if err != nil {
+		return err
+	}
+	if np > 0 {
+		return fmt.Errorf("project has %d active payment(s) -- delete them first", np)
 	}
 	return s.softDelete(&Project{}, DeletionEntityProject, id)
 }

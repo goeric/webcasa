@@ -91,6 +91,16 @@ type serviceLogFormData struct {
 	Notes             string
 }
 
+type paymentFormData struct {
+	ProjectID uint
+	VendorID  uint // 0 = none
+	Amount    string
+	PaidAt    string
+	Method    string
+	Reference string
+	Notes     string
+}
+
 type vendorFormData struct {
 	Name        string
 	ContactName string
@@ -566,6 +576,193 @@ func (m *Model) parseApplianceFormData() (data.Appliance, error) {
 	}, nil
 }
 
+func (m *Model) startPaymentForm(projectID uint) error {
+	values := &paymentFormData{
+		ProjectID: projectID,
+		PaidAt:    time.Now().Format(data.DateLayout),
+		Method:    "check",
+	}
+	vendorOpts := vendorOptions(m.vendors)
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Amount").
+				Placeholder("1250.00").
+				Value(&values.Amount).
+				Validate(requiredMoney("amount")),
+			huh.NewInput().
+				Title("Date paid (YYYY-MM-DD)").
+				Value(&values.PaidAt).
+				Validate(requiredDate("date paid")),
+			huh.NewSelect[string]().
+				Title("Method").
+				Options(paymentMethodOptions()...).
+				Value(&values.Method),
+			huh.NewSelect[uint]().
+				Title("Vendor").
+				Options(vendorOpts...).
+				Value(&values.VendorID),
+		),
+	)
+	m.activateForm(formPayment, form, values)
+	return nil
+}
+
+func (m *Model) startEditPaymentForm(id uint) error {
+	payment, err := m.store.GetProjectPayment(id)
+	if err != nil {
+		return fmt.Errorf("load payment: %w", err)
+	}
+	values := paymentFormValues(payment)
+	vendorOpts := vendorOptions(m.vendors)
+	m.editID = &id
+	m.openPaymentForm(values, vendorOpts)
+	return nil
+}
+
+func (m *Model) openPaymentForm(
+	values *paymentFormData,
+	vendorOpts []huh.Option[uint],
+) {
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Amount").
+				Placeholder("1250.00").
+				Value(&values.Amount).
+				Validate(requiredMoney("amount")),
+			huh.NewInput().
+				Title("Date paid (YYYY-MM-DD)").
+				Value(&values.PaidAt).
+				Validate(requiredDate("date paid")),
+			huh.NewSelect[string]().
+				Title("Method").
+				Options(paymentMethodOptions()...).
+				Value(&values.Method),
+			huh.NewSelect[uint]().
+				Title("Vendor").
+				Options(vendorOpts...).
+				Value(&values.VendorID),
+			huh.NewInput().Title("Reference").
+				Placeholder("Check #1234").
+				Value(&values.Reference),
+			huh.NewText().Title("Notes").Value(&values.Notes),
+		),
+	)
+	m.activateForm(formPayment, form, values)
+}
+
+func (m *Model) submitPaymentForm() error {
+	payment, vendor, err := m.parsePaymentFormData()
+	if err != nil {
+		return err
+	}
+	if m.editID != nil {
+		payment.ID = *m.editID
+		return m.store.UpdateProjectPayment(payment, vendor)
+	}
+	return m.store.CreateProjectPayment(payment, vendor)
+}
+
+func (m *Model) parsePaymentFormData() (data.ProjectPayment, data.Vendor, error) {
+	values, ok := m.formData.(*paymentFormData)
+	if !ok {
+		return data.ProjectPayment{}, data.Vendor{}, fmt.Errorf("unexpected payment form data")
+	}
+	amount, err := data.ParseRequiredCents(values.Amount)
+	if err != nil {
+		return data.ProjectPayment{}, data.Vendor{}, err
+	}
+	paidAt, err := data.ParseRequiredDate(values.PaidAt)
+	if err != nil {
+		return data.ProjectPayment{}, data.Vendor{}, err
+	}
+	payment := data.ProjectPayment{
+		ProjectID:   values.ProjectID,
+		AmountCents: amount,
+		PaidAt:      paidAt,
+		Method:      values.Method,
+		Reference:   strings.TrimSpace(values.Reference),
+		Notes:       strings.TrimSpace(values.Notes),
+	}
+	var vendor data.Vendor
+	if values.VendorID > 0 {
+		for _, v := range m.vendors {
+			if v.ID == values.VendorID {
+				vendor = v
+				break
+			}
+		}
+	}
+	return payment, vendor, nil
+}
+
+func (m *Model) inlineEditPayment(id uint, col int) error {
+	payment, err := m.store.GetProjectPayment(id)
+	if err != nil {
+		return fmt.Errorf("load payment: %w", err)
+	}
+	values := paymentFormValues(payment)
+	// Column mapping: 0=ID, 1=Vendor, 2=Amount, 3=Date, 4=Method, 5=Ref, 6=Notes
+	switch col {
+	case 1:
+		vendorOpts := vendorOptions(m.vendors)
+		field := huh.NewSelect[uint]().
+			Title("Vendor").
+			Options(vendorOpts...).
+			Value(&values.VendorID)
+		m.openInlineEdit(id, formPayment, field, values)
+	case 2:
+		m.openInlineInput(
+			id, formPayment, "Amount", "1250.00",
+			&values.Amount, requiredMoney("amount"), values,
+		)
+	case 3:
+		m.openDatePicker(id, formPayment, &values.PaidAt, values)
+	case 4:
+		field := huh.NewSelect[string]().
+			Title("Method").
+			Options(paymentMethodOptions()...).
+			Value(&values.Method)
+		m.openInlineEdit(id, formPayment, field, values)
+	case 5:
+		m.openInlineInput(
+			id, formPayment, "Reference", "Check #1234",
+			&values.Reference, nil, values,
+		)
+	case 6:
+		m.openInlineInput(id, formPayment, "Notes", "", &values.Notes, nil, values)
+	default:
+		return m.startEditPaymentForm(id)
+	}
+	return nil
+}
+
+func paymentFormValues(p data.ProjectPayment) *paymentFormData {
+	var vendorID uint
+	if p.VendorID != nil {
+		vendorID = *p.VendorID
+	}
+	return &paymentFormData{
+		ProjectID: p.ProjectID,
+		VendorID:  vendorID,
+		Amount:    data.FormatCents(p.AmountCents),
+		PaidAt:    p.PaidAt.Format(data.DateLayout),
+		Method:    p.Method,
+		Reference: p.Reference,
+		Notes:     p.Notes,
+	}
+}
+
+func paymentMethodOptions() []huh.Option[string] {
+	methods := data.PaymentMethods()
+	opts := make([]huh.Option[string], len(methods))
+	for i, m := range methods {
+		opts[i] = huh.NewOption(m, m)
+	}
+	return withOrdinals(opts)
+}
+
 func (m *Model) startVendorForm() {
 	values := &vendorFormData{}
 	form := huh.NewForm(
@@ -740,7 +937,7 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 		return err
 	}
 	values := quoteFormValues(quote)
-	// Column mapping: 0=ID, 1=Project, 2=Vendor, 3=Total, 4=Labor, 5=Mat, 6=Other, 7=Recv
+	// Column mapping: 0=ID, 1=Project, 2=Vendor, 3=Total, 4=Labor, 5=Mat, 6=Other, 7=Recv, 8=Accepted
 	switch col {
 	case 1:
 		projectOpts := projectOptions(projects)
@@ -800,9 +997,34 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 		)
 	case 7:
 		m.openDatePicker(id, formQuote, &values.ReceivedDate, values)
+	case 8:
+		// Toggle quote acceptance instead of inline editing.
+		return m.toggleQuoteAcceptance(id)
 	default:
 		return m.startEditQuoteForm(id)
 	}
+	return nil
+}
+
+// toggleQuoteAcceptance accepts or unaccepts a quote. Accepting clears any
+// other accepted quote on the same project.
+func (m *Model) toggleQuoteAcceptance(id uint) error {
+	quote, err := m.store.GetQuote(id)
+	if err != nil {
+		return fmt.Errorf("load quote: %w", err)
+	}
+	if quote.AcceptedAt != nil {
+		if err := m.store.UnacceptQuote(id); err != nil {
+			return err
+		}
+		m.setStatusInfo("Quote unaccepted.")
+	} else {
+		if err := m.store.AcceptQuote(id); err != nil {
+			return err
+		}
+		m.setStatusInfo("Quote accepted.")
+	}
+	m.reloadAfterMutation()
 	return nil
 }
 

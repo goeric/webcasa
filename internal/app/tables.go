@@ -104,6 +104,7 @@ func projectColumnSpecs() []columnSpec {
 		{Title: "Start", Min: 10, Max: 12, Kind: cellDate},
 		{Title: "End", Min: 10, Max: 12, Kind: cellDate},
 		{Title: tabQuotes.String(), Min: 6, Max: 8, Align: alignRight, Kind: cellDrilldown},
+		{Title: "Pay", Min: 4, Max: 6, Align: alignRight, Kind: cellDrilldown},
 	}
 }
 
@@ -129,6 +130,7 @@ func quoteColumnSpecs() []columnSpec {
 		{Title: "Mat", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
 		{Title: "Other", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
 		{Title: "Recv", Min: 10, Max: 12, Kind: cellDate},
+		{Title: "Accepted", Min: 10, Max: 12, Kind: cellDate},
 	}
 }
 
@@ -395,11 +397,16 @@ func newTable(columns []table.Column, styles Styles) table.Model {
 func projectRows(
 	projects []data.Project,
 	quoteCounts map[uint]int,
+	paymentCounts map[uint]int,
 ) ([]table.Row, []rowMeta, [][]cell) {
 	return buildRows(projects, func(p data.Project) rowSpec {
 		quoteCount := ""
 		if n := quoteCounts[p.ID]; n > 0 {
 			quoteCount = fmt.Sprintf("%d", n)
+		}
+		payCount := ""
+		if n := paymentCounts[p.ID]; n > 0 {
+			payCount = fmt.Sprintf("%d", n)
 		}
 		return rowSpec{
 			ID:      p.ID,
@@ -414,6 +421,7 @@ func projectRows(
 				{Value: dateValue(p.StartDate), Kind: cellDate},
 				{Value: dateValue(p.EndDate), Kind: cellDate},
 				{Value: quoteCount, Kind: cellDrilldown},
+				{Value: payCount, Kind: cellDrilldown},
 			},
 		}
 	})
@@ -439,6 +447,7 @@ func quoteRows(
 				{Value: centsValue(q.MaterialsCents), Kind: cellMoney},
 				{Value: centsValue(q.OtherCents), Kind: cellMoney},
 				{Value: dateValue(q.ReceivedDate), Kind: cellDate},
+				{Value: dateValue(q.AcceptedAt), Kind: cellDate},
 			},
 		}
 	})
@@ -526,6 +535,7 @@ func vendorQuoteColumnSpecs() []columnSpec {
 		{Title: "Mat", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
 		{Title: "Other", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
 		{Title: "Recv", Min: 10, Max: 12, Kind: cellDate},
+		{Title: "Accepted", Min: 10, Max: 12, Kind: cellDate},
 	}
 }
 
@@ -548,6 +558,7 @@ func vendorQuoteRows(
 				{Value: centsValue(q.MaterialsCents), Kind: cellMoney},
 				{Value: centsValue(q.OtherCents), Kind: cellMoney},
 				{Value: dateValue(q.ReceivedDate), Kind: cellDate},
+				{Value: dateValue(q.AcceptedAt), Kind: cellDate},
 			},
 		}
 	})
@@ -607,6 +618,7 @@ func projectQuoteColumnSpecs() []columnSpec {
 		{Title: "Mat", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
 		{Title: "Other", Min: 8, Max: 12, Align: alignRight, Kind: cellMoney},
 		{Title: "Recv", Min: 10, Max: 12, Kind: cellDate},
+		{Title: "Accepted", Min: 10, Max: 12, Kind: cellDate},
 	}
 }
 
@@ -625,6 +637,52 @@ func projectQuoteRows(
 				{Value: centsValue(q.MaterialsCents), Kind: cellMoney},
 				{Value: centsValue(q.OtherCents), Kind: cellMoney},
 				{Value: dateValue(q.ReceivedDate), Kind: cellDate},
+				{Value: dateValue(q.AcceptedAt), Kind: cellDate},
+			},
+		}
+	})
+}
+
+// projectPaymentColumnSpecs defines the columns for payments scoped to a project.
+func projectPaymentColumnSpecs() []columnSpec {
+	return []columnSpec{
+		{Title: "ID", Min: 4, Max: 6, Align: alignRight, Kind: cellReadonly},
+		{
+			Title: "Vendor",
+			Min:   12,
+			Max:   20,
+			Flex:  true,
+			Link:  &columnLink{TargetTab: tabVendors},
+		},
+		{Title: "Amount", Min: 10, Max: 14, Align: alignRight, Kind: cellMoney},
+		{Title: "Date", Min: 10, Max: 12, Kind: cellDate},
+		{Title: "Method", Min: 8, Max: 12},
+		{Title: "Ref", Min: 8, Max: 16, Flex: true},
+		{Title: "Notes", Min: 12, Max: 40, Flex: true, Kind: cellNotes},
+	}
+}
+
+func projectPaymentRows(
+	payments []data.ProjectPayment,
+) ([]table.Row, []rowMeta, [][]cell) {
+	return buildRows(payments, func(p data.ProjectPayment) rowSpec {
+		vendorName := ""
+		var vendorLinkID uint
+		if p.VendorID != nil && p.Vendor.Name != "" {
+			vendorName = p.Vendor.Name
+			vendorLinkID = *p.VendorID
+		}
+		return rowSpec{
+			ID:      p.ID,
+			Deleted: p.DeletedAt.Valid,
+			Cells: []cell{
+				{Value: fmt.Sprintf("%d", p.ID), Kind: cellReadonly},
+				{Value: vendorName, Kind: cellText, LinkID: vendorLinkID},
+				{Value: data.FormatCents(p.AmountCents), Kind: cellMoney},
+				{Value: p.PaidAt.Format(data.DateLayout), Kind: cellDate},
+				{Value: p.Method, Kind: cellText},
+				{Value: p.Reference, Kind: cellText},
+				{Value: p.Notes, Kind: cellNotes},
 			},
 		}
 	})

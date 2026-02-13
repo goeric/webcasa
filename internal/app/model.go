@@ -662,6 +662,22 @@ func (m *Model) openVendorJobsDetail(vendorID uint, vendorName string) error {
 	})
 }
 
+func (m *Model) openProjectPaymentDetail(projectID uint, projectTitle string) error {
+	specs := projectPaymentColumnSpecs()
+	return m.openDetailWith(detailContext{
+		ParentTabIndex: m.active,
+		ParentRowID:    projectID,
+		Breadcrumb:     "Projects" + breadcrumbSep + projectTitle + breadcrumbSep + "Payments",
+		Tab: Tab{
+			Kind:    tabProjects,
+			Name:    "Payments",
+			Handler: projectPaymentHandler{projectID: projectID},
+			Specs:   specs,
+			Table:   newTable(specsToColumns(specs), m.styles),
+		},
+	})
+}
+
 func (m *Model) openProjectQuoteDetail(projectID uint, projectTitle string) error {
 	specs := projectQuoteColumnSpecs()
 	return m.openDetailWith(detailContext{
@@ -717,6 +733,13 @@ func (m *Model) openDetailForRow(tab *Tab, rowID uint, colTitle string) error {
 			return fmt.Errorf("load project: %w", err)
 		}
 		return m.openProjectQuoteDetail(rowID, project.Title)
+
+	case tab.Kind == tabProjects && colTitle == "Pay":
+		project, err := m.store.GetProject(rowID)
+		if err != nil {
+			return fmt.Errorf("load project: %w", err)
+		}
+		return m.openProjectPaymentDetail(rowID, project.Title)
 	}
 	return nil
 }

@@ -495,11 +495,15 @@ func TestProjectQuoteHandlerFormKind(t *testing.T) {
 	assert.Equal(t, formQuote, h.FormKind())
 }
 
-func TestProjectColumnSpecsIncludeQuotes(t *testing.T) {
+func TestProjectColumnSpecsIncludeDrilldowns(t *testing.T) {
 	specs := projectColumnSpecs()
-	last := specs[len(specs)-1]
-	assert.Equal(t, "Quotes", last.Title)
-	assert.Equal(t, cellDrilldown, last.Kind)
+	// Quotes is the second-to-last column, Pay is the last.
+	quotes := specs[len(specs)-2]
+	assert.Equal(t, "Quotes", quotes.Title)
+	assert.Equal(t, cellDrilldown, quotes.Kind)
+	pay := specs[len(specs)-1]
+	assert.Equal(t, "Pay", pay.Title)
+	assert.Equal(t, cellDrilldown, pay.Kind)
 }
 
 // ---------------------------------------------------------------------------

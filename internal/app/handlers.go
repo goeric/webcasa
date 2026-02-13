@@ -89,7 +89,11 @@ func (projectHandler) Load(
 	if err != nil {
 		quoteCounts = map[uint]int{}
 	}
-	rows, meta, cellRows := projectRows(projects, quoteCounts)
+	paymentCounts, err := store.CountPaymentsByProject(ids)
+	if err != nil {
+		paymentCounts = map[uint]int{}
+	}
+	rows, meta, cellRows := projectRows(projects, quoteCounts, paymentCounts)
 	return rows, meta, cellRows, nil
 }
 
@@ -602,7 +606,7 @@ func (vendorQuoteHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (vendorQuoteHandler) InlineEdit(m *Model, id uint, col int) error {
-	// Columns: 0=ID, 1=Project, 2=Total, 3=Labor, 4=Mat, 5=Other, 6=Recv.
+	// Columns: 0=ID, 1=Project, 2=Total, 3=Labor, 4=Mat, 5=Other, 6=Recv, 7=Accepted.
 	// Map to full quote columns (skip col 2=Vendor).
 	fullCol := col
 	if col >= 2 {
@@ -724,7 +728,7 @@ func (projectQuoteHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (projectQuoteHandler) InlineEdit(m *Model, id uint, col int) error {
-	// Columns: 0=ID, 1=Vendor, 2=Total, 3=Labor, 4=Mat, 5=Other, 6=Recv.
+	// Columns: 0=ID, 1=Vendor, 2=Total, 3=Labor, 4=Mat, 5=Other, 6=Recv, 7=Accepted.
 	// Map to full quote columns (skip col 1=Project).
 	fullCol := col
 	if col >= 1 {
@@ -742,3 +746,67 @@ func (projectQuoteHandler) Snapshot(store *data.Store, id uint) (undoEntry, bool
 }
 
 func (projectQuoteHandler) SyncFixedValues(_ *Model, _ []columnSpec) {}
+
+// ---------------------------------------------------------------------------
+// projectPaymentHandler -- detail-view handler for payments scoped to a project.
+// ---------------------------------------------------------------------------
+
+type projectPaymentHandler struct {
+	projectID uint
+}
+
+func (projectPaymentHandler) FormKind() FormKind { return formPayment }
+
+func (h projectPaymentHandler) Load(
+	store *data.Store,
+	showDeleted bool,
+) ([]table.Row, []rowMeta, [][]cell, error) {
+	payments, err := store.ListProjectPayments(h.projectID, showDeleted)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	rows, meta, cellRows := projectPaymentRows(payments)
+	return rows, meta, cellRows, nil
+}
+
+func (projectPaymentHandler) Delete(store *data.Store, id uint) error {
+	return store.DeleteProjectPayment(id)
+}
+
+func (projectPaymentHandler) Restore(store *data.Store, id uint) error {
+	return store.RestoreProjectPayment(id)
+}
+
+func (h projectPaymentHandler) StartAddForm(m *Model) error {
+	return m.startPaymentForm(h.projectID)
+}
+
+func (projectPaymentHandler) StartEditForm(m *Model, id uint) error {
+	return m.startEditPaymentForm(id)
+}
+
+func (projectPaymentHandler) InlineEdit(m *Model, id uint, col int) error {
+	return m.inlineEditPayment(id, col)
+}
+
+func (projectPaymentHandler) SubmitForm(m *Model) error {
+	return m.submitPaymentForm()
+}
+
+func (projectPaymentHandler) Snapshot(store *data.Store, id uint) (undoEntry, bool) {
+	payment, err := store.GetProjectPayment(id)
+	if err != nil {
+		return undoEntry{}, false
+	}
+	vendor := payment.Vendor
+	return undoEntry{
+		Description: fmt.Sprintf("payment %s", payment.PaidAt.Format("2006-01-02")),
+		FormKind:    formPayment,
+		EntityID:    id,
+		Restore: func() error {
+			return store.UpdateProjectPayment(payment, vendor)
+		},
+	}, true
+}
+
+func (projectPaymentHandler) SyncFixedValues(_ *Model, _ []columnSpec) {}

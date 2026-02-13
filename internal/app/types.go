@@ -27,6 +27,7 @@ const (
 	formAppliance
 	formServiceLog
 	formVendor
+	formPayment
 )
 
 type TabKind int
