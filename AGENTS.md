@@ -109,6 +109,13 @@ a coding agent on a user's computer.
 - **Skip CI for agent-docs-only commits**: When a commit changes ONLY
   `AGENTS.md` and/or `CLAUDE.md` (no code, no CI, no other files), add
   `[skip ci]` to the commit message. There's nothing to build or test.
+- **Actionable error messages**: Every user-facing error must tell the user
+  what to DO, not just what went wrong. "Connection refused" is useless;
+  "Can't reach Ollama at localhost:11434 -- start it with `ollama serve`"
+  is actionable. Include the specific failure, the likely cause, and a
+  concrete remediation step. This applies to status bar messages, form
+  validation errors, LLM errors, and any other surface where the user sees
+  an error.
 
 # Exploration and reading files
 
