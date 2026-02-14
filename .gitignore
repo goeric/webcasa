@@ -54,3 +54,4 @@ dev.md
 
 # Rust (legacy)
 target/
+.claude
