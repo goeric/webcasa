@@ -498,6 +498,9 @@ like `LEARNINGS.md` are not.
   specific directory) to get the most information about which test failed
   and to avoid introducing test order dependencies. Use `-shuffle=on`
   not `-shuffle=$RANDOM` -- Go picks and prints the seed for you.
+- **Run long commands in the background**: `go test`, `go vet`, `go build`,
+  and `nix run '.#pre-commit'` can all be run as background tasks so you can
+  continue working while they execute.
 - Depend on `pre-commit` (which is automatically run when you make a commit) to
   catch formatting issues. **DO NOT** attempt to use `gofmt` or any other
   formatting tool directly
