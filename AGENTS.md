@@ -99,6 +99,9 @@ a coding agent on a user's computer.
   use `git reset HEAD~1` (or `HEAD~N`) to undo it instead of `git revert`.
   Revert commits add noise to the history for no reason when the original
   is local-only.
+- **Rebase-only merges**: Merge commits and squash merges are not allowed on
+  this repository. Always use rebase merges (`gh pr merge --rebase`). This
+  keeps the history linear and clean.
 
 # Exploration and reading files
 
