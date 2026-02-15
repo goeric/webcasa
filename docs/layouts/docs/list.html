@@ -2,7 +2,13 @@
 {{- /* Licensed under the Apache License, Version 2.0 */ -}}
 
 {{ define "main" }}
-  <h1>{{ .Title }}</h1>
+  {{- if not .IsHome }}
+    {{- with .Parent }}
+      {{- if ne .Kind "home" }}
+        <h1>{{ $.Title }}</h1>
+      {{- end }}
+    {{- end }}
+  {{- end }}
   {{ .Content }}
 
   {{- /* Top-level docs page: show sub-sections with their pages */ -}}
