@@ -1044,8 +1044,8 @@ func TestRequiredLegendHiddenOnInlineEdit(t *testing.T) {
 	m.exitForm()
 	m.reloadAll()
 
-	// Inline-edit the Status column (col 3) — a Select via openInlineEdit.
-	require.NoError(t, m.inlineEditProject(1, 3))
+	// Inline-edit the Status column -- a Select via openInlineEdit.
+	require.NoError(t, m.inlineEditProject(1, projectColStatus))
 	require.Equal(t, modeForm, m.mode, "inline edit should activate form mode")
 	m.form.Init()
 

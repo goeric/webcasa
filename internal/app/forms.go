@@ -668,25 +668,24 @@ func (m *Model) parseVendorFormData() (data.Vendor, error) {
 	}, nil
 }
 
-func (m *Model) inlineEditVendor(id uint, col int) error {
+func (m *Model) inlineEditVendor(id uint, col vendorCol) error {
 	vendor, err := m.store.GetVendor(id)
 	if err != nil {
 		return fmt.Errorf("load vendor: %w", err)
 	}
 	values := vendorFormValues(vendor)
-	// Column mapping: 0=ID, 1=Name, 2=Contact, 3=Email, 4=Phone, 5=Website, 6=Quotes(ro), 7=Jobs(ro)
 	switch col {
-	case 1:
+	case vendorColName:
 		m.openInlineInput(id, formVendor, "Name", "", &values.Name, requiredText("name"), values)
-	case 2:
+	case vendorColContact:
 		m.openInlineInput(id, formVendor, "Contact name", "", &values.ContactName, nil, values)
-	case 3:
+	case vendorColEmail:
 		m.openInlineInput(id, formVendor, "Email", "", &values.Email, nil, values)
-	case 4:
+	case vendorColPhone:
 		m.openInlineInput(id, formVendor, "Phone", "", &values.Phone, nil, values)
-	case 5:
+	case vendorColWebsite:
 		m.openInlineInput(id, formVendor, "Website", "", &values.Website, nil, values)
-	default:
+	case vendorColID, vendorColQuotes, vendorColJobs:
 		return m.startEditVendorForm(id)
 	}
 	return nil
@@ -703,21 +702,20 @@ func vendorFormValues(vendor data.Vendor) *vendorFormData {
 	}
 }
 
-func (m *Model) inlineEditProject(id uint, col int) error {
+func (m *Model) inlineEditProject(id uint, col projectCol) error {
 	project, err := m.store.GetProject(id)
 	if err != nil {
 		return fmt.Errorf("load project: %w", err)
 	}
 	values := projectFormValues(project)
-	// Column mapping: 0=ID, 1=Type, 2=Title, 3=Status, 4=Budget, 5=Actual, 6=Start, 7=End, 8=Quotes(ro), 9=Docs(ro)
 	switch col {
-	case 1:
+	case projectColType:
 		options := projectTypeOptions(m.projectTypes)
 		field := huh.NewSelect[uint]().Title("Project type").
 			Options(options...).
 			Value(&values.ProjectTypeID)
 		m.openInlineEdit(id, formProject, field, values)
-	case 2:
+	case projectColTitle:
 		m.openInlineInput(
 			id,
 			formProject,
@@ -727,12 +725,12 @@ func (m *Model) inlineEditProject(id uint, col int) error {
 			requiredText("title"),
 			values,
 		)
-	case 3:
+	case projectColStatus:
 		field := huh.NewSelect[string]().Title("Status").
 			Options(statusOptions()...).
 			Value(&values.Status)
 		m.openInlineEdit(id, formProject, field, values)
-	case 4:
+	case projectColBudget:
 		m.openInlineInput(
 			id,
 			formProject,
@@ -742,7 +740,7 @@ func (m *Model) inlineEditProject(id uint, col int) error {
 			optionalMoney("budget"),
 			values,
 		)
-	case 5:
+	case projectColActual:
 		m.openInlineInput(
 			id,
 			formProject,
@@ -752,17 +750,17 @@ func (m *Model) inlineEditProject(id uint, col int) error {
 			optionalMoney("actual cost"),
 			values,
 		)
-	case 6:
+	case projectColStart:
 		m.openDatePicker(id, formProject, &values.StartDate, values)
-	case 7:
+	case projectColEnd:
 		m.openDatePicker(id, formProject, &values.EndDate, values)
-	default:
+	case projectColID, projectColQuotes, projectColDocs:
 		return m.startEditProjectForm(id)
 	}
 	return nil
 }
 
-func (m *Model) inlineEditQuote(id uint, col int) error {
+func (m *Model) inlineEditQuote(id uint, col quoteCol) error {
 	quote, err := m.store.GetQuote(id)
 	if err != nil {
 		return fmt.Errorf("load quote: %w", err)
@@ -772,15 +770,14 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 		return err
 	}
 	values := quoteFormValues(quote)
-	// Column mapping: 0=ID, 1=Project, 2=Vendor, 3=Total, 4=Labor, 5=Mat, 6=Other, 7=Recv
 	switch col {
-	case 1:
+	case quoteColProject:
 		projectOpts := projectOptions(projects)
 		field := huh.NewSelect[uint]().Title("Project").
 			Options(projectOpts...).
 			Value(&values.ProjectID)
 		m.openInlineEdit(id, formQuote, field, values)
-	case 2:
+	case quoteColVendor:
 		m.openInlineInput(
 			id,
 			formQuote,
@@ -790,7 +787,7 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 			requiredText("vendor name"),
 			values,
 		)
-	case 3:
+	case quoteColTotal:
 		m.openInlineInput(
 			id,
 			formQuote,
@@ -800,7 +797,7 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 			requiredMoney("total"),
 			values,
 		)
-	case 4:
+	case quoteColLabor:
 		m.openInlineInput(
 			id,
 			formQuote,
@@ -810,7 +807,7 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 			optionalMoney("labor"),
 			values,
 		)
-	case 5:
+	case quoteColMat:
 		m.openInlineInput(
 			id,
 			formQuote,
@@ -820,7 +817,7 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 			optionalMoney("materials"),
 			values,
 		)
-	case 6:
+	case quoteColOther:
 		m.openInlineInput(
 			id,
 			formQuote,
@@ -830,23 +827,22 @@ func (m *Model) inlineEditQuote(id uint, col int) error {
 			optionalMoney("other costs"),
 			values,
 		)
-	case 7:
+	case quoteColRecv:
 		m.openDatePicker(id, formQuote, &values.ReceivedDate, values)
-	default:
+	case quoteColID:
 		return m.startEditQuoteForm(id)
 	}
 	return nil
 }
 
-func (m *Model) inlineEditMaintenance(id uint, col int) error {
+func (m *Model) inlineEditMaintenance(id uint, col maintenanceCol) error {
 	item, err := m.store.GetMaintenance(id)
 	if err != nil {
 		return fmt.Errorf("load maintenance item: %w", err)
 	}
 	values := maintenanceFormValues(item)
-	// Column mapping: 0=ID, 1=Item, 2=Category, 3=Appliance, 4=Last, 5=Next(computed), 6=Every, 7=Log
 	switch col {
-	case 1:
+	case maintenanceColItem:
 		m.openInlineInput(
 			id,
 			formMaintenance,
@@ -856,13 +852,13 @@ func (m *Model) inlineEditMaintenance(id uint, col int) error {
 			requiredText("item"),
 			values,
 		)
-	case 2:
+	case maintenanceColCategory:
 		catOptions := maintenanceOptions(m.maintenanceCategories)
 		field := huh.NewSelect[uint]().Title("Category").
 			Options(catOptions...).
 			Value(&values.CategoryID)
 		m.openInlineEdit(id, formMaintenance, field, values)
-	case 3:
+	case maintenanceColAppliance:
 		appliances, loadErr := m.store.ListAppliances(false)
 		if loadErr != nil {
 			return loadErr
@@ -872,9 +868,9 @@ func (m *Model) inlineEditMaintenance(id uint, col int) error {
 			Options(appOpts...).
 			Value(&values.ApplianceID)
 		m.openInlineEdit(id, formMaintenance, field, values)
-	case 4:
+	case maintenanceColLast:
 		m.openDatePicker(id, formMaintenance, &values.LastServiced, values)
-	case 6:
+	case maintenanceColEvery:
 		m.openInlineInput(
 			id,
 			formMaintenance,
@@ -884,36 +880,34 @@ func (m *Model) inlineEditMaintenance(id uint, col int) error {
 			optionalInterval("interval"),
 			values,
 		)
-	default:
-		// Col 0 (ID), 5 (Next Due, computed), 7 (Log) are readonly.
+	case maintenanceColID, maintenanceColNext, maintenanceColLog:
 		return m.startEditMaintenanceForm(id)
 	}
 	return nil
 }
 
-func (m *Model) inlineEditAppliance(id uint, col int) error {
+func (m *Model) inlineEditAppliance(id uint, col applianceCol) error {
 	item, err := m.store.GetAppliance(id)
 	if err != nil {
 		return fmt.Errorf("load appliance: %w", err)
 	}
 	values := applianceFormValues(item)
-	// Column mapping: 0=ID, 1=Name, 2=Brand, 3=Model, 4=Serial, 5=Location, 6=Purchased, 7=Age(ro), 8=Warranty, 9=Cost, 10=Maint(ro), 11=Docs(ro)
 	switch col {
-	case 1:
+	case applianceColName:
 		m.openInlineInput(id, formAppliance, "Name", "", &values.Name, requiredText("name"), values)
-	case 2:
+	case applianceColBrand:
 		m.openInlineInput(id, formAppliance, "Brand", "", &values.Brand, nil, values)
-	case 3:
+	case applianceColModel:
 		m.openInlineInput(id, formAppliance, "Model number", "", &values.ModelNumber, nil, values)
-	case 4:
+	case applianceColSerial:
 		m.openInlineInput(id, formAppliance, "Serial number", "", &values.SerialNumber, nil, values)
-	case 5:
+	case applianceColLocation:
 		m.openInlineInput(id, formAppliance, "Location", "Kitchen", &values.Location, nil, values)
-	case 6:
+	case applianceColPurchased:
 		m.openDatePicker(id, formAppliance, &values.PurchaseDate, values)
-	case 8:
+	case applianceColWarranty:
 		m.openDatePicker(id, formAppliance, &values.WarrantyExpiry, values)
-	case 9:
+	case applianceColCost:
 		m.openInlineInput(
 			id,
 			formAppliance,
@@ -923,7 +917,7 @@ func (m *Model) inlineEditAppliance(id uint, col int) error {
 			optionalMoney("cost"),
 			values,
 		)
-	default:
+	case applianceColID, applianceColAge, applianceColMaint, applianceColDocs:
 		return m.startEditApplianceForm(id)
 	}
 	return nil
@@ -1037,24 +1031,23 @@ func (m *Model) parseServiceLogFormData() (data.ServiceLogEntry, data.Vendor, er
 	return entry, vendor, nil
 }
 
-func (m *Model) inlineEditServiceLog(id uint, col int) error {
+func (m *Model) inlineEditServiceLog(id uint, col serviceLogCol) error {
 	entry, err := m.store.GetServiceLog(id)
 	if err != nil {
 		return fmt.Errorf("load service log: %w", err)
 	}
 	values := serviceLogFormValues(entry)
-	// Column mapping: 0=ID, 1=Date, 2=Performed By, 3=Cost, 4=Notes
 	switch col {
-	case 1:
+	case serviceLogColDate:
 		m.openDatePicker(id, formServiceLog, &values.ServicedAt, values)
-	case 2:
+	case serviceLogColPerformedBy:
 		vendorOpts := vendorOptions(m.vendors)
 		field := huh.NewSelect[uint]().
 			Title("Performed by").
 			Options(vendorOpts...).
 			Value(&values.VendorID)
 		m.openInlineEdit(id, formServiceLog, field, values)
-	case 3:
+	case serviceLogColCost:
 		m.openInlineInput(
 			id,
 			formServiceLog,
@@ -1064,9 +1057,9 @@ func (m *Model) inlineEditServiceLog(id uint, col int) error {
 			optionalMoney("cost"),
 			values,
 		)
-	case 4:
+	case serviceLogColNotes:
 		m.openInlineInput(id, formServiceLog, "Notes", "", &values.Notes, nil, values)
-	default:
+	case serviceLogColID:
 		return m.startEditServiceLogForm(id)
 	}
 	return nil
@@ -1928,15 +1921,14 @@ func (m *Model) parseDocumentFormData() (data.Document, error) {
 	return doc, nil
 }
 
-func (m *Model) inlineEditDocument(id uint, col int) error {
+func (m *Model) inlineEditDocument(id uint, col documentCol) error {
 	doc, err := m.store.GetDocument(id)
 	if err != nil {
 		return fmt.Errorf("load document: %w", err)
 	}
 	values := documentFormValues(doc)
-	// Column mapping: 0=ID, 1=Title, 2=Entity(ro), 3=Type(ro), 4=Size(ro), 5=Notes, 6=Updated(ro)
 	switch col {
-	case 1:
+	case documentColTitle:
 		m.openInlineInput(
 			id,
 			formDocument,
@@ -1946,9 +1938,9 @@ func (m *Model) inlineEditDocument(id uint, col int) error {
 			requiredText("title"),
 			values,
 		)
-	case 5:
+	case documentColNotes:
 		m.openInlineInput(id, formDocument, "Notes", "", &values.Notes, nil, values)
-	default:
+	case documentColID, documentColEntity, documentColType, documentColSize, documentColUpdated:
 		return m.startEditDocumentForm(id)
 	}
 	return nil

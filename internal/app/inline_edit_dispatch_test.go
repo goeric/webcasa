@@ -22,8 +22,8 @@ func TestInlineEditProjectTextColumnOpensInlineInput(t *testing.T) {
 	m.exitForm()
 	m.reloadAll()
 
-	// Inline edit the Title column (col 2) -- should open inline input.
-	require.NoError(t, m.inlineEditProject(1, 2))
+	// Inline edit the Title column -- should open inline input.
+	require.NoError(t, m.inlineEditProject(1, projectColTitle))
 	require.NotNil(t, m.inlineInput, "expected inline input for text column (Title)")
 	assert.Equal(t, "Title", m.inlineInput.Title)
 	assert.NotEqual(t, modeForm, m.mode, "inline input should not switch to modeForm")
@@ -40,8 +40,8 @@ func TestInlineEditProjectSelectColumnOpensFormOverlay(t *testing.T) {
 	m.exitForm()
 	m.reloadAll()
 
-	// Inline edit the Status column (col 3) -- should open form overlay.
-	require.NoError(t, m.inlineEditProject(1, 3))
+	// Inline edit the Status column -- should open form overlay.
+	require.NoError(t, m.inlineEditProject(1, projectColStatus))
 	assert.Nil(t, m.inlineInput, "select column should NOT open inline input")
 	assert.Equal(t, modeForm, m.mode, "select column should open form overlay")
 }
@@ -59,14 +59,14 @@ func TestInlineEditVendorTextColumnsUseInlineInput(t *testing.T) {
 
 	// All editable vendor columns are text, so they should all use inline input.
 	cases := []struct {
-		col   int
+		col   vendorCol
 		title string
 	}{
-		{1, "Name"},
-		{2, "Contact name"},
-		{3, "Email"},
-		{4, "Phone"},
-		{5, "Website"},
+		{vendorColName, "Name"},
+		{vendorColContact, "Contact name"},
+		{vendorColEmail, "Email"},
+		{vendorColPhone, "Phone"},
+		{vendorColWebsite, "Website"},
 	}
 	for _, tc := range cases {
 		m.closeInlineInput()
@@ -87,8 +87,8 @@ func TestInlineEditAppliaceDateColumnOpensCalendar(t *testing.T) {
 	m.exitForm()
 	m.reloadAll()
 
-	// Purchase date column (col 6) should open calendar picker.
-	require.NoError(t, m.inlineEditAppliance(1, 6))
+	// Purchase date column should open calendar picker.
+	require.NoError(t, m.inlineEditAppliance(1, applianceColPurchased))
 	assert.NotNil(t, m.calendar, "date column should open calendar picker")
 	assert.Nil(t, m.inlineInput, "date column should NOT open inline input")
 }

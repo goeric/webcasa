@@ -307,6 +307,15 @@ These have been repeatedly requested. Violating them wastes the user's time.
   filed as a bug report MUST include the same. "Steps to reproduce" is
   not optional -- without it, reviewers and future readers cannot verify
   the claim.
+- **Never switch on bare integers that represent enums**: If an integer
+  is an implementation detail standing in for a category (column index,
+  entity kind, mode, etc.), define a typed `iota` constant set and switch
+  on that. Think of this as Go's closest equivalent to a Rust `enum` +
+  `match` -- in Rust you'd define an enum and the compiler would reject
+  unhandled variants; here you define a typed `int` with named constants
+  and the `exhaustive` linter (already enabled) catches missing cases.
+  Raw `case 1:` / `case 2:` on an index is a silent-breakage magnet when
+  values shift.
 - **Tests hit real code paths, not wrappers**: Every test must exercise
   the same code path a real user would trigger. If the user sees a
   rendered header, the test must call the real rendering pipeline

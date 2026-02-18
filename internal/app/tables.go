@@ -101,6 +101,21 @@ func NewTabs(styles Styles) []Tab {
 	}
 }
 
+type projectCol int
+
+const (
+	projectColID projectCol = iota
+	projectColType
+	projectColTitle
+	projectColStatus
+	projectColBudget
+	projectColActual
+	projectColStart
+	projectColEnd
+	projectColQuotes
+	projectColDocs
+)
+
 func projectColumnSpecs() []columnSpec {
 	return []columnSpec{
 		{Title: "ID", Min: 4, Max: 6, Align: alignRight, Kind: cellReadonly},
@@ -115,6 +130,19 @@ func projectColumnSpecs() []columnSpec {
 		{Title: tabDocuments.String(), Min: 5, Max: 6, Align: alignRight, Kind: cellDrilldown},
 	}
 }
+
+type quoteCol int
+
+const (
+	quoteColID quoteCol = iota
+	quoteColProject
+	quoteColVendor
+	quoteColTotal
+	quoteColLabor
+	quoteColMat
+	quoteColOther
+	quoteColRecv
+)
 
 func quoteColumnSpecs() []columnSpec {
 	return []columnSpec{
@@ -141,6 +169,19 @@ func quoteColumnSpecs() []columnSpec {
 	}
 }
 
+type maintenanceCol int
+
+const (
+	maintenanceColID maintenanceCol = iota
+	maintenanceColItem
+	maintenanceColCategory
+	maintenanceColAppliance
+	maintenanceColLast
+	maintenanceColNext
+	maintenanceColEvery
+	maintenanceColLog
+)
+
 func maintenanceColumnSpecs() []columnSpec {
 	return []columnSpec{
 		{Title: "ID", Min: 4, Max: 6, Align: alignRight, Kind: cellReadonly},
@@ -159,6 +200,23 @@ func maintenanceColumnSpecs() []columnSpec {
 		{Title: "Log", Min: 4, Max: 6, Align: alignRight, Kind: cellDrilldown},
 	}
 }
+
+type applianceCol int
+
+const (
+	applianceColID applianceCol = iota
+	applianceColName
+	applianceColBrand
+	applianceColModel
+	applianceColSerial
+	applianceColLocation
+	applianceColPurchased
+	applianceColAge
+	applianceColWarranty
+	applianceColCost
+	applianceColMaint
+	applianceColDocs
+)
 
 func applianceColumnSpecs() []columnSpec {
 	return []columnSpec{
@@ -218,6 +276,16 @@ func applianceMaintenanceRows(
 		}
 	})
 }
+
+type serviceLogCol int
+
+const (
+	serviceLogColID serviceLogCol = iota
+	serviceLogColDate
+	serviceLogColPerformedBy
+	serviceLogColCost
+	serviceLogColNotes
+)
 
 func serviceLogColumnSpecs() []columnSpec {
 	return []columnSpec{
@@ -344,6 +412,19 @@ func applianceAge(purchased *time.Time, now time.Time) string {
 	}
 	return fmt.Sprintf("%dy %dm", years, months)
 }
+
+type vendorCol int
+
+const (
+	vendorColID vendorCol = iota
+	vendorColName
+	vendorColContact
+	vendorColEmail
+	vendorColPhone
+	vendorColWebsite
+	vendorColQuotes
+	vendorColJobs
+)
 
 func vendorColumnSpecs() []columnSpec {
 	return []columnSpec{
@@ -566,6 +647,16 @@ func vendorQuoteRows(
 	})
 }
 
+type vendorJobsCol int
+
+const (
+	vendorJobsColID vendorJobsCol = iota
+	vendorJobsColItem
+	vendorJobsColDate
+	vendorJobsColCost
+	vendorJobsColNotes
+)
+
 // vendorJobsColumnSpecs defines the columns for service log entries scoped to
 // a vendor. Omits the Vendor column since the parent context provides that.
 func vendorJobsColumnSpecs() []columnSpec {
@@ -667,6 +758,18 @@ func nullTextCell(value string, linkID uint) cell {
 	}
 	return cell{Value: value, Kind: cellText, LinkID: linkID}
 }
+
+type documentCol int
+
+const (
+	documentColID documentCol = iota
+	documentColTitle
+	documentColEntity
+	documentColType
+	documentColSize
+	documentColNotes
+	documentColUpdated
+)
 
 // documentColumnSpecs defines columns for the top-level Documents tab.
 func documentColumnSpecs() []columnSpec {

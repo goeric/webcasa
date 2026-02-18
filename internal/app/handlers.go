@@ -115,7 +115,7 @@ func (projectHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (projectHandler) InlineEdit(m *Model, id uint, col int) error {
-	return m.inlineEditProject(id, col)
+	return m.inlineEditProject(id, projectCol(col))
 }
 
 func (projectHandler) SubmitForm(m *Model) error {
@@ -182,7 +182,7 @@ func (quoteHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (quoteHandler) InlineEdit(m *Model, id uint, col int) error {
-	return m.inlineEditQuote(id, col)
+	return m.inlineEditQuote(id, quoteCol(col))
 }
 
 func (quoteHandler) SubmitForm(m *Model) error {
@@ -254,7 +254,7 @@ func (maintenanceHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (maintenanceHandler) InlineEdit(m *Model, id uint, col int) error {
-	return m.inlineEditMaintenance(id, col)
+	return m.inlineEditMaintenance(id, maintenanceCol(col))
 }
 
 func (maintenanceHandler) SubmitForm(m *Model) error {
@@ -334,7 +334,7 @@ func (applianceHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (applianceHandler) InlineEdit(m *Model, id uint, col int) error {
-	return m.inlineEditAppliance(id, col)
+	return m.inlineEditAppliance(id, applianceCol(col))
 }
 
 func (applianceHandler) SubmitForm(m *Model) error {
@@ -481,7 +481,7 @@ func (h serviceLogHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (h serviceLogHandler) InlineEdit(m *Model, id uint, col int) error {
-	return m.inlineEditServiceLog(id, col)
+	return m.inlineEditServiceLog(id, serviceLogCol(col))
 }
 
 func (h serviceLogHandler) SubmitForm(m *Model) error {
@@ -556,7 +556,7 @@ func (vendorHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (vendorHandler) InlineEdit(m *Model, id uint, col int) error {
-	return m.inlineEditVendor(id, col)
+	return m.inlineEditVendor(id, vendorCol(col))
 }
 
 func (vendorHandler) SubmitForm(m *Model) error {
@@ -609,16 +609,15 @@ func newVendorJobsHandler(vendorID uint) scopedHandler {
 			return rows, meta, cellRows, nil
 		},
 		inlineEditFn: func(m *Model, id uint, col int) error {
-			// Vendor jobs columns: 0=ID, 1=Item, 2=Date, 3=Cost, 4=Notes.
-			// Map to full service log columns: 0=ID, 1=Date, 2=Performed By, 3=Cost, 4=Notes.
-			switch col {
-			case 2:
-				return m.inlineEditServiceLog(id, 1) // Date
-			case 3:
-				return m.inlineEditServiceLog(id, 3) // Cost
-			default:
+			switch vendorJobsCol(col) {
+			case vendorJobsColDate:
+				return m.inlineEditServiceLog(id, serviceLogColDate)
+			case vendorJobsColCost:
+				return m.inlineEditServiceLog(id, serviceLogColCost)
+			case vendorJobsColID, vendorJobsColItem, vendorJobsColNotes:
 				return nil
 			}
+			return nil
 		},
 		startAddFn: func(_ *Model) error {
 			return fmt.Errorf("add service log entries from the Maintenance tab")
@@ -679,7 +678,7 @@ func (documentHandler) StartEditForm(m *Model, id uint) error {
 }
 
 func (documentHandler) InlineEdit(m *Model, id uint, col int) error {
-	return m.inlineEditDocument(id, col)
+	return m.inlineEditDocument(id, documentCol(col))
 }
 
 func (documentHandler) SubmitForm(m *Model) error {
