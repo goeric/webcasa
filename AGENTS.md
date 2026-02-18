@@ -1,21 +1,18 @@
 <!-- Copyright 2026 Phillip Cloud -->
 <!-- Licensed under the Apache License, Version 2.0 -->
 
-You are Claude Opus 4.6 Thinking running via the cursor CLI. You are running as
-a coding agent on a user's computer.
+You are a coding agent running on a user's computer.
 
 # Git history
 
-- Make sure before you run your first command that you take a look at recent
-  Git history to get a rough idea of where the repo is at. You can find
-  remaining context from GitHub issues and pull requests.
+- Run `/resume-work` at the start of a session to pick up context from
+  previous agents (git log, open PRs/issues, uncommitted work, worktrees).
 
 # General
 
 - Default expectation: deliver working code, not just a plan. If some details
   are missing, make reasonable assumptions and complete a working version of
   the feature.
-
 
 # Autonomy and Persistence
 
@@ -88,16 +85,8 @@ a coding agent on a user's computer.
   use `git reset HEAD~1` (or `HEAD~N`) to undo it instead of `git revert`.
   Revert commits add noise to the history for no reason when the original
   is local-only.
-- **Rebase-only merges**: Merge commits and squash merges are not allowed on
-  this repository. Always use rebase merges (`gh pr merge --rebase`). This
-  keeps the history linear and clean.
-- **NEVER force push to main**: Force pushing to main is ABSOLUTELY FORBIDDEN
-  under ALL circumstances. ZERO EXCEPTIONS. Force pushing rewrites shared
-  history and can destroy other contributors' work. If you made a mistake on
-  main, fix it with a new commit — never rewrite history.
-- **Skip CI for agent-docs-only commits**: When a commit changes ONLY
-  `AGENTS.md` and/or `CLAUDE.md` (no code, no CI, no other files), add
-  `[skip ci]` to the commit message. There's nothing to build or test.
+- **Never force push to main**: No exceptions. Fix mistakes with a new
+  commit instead of rewriting shared history.
 - **Actionable error messages**: Every user-facing error must tell the user
   what to DO, not just what went wrong. "Connection refused" is useless;
   "Can't reach Ollama at localhost:11434 -- start it with `ollama serve`"
@@ -250,8 +239,6 @@ design.
 
 You're working on an application to manage home projects and home maintenance.
 
-It's very likely another agent has been working and just run out of context.
-
 ## Hard rules (non-negotiable)
 
 These have been repeatedly requested. Violating them wastes the user's time.
@@ -264,25 +251,15 @@ These have been repeatedly requested. Violating them wastes the user's time.
 - **Treat "upstream" conceptually**: When the user says "rebase on upstream",
   use the repository's canonical mainline remote even if it is not literally
   named `upstream` (for example `origin/main` when no `upstream` remote exists).
-- **Use `--body-file` for `gh` PR/issue bodies**: Write the body to a
-  temp file and pass `--body-file` instead of `--body`. This avoids
-  shell-quoting issues that silently corrupt markdown.
 - **Quote nix flake refs**: Always single-quote flake references that
   contain `#` so the shell doesn't treat `#` as a comment. Examples:
   `nix shell 'nixpkgs#vhs'`, `nix run '.#capture-screenshots'`,
   `nix search 'nixpkgs' vhs`. Bare `nixpkgs#foo` silently drops everything
   after the `#`.
-- **Pre-commit must run via Nix**: Always run `nix run '.#pre-commit'`
-  **as a separate explicit step before every `git commit`**. Do not rely
-  on the git hook firing during commit -- run it proactively so issues
-  are caught and fixed before the commit attempt, not during it. Never
-  skip it or use a different invocation. If running it is not possible,
-  stop and ask the user why it cannot be run before proceeding.
-- **Run `nix run '.#deadcode'` before committing**: Run the dead code
-  checker alongside pre-commit, tests, `go vet`, and `osv-scanner` as
-  part of the pre-commit verification bag. It performs whole-program
-  reachability analysis and catches exported-but-unreachable functions
-  that per-package linters miss. Fix any findings before committing.
+- **Run `/pre-commit-check` before every commit**: This skill runs the
+  full verification bag (`go mod tidy`, pre-commit, deadcode, go vet,
+  osv-scanner, tests). Run it proactively before `git commit`, not during
+  it. If it cannot run, stop and ask the user why before proceeding.
 - **Nix fallback priority for missing commands**: If a command is not found,
   try these in order: (1) `nix run '.#<tool>'` — preferred, runs the tool
   directly from a flake app; (2) `nix shell 'nixpkgs#<tool>' -c <command>` —
@@ -307,61 +284,30 @@ These have been repeatedly requested. Violating them wastes the user's time.
 - **Pin Actions to version tags**: In GitHub Actions workflows, always use
   versioned tags (e.g. `@v3.93.1`) instead of named refs like `@main` or
   `@latest`.
-- **Avoid CI trigger phrases in commits/PRs**: GitHub Actions recognises
-  `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, and
-  `[actions skip]` anywhere in a commit message, PR title, or PR body and
-  will suppress workflow runs. Never include these tokens in commit
-  messages, PR titles, or PR bodies unless you *intend* to suppress CI.
-  When *referring* to the mechanism, paraphrase (e.g. "the standard no-ci
-  marker") instead of writing the literal token.
+- **Commit conventions**: Use `/commit` for the full list of type rules,
+  scope conventions, and CI trigger phrase restrictions.
 - **No `=` in CI go commands**: PowerShell (Windows runner) misparses `=`
   in command-line flags. Use space-separated form: `-bench .` not
   `-bench=.`, `-run '^$'` not `-run='^$'`.
-- **NEVER EVER EVER use `git commit --no-verify`**: This is ABSOLUTELY
-  FORBIDDEN under ALL circumstances. ZERO EXCEPTIONS. If pre-commit hooks
-  fail, you MUST FIX EVERY SINGLE ISSUE before committing. There is NO
-  scenario where bypassing pre-commit is acceptable. Not for "pre-existing
-  issues", not for "unrelated changes", not for time pressure, not for
-  ANYTHING. Using --no-verify is a SEVERE violation that has REPEATEDLY
-  caused user-visible bugs. If pre-commit fails, STOP, FIX THE CODE, and
-  do not proceed until every hook passes cleanly.
-- **Linter/compiler warnings are CRITICAL BUGS that BREAK THE APPLICATION**:
-  Every single warning from `golangci-lint`, `staticcheck`, `golines`, or
-  any compiler is a REAL BUG that WILL cause runtime failures, not a style
-  suggestion. Example: staticcheck SA4006 "this value of X is never used"
-  means you wrote dead code that was supposed to do something but doesn't,
-  causing features to silently fail. EVERY warning indicates broken
-  functionality. Treat each one as P0 critical. If you think a warning is
-  a false positive, you are wrong—the code is unclear and must be
-  refactored until the tool is satisfied. NO exceptions, NO shortcuts, NO
-  dismissing warnings. Fix them ALL before committing.
-- **No PR test plans unless truly manual**: Do not write a "Test plan"
-  section in PR descriptions. CI covers tests, lint, vet, and build --
-  restating that is noise. Only include a test plan when there are
-  genuinely manual-only verification steps (e.g. visual UI/UX checks that
-  cannot be automated). Instead of listing test plan items, write actual
-  unit or integration tests that ship with the PR.
-- **Tests simulate user behavior, not implementation**: Before writing a
-  test, ask: "What would a real user do in the TUI?" Then encode that
-  workflow as a test. A user creates a document, edits just the title,
-  saves -- does the file survive? A user deletes something then restores
-  it -- is everything intact? Think in terms of complete user journeys,
+- **Never use `git commit --no-verify`**: No exceptions. If pre-commit
+  hooks fail, fix every issue before committing. Not for "pre-existing
+  issues", not for "unrelated changes", not for time pressure. Bypassing
+  hooks has repeatedly caused user-visible bugs in this repo.
+- **Treat all linter/compiler warnings as bugs**: Every warning from
+  `golangci-lint`, `staticcheck`, `golines`, or the compiler indicates
+  broken or dead code, not a style suggestion. If you think a warning is
+  a false positive, the code is unclear and must be refactored until the
+  tool is satisfied. Fix all warnings before committing.
+- **PR conventions**: Use `/create-pr` when creating pull requests. It
+  covers `--body-file`, no test plans, description maintenance, and merge
+  strategy.
+- **Tests simulate user behavior**: Every user-facing change must have at
+  least one test written from the user's perspective -- complete journeys,
   not isolated function calls. Exercise the public API with realistic
-  inputs and assert on observable outputs and side effects. Do not reach
-  into unexported fields, mock internal helpers, or assert on internal
-  state. If a test can only be written by poking into implementation
-  details, the API surface needs refactoring, not the test.
-- **User-flow tests are MANDATORY for all user-facing changes**: Every
-  bug fix or feature that affects user-visible behavior MUST have at
-  least one test written from the user's perspective (e.g. "user opens
-  dashboard, appliances without warranty don't appear"; "user edits a
-  form field, dirty detection fires"). Structural/belt-and-suspenders
-  tests (compile-time guards, invariant checks) are welcome as
-  ADDITIONS but never as REPLACEMENTS for user-flow tests. If you're
-  unsure whether a user-flow test is needed or would be overkill, STOP
-  and ask the developer before proceeding. Existing tests that violate
-  this rule are tech debt, not precedent. Do not mimic their style. New
-  tests must follow this rule regardless of what neighboring tests do.
+  inputs; assert on observable outputs and side effects. Do not reach into
+  unexported fields or mock internal helpers. Structural tests (compile
+  guards, invariant checks) are additions, never replacements. Existing
+  tests that violate this are tech debt, not precedent.
 - **Prefer tools over shell commands**: Use the dedicated Read, Write,
   StrReplace, Grep, and Glob tools instead of shell equivalents (`cat`,
   `sed`, `grep`, `find`, `echo >`, etc.). Only use Shell for commands that
@@ -370,25 +316,13 @@ These have been repeatedly requested. Violating them wastes the user's time.
   are available in the standard library (e.g. `math.MaxInt64`, `math.MinInt64`)
   or defined in the codebase, always use those instead of inlining the literal
   values. This improves readability, maintainability, and prevents typos.
-- **Audit docs on feature/fix changes**: When features or fixes are
-  introduced, check whether documentation (Hugo docs, README, website)
-  needs updating. Also consider whether the demo GIF (`record-demo`) and
-  screenshot tapes (`docs/tapes/`) need re-recording to reflect changes.
-  If they do, re-record them -- don't leave it for the user.
-- **Nix vendorHash after dep changes**: After adding or updating a Go
-  dependency, run `nix build '.#micasa'`. If it fails with a hash mismatch,
-  temporarily set `vendorHash = pkgs.lib.fakeHash;` (not `""`) to get the
-  expected hash from the error without a noisy warning, then paste in the
-  real hash.
-- **Run `nix flake update` periodically**: Before committing/PRing, run
-  `nix flake update` to pull the latest nixpkgs (which may include newer
-  Go versions, updated tools, security patches, etc.). Then deal with
-  the consequences: rebuild (`nix build '.#micasa'`), re-run tests, fix
-  any breakage from updated packages, update `vendorHash` if needed, and
-  re-run `osv-scanner` since a newer Go may resolve previously-ignored
-  stdlib CVEs (remove stale `[[IgnoredVulns]]` entries when they're
-  fixed).
-- **Run `go mod tidy` before committing** to keep `go.mod`/`go.sum` clean.
+- **Audit docs on feature/fix changes**: Use `/audit-docs` after
+  introducing features or fixes to check all documentation surfaces.
+- **Nix vendorHash after dep changes**: Use `/update-vendor-hash` after
+  adding or updating Go dependencies.
+- **Run `/flake-update` periodically**: Before committing/PRing, run this
+  skill to pull the latest nixpkgs, rebuild, retest, and handle downstream
+  consequences.
 - **Use `testify/assert` and `testify/require` for all test assertions**:
   All tests use `github.com/stretchr/testify`. Use `require` for
   preconditions that must hold for the test to continue (setup errors,
@@ -396,35 +330,10 @@ These have been repeatedly requested. Violating them wastes the user's time.
   use bare `t.Fatal`, `t.Fatalf`, `t.Error`, or `t.Errorf` for
   assertions — strong justification is needed to deviate from this
   pattern.
-- **Run `go vet` and `nix run .#osv-scanner` before committing** when
-  Go-related files have changed (`.go`, `go.mod`, `go.sum`, `flake.nix`,
-  `osv-scanner.toml`). These catch common Go errors and security
-  vulnerabilities respectively.
-- **OSV scanner findings are blockers, not advisories.** When `osv-scanner`
-  reports vulnerabilities, you MUST address them before committing/pushing.
-  First, try to fix: update the dependency (`go get pkg@latest`), bump
-  the Go version in `go.mod`, update `vendorHash` in `flake.nix`. If the
-  vulnerability genuinely does not apply to this application's usage (e.g.
-  the affected code path is never reached, the preconditions don't hold),
-  add an `[[IgnoredVulns]]` entry to `osv-scanner.toml` with a reason
-  explaining *why the vuln doesn't affect micasa specifically* -- not
-  "blocked on upstream" or "toolchain-level". The reason must be about
-  the application's architecture, not about inability to upgrade. NEVER
-  dismiss scanner output without analyzing whether the vuln is reachable.
-- **Record every user request** as a GitHub issue
-  (`gh issue create --repo cpcloud/micasa`) if one doesn't already exist.
-  Use conventional-commit-style titles (e.g. `feat(ui): ...`,
-  `fix(data): ...`). **This includes small one-liner asks and micro UI
-  tweaks.** Do this immediately when the request is made, not later in a
-  batch.
-- **Exception for AGENTS-only edits**: Do not create a GitHub issue solely
-  for AGENTS.md rule updates. Keep those changes scoped to the relevant branch
-  or a dedicated docs/agent-rules branch as appropriate.
-- **Website commits use `docs(website):`** not `feat(website):` to avoid
-  triggering semantic-release version bumps.
-- **Keep README and website in sync**: when changing content on one (features,
-  install instructions, keybindings, tech stack, pitch copy), update the other
-  to match.
+- **OSV scanner findings are blockers**: Use `/fix-osv-finding` to
+  remediate. Never dismiss scanner output without analyzing reachability.
+- **Record every user request as a GitHub issue**: Use `/create-issue`
+  immediately when a request is made. This includes small one-liner asks.
 - **Single-file backup principle**: Every feature must preserve the property
   that `cp micasa.db backup.db` is a complete backup. Never store
   application state outside the SQLite database (e.g. external file
@@ -447,55 +356,22 @@ These have been repeatedly requested. Violating them wastes the user's time.
 - **No mass-history-cleanup logs**: Don't write detailed session log entries
   for git history rewrites (filter-branch, squash rebases, etc.) -- they
   reference commit hashes that no longer exist and add noise.
-- **Re-record demo after UI/UX changes**: Run `nix run '.#record-demo'`
-  after any UI or UX feature work. This updates `images/demo.gif` (used in
-  README). Commit the GIF with the feature.
-- **Screenshots: test one before capturing all**: When iterating on
-  screenshot themes or capture settings, modify the `capture-screenshots`
-  script to only run a single capture (e.g. just `dashboard`) and inspect the
-  result before committing to a full 9-screenshot run (~2 min each). Don't
-  re-run all 9 just to check a theme change.
-- **Composable soft-delete/restore for new FK relationships**: When adding a
-  new model or FK link between soft-deletable entities, add both delete guards
-  (parent refuses deletion while active children exist) and restore guards
-  (child refuses restore while parent is deleted). This applies to ALL FKs
-  where a value is set -- including nullable FKs: nullable means "you don't
-  have to link one", not "the link doesn't matter once it exists". For
-  nullable FKs, only check when the value is non-nil. Write composition tests
-  covering the full lifecycle: bottom-up delete, wrong-order restore blocked,
-  correct-order restore succeeds. See existing tests
-  (`TestThreeLevelDeleteRestoreChain`, `TestRestoreMaintenanceBlockedByDeletedAppliance`,
-  `TestRestoreMaintenanceAllowedWithoutAppliance`, etc.) as templates.
-
-- **Keep PR descriptions in sync**: After pushing additional commits to a PR
-  branch, re-read the PR title and body (`gh pr view`) and update them if
-  they no longer match the actual changes. Don't wait for the user to notice
-  stale descriptions.
+- **Re-record demo after UI/UX changes**: Use `/record-demo` after any UI
+  or UX feature work. Commit the GIF with the feature.
+- **Composable soft-delete/restore for new FK relationships**: Use
+  `/new-fk-relationship` when adding models or FK links between
+  soft-deletable entities. It covers delete guards, restore guards,
+  nullable FK handling, and required lifecycle tests.
 - **Respect native shells in CI**: Don't switch Windows CI steps to `bash`
   just to work around argument-parsing issues. PowerShell is the native
   shell on Windows runners; fix commands to work under PowerShell instead
   (e.g. quote arguments, use `--flag value` instead of `--flag=value`).
-- **Worktree discipline**: ALL work unrelated to the current worktree MUST
-  go in a new worktree. Before starting: (1) `git fetch origin` to get the
-  latest remote state, (2) create a uniquely-named git worktree in
-  `~/src/agent-work/` (e.g.
-  `git worktree add ~/src/agent-work/<descriptive-name> -b <branch> origin/main`),
-  and (3) IMMEDIATELY `cd` into the new worktree and set it as your working
-  directory, then run `direnv allow` followed by `direnv reload` to load the
-  Nix dev shell. Do ALL work in that worktree. Never start unrelated work
-  directly in the main checkout or the current worktree. Worktrees are cheap.
+- **Worktree discipline**: All work unrelated to the current worktree must
+  go in a new worktree. Use `/new-worktree` to set one up. Never start
+  unrelated work directly in the main checkout or the current worktree.
 - **Set your working directory, don't keep cd-ing**: If you notice yourself
   repeatedly `cd`-ing into the same directory before running commands,
   stop and set that directory as your working directory instead.
-- **CI commits use `ci:` scope**: Use `ci:` (not `fix:`) for CI workflow
-  changes unless the user explicitly says otherwise.
-- **`fix:` is for user-facing bugs only**: Never use `fix:` (or `fix(test):`)
-  for commits that only fix a broken test. Use `test:` or `chore(test):`
-  instead. `fix:` triggers a semantic-release patch bump and implies
-  a user-visible bug was resolved.
-- **Don't mention AGENTS.md in PR descriptions**: When AGENTS.md changes
-  accompany other work, omit them from the PR summary. Only mention
-  AGENTS.md if the PR is solely about agent rules.
 - **AGENTS.md changes go on the working branch**: When updating AGENTS.md,
   only edit it in the worktree/branch where the related work lives. Never
   make AGENTS.md changes as uncommitted edits in the main checkout.
@@ -522,28 +398,19 @@ These have been repeatedly requested. Violating them wastes the user's time.
   `ErrorIndicator` theme, because both communicate "this field is
   required" and users see them together.
 
-If the user asks you to learn something, add it to this "Hard rules" section
-so it survives context resets. This file is always injected; external files
-like `LEARNINGS.md` are not.
+If the user asks you to learn something, add behavioral constraints to this
+"Hard rules" section, or create a skill in `.claude/commands/` for workflows.
 
 ## Development best practices
 
 - At each point where you have the next stage of the application, pause and let
   the user play around with things.
-- Commit when you reach logical stopping points; use conventional commits and
-  include scopes.
-- Make sure to run the appropriate testing and formatting commands when you
-  need to (usually a logical stopping point).
+- Commit when you reach logical stopping points; use `/commit` for conventions.
 - Write the code as well factored and human readable as you possibly can.
-- Always run `go test -shuffle=on ./...` (all packages, not a
-  specific directory) to avoid introducing test order dependencies.
-  **Do not use `-v`** -- verbose output wastes tokens and is rarely
-  needed; Go already prints failing test names and output on failure.
-  Use `-shuffle=on` not `-shuffle=$RANDOM` -- Go picks and prints the
-  seed for you.
-- **Run long commands in the background**: `go test`, `go vet`, `go build`,
-  and `nix run '.#pre-commit'` can all be run as background tasks so you can
-  continue working while they execute.
+- When running tests directly: `go test -shuffle=on ./...` (all packages,
+  shuffled, no `-v`).
+- Run long commands (`go test`, `go build`, `nix run '.#pre-commit'`) in the
+  background so you can continue working while they execute.
 - Every so often, take a breather and find opportunities to refactor code and
   add more thorough tests.
 - "Refactoring" includes **all** code in the repo: Go, JS/CSS in
@@ -556,15 +423,7 @@ continuing on. Be prepared for the user to veer off into other tasks. That's
 fine, go with the flow and soft nudges to get back to the original work stream
 are appreciated.
 
-Once allowed to move on, commit the current change set (fixing any pre-commit
-issues that show up).
-
-When you finish a task, reference the issue number in the commit message
-(e.g. `closes #42`) so GitHub auto-closes it.
-
-Every time the user makes a request that doesn't have a GitHub issue,
-create one. When you complete the task, note it in the "Session log"
-section with the task ID and a brief description of what you did.
+Once allowed to move on, use `/commit` to commit the current change set.
 
 For big or core features and key design decisions, write a plan document in the
 `plans/` directory (e.g. `plans/row-filtering.md`) before doing anything. These
