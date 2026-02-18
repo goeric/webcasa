@@ -301,6 +301,12 @@ These have been repeatedly requested. Violating them wastes the user's time.
 - **PR conventions**: Use `/create-pr` when creating pull requests. It
   covers `--body-file`, no test plans, description maintenance, and merge
   strategy.
+- **Reproduction steps in PRs and issues**: Every PR that fixes a bug or
+  adds a feature MUST include a numbered list of UI actions that reproduce
+  the bug (before the fix) or demonstrate the feature. Every GitHub issue
+  filed as a bug report MUST include the same. "Steps to reproduce" is
+  not optional -- without it, reviewers and future readers cannot verify
+  the claim.
 - **Tests hit real code paths, not wrappers**: Every test must exercise
   the same code path a real user would trigger. If the user sees a
   rendered header, the test must call the real rendering pipeline
