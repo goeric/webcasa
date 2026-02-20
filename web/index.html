@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>micasa — Home Management</title>
+<title>webcasa — Home Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -790,6 +790,114 @@ table {
   letter-spacing: 0.04em;
 }
 
+/* ── Upload Drop Zone ──────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--warm-300);
+  border-radius: 12px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--linen);
+}
+.drop-zone:hover {
+  border-color: var(--clay-light);
+  background: var(--warm-100);
+}
+.drop-zone.--active {
+  border-color: var(--clay);
+  background: var(--warm-100);
+  border-style: solid;
+}
+.drop-zone.--has-file {
+  border-color: var(--sage);
+  border-style: solid;
+  background: var(--sage-pale);
+}
+.drop-zone-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  color: var(--warm-400);
+}
+.drop-zone.--active .drop-zone-icon,
+.drop-zone:hover .drop-zone-icon { color: var(--clay); }
+.drop-zone.--has-file .drop-zone-icon { color: var(--sage); }
+.drop-zone-text {
+  font-size: 0.95rem;
+  color: var(--warm-500);
+  line-height: 1.6;
+}
+.drop-zone-text strong {
+  color: var(--clay);
+  font-weight: 600;
+}
+.drop-zone.--has-file .drop-zone-text { color: var(--charcoal); }
+.drop-zone-hint {
+  font-size: 0.78rem;
+  color: var(--warm-400);
+  margin-top: 0.4rem;
+}
+.drop-zone-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.drop-zone-file-name {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--charcoal);
+  font-weight: 500;
+}
+.drop-zone-file-size {
+  font-size: 0.78rem;
+  color: var(--warm-500);
+}
+.drop-zone-clear {
+  background: none;
+  border: 1px solid var(--warm-300);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--warm-500);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.drop-zone-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Full-page drop overlay for the Documents page */
+.page-drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(184, 97, 63, 0.06);
+  border: 3px dashed var(--clay-light);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.page-drop-overlay.--visible {
+  opacity: 1;
+}
+.page-drop-label {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--clay);
+  background: var(--cream);
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
 .modal-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--warm-100);
@@ -904,7 +1012,7 @@ table {
     <div class="sidebar-brand">
       <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L2 14h4v14h8v-8h4v8h8V14h4L16 2z" fill="#B8613F" opacity=".9"/><path d="M16 2L2 14h4v14h8v-8h4v8h8V14h4L16 2z" fill="none" stroke="#F7F3ED" stroke-width="0.5" opacity=".3"/></svg>
       <div>
-        <h1>micasa</h1>
+        <h1>webcasa</h1>
         <small>Home Management</small>
       </div>
     </div>
@@ -992,7 +1100,7 @@ table {
 
 <script>
 /* ═══════════════════════════════════════════════════
-   micasa Web — API-backed App
+   webcasa — API-backed App
    ═══════════════════════════════════════════════════ */
 
 // ── API Client ─────────────────────────────────────
@@ -1995,14 +2103,78 @@ async function renderDocuments() {
 
   searchInput.addEventListener('input', e => { searchTerm = e.target.value; renderTable(items); });
   renderTable(items);
+
+  // Page-level drag-and-drop — drop a file anywhere on the documents page
+  // to open the upload modal with the file pre-selected.
+  const dropOverlay = el('div', {class:'page-drop-overlay'}, el('div', {class:'page-drop-label'}, 'Drop file to upload'));
+  page.appendChild(dropOverlay);
+  page.style.position = 'relative';
+  let dragCounter = 0;
+  page.addEventListener('dragenter', e => { e.preventDefault(); dragCounter++; dropOverlay.classList.add('--visible'); });
+  page.addEventListener('dragleave', e => { e.preventDefault(); dragCounter--; if (dragCounter <= 0) { dragCounter = 0; dropOverlay.classList.remove('--visible'); } });
+  page.addEventListener('dragover', e => e.preventDefault());
+  page.addEventListener('drop', e => {
+    e.preventDefault();
+    dragCounter = 0;
+    dropOverlay.classList.remove('--visible');
+    if (e.dataTransfer.files[0]) uploadDocument(e.dataTransfer.files[0]);
+  });
 }
 
-function uploadDocument() {
+function uploadDocument(preselectedFile) {
   const f = {};
-  const fileInput = el('input', {type:'file'});
+  const fileInput = el('input', {type:'file', style:'display:none'});
+  let selectedFile = preselectedFile || null;
+
+  // Drop zone
+  const dzIcon = el('div', {class:'drop-zone-icon', html:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'});
+  const dzText = el('div', {class:'drop-zone-text'});
+  const dzHint = el('div', {class:'drop-zone-hint'});
+  const dzFileInfo = el('div', {class:'drop-zone-file', style:'display:none'});
+  const zone = el('div', {class:'drop-zone'}, dzIcon, dzText, dzHint, dzFileInfo, fileInput);
+
+  function updateZoneDisplay() {
+    if (selectedFile) {
+      zone.classList.add('--has-file');
+      dzText.innerHTML = '';
+      dzText.appendChild(document.createTextNode('File selected'));
+      dzHint.style.display = 'none';
+      dzFileInfo.style.display = '';
+      dzFileInfo.innerHTML = '';
+      dzFileInfo.appendChild(el('span', {class:'drop-zone-file-name'}, selectedFile.name));
+      dzFileInfo.appendChild(el('span', {class:'drop-zone-file-size'}, fmtSize(selectedFile.size)));
+      const clearBtn = el('button', {class:'drop-zone-clear', onClick: (e) => {
+        e.stopPropagation();
+        selectedFile = null;
+        fileInput.value = '';
+        updateZoneDisplay();
+      }}, 'Remove');
+      dzFileInfo.appendChild(clearBtn);
+    } else {
+      zone.classList.remove('--has-file');
+      dzText.innerHTML = '<strong>Click to browse</strong> or drag a file here';
+      dzHint.textContent = 'Invoices, manuals, photos, contracts...';
+      dzHint.style.display = '';
+      dzFileInfo.style.display = 'none';
+    }
+  }
+  updateZoneDisplay();
+
+  zone.addEventListener('click', () => { if (!selectedFile) fileInput.click(); });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) { selectedFile = fileInput.files[0]; updateZoneDisplay(); }
+  });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('--active'); });
+  zone.addEventListener('dragleave', e => { e.preventDefault(); zone.classList.remove('--active'); });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('--active');
+    if (e.dataTransfer.files[0]) { selectedFile = e.dataTransfer.files[0]; updateZoneDisplay(); }
+  });
+
   const entityKinds = [['','None'], ...Object.entries(entityKindLabels).map(([k,v]) => [k, v])];
   const form = el('div', {class:'form-grid'},
-    formField('File', fileInput, true),
+    el('div', {class:'form-group --full'}, zone),
     formField('Title', f.title = textInput('', 'Auto-generated from filename if empty'), true),
     formField('Link to Entity Type', f.entityKind = selectInput(entityKinds, '')),
     formField('Entity ID', f.entityId = numberInput('', 'e.g. 5')),
@@ -2010,11 +2182,10 @@ function uploadDocument() {
   );
 
   openModal('Upload Document', form, async () => {
-    const file = fileInput.files[0];
-    if (!file) { toast('Select a file to upload'); return; }
+    if (!selectedFile) { toast('Select a file to upload'); return; }
 
     const fd = new FormData();
-    fd.append('file', file);
+    fd.append('file', selectedFile);
     if (f.title.value) fd.append('title', f.title.value);
     if (f.entityKind.value) fd.append('entityKind', f.entityKind.value);
     if (f.entityId.value) fd.append('entityId', f.entityId.value);

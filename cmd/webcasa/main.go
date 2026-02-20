@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cpcloud/micasa/internal/api"
-	"github.com/cpcloud/micasa/internal/data"
+	"github.com/cpcloud/webcasa/internal/api"
+	"github.com/cpcloud/webcasa/internal/data"
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 		if err := store.SeedDemoData(); err != nil {
 			fail("seed demo data", err)
 		}
-		fmt.Fprintf(os.Stderr, "micasa-web: demo data seeded\n")
+		fmt.Fprintf(os.Stderr, "webcasa: demo data seeded\n")
 	}
 
 	srv := &http.Server{
@@ -61,11 +61,11 @@ func main() {
 	defer stop()
 
 	go func() {
-		fmt.Fprintf(os.Stderr, "micasa-web: listening on %s\n", *addr)
+		fmt.Fprintf(os.Stderr, "webcasa: listening on %s\n", *addr)
 		if resolvedDB == ":memory:" {
-			fmt.Fprintf(os.Stderr, "micasa-web: using in-memory database (demo mode)\n")
+			fmt.Fprintf(os.Stderr, "webcasa: using in-memory database (demo mode)\n")
 		} else {
-			fmt.Fprintf(os.Stderr, "micasa-web: database at %s\n", resolvedDB)
+			fmt.Fprintf(os.Stderr, "webcasa: database at %s\n", resolvedDB)
 		}
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fail("listen", err)
@@ -73,7 +73,7 @@ func main() {
 	}()
 
 	<-ctx.Done()
-	fmt.Fprintf(os.Stderr, "\nmicasa-web: shutting down...\n")
+	fmt.Fprintf(os.Stderr, "\nwebcasa: shutting down...\n")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -93,6 +93,6 @@ func resolveDB(path string, demo bool) (string, error) {
 }
 
 func fail(context string, err error) {
-	fmt.Fprintf(os.Stderr, "micasa-web: %s: %v\n", context, err)
+	fmt.Fprintf(os.Stderr, "webcasa: %s: %v\n", context, err)
 	os.Exit(1)
 }

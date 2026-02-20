@@ -1,89 +1,75 @@
-<!-- Copyright 2026 Phillip Cloud -->
-<!-- Licensed under the Apache License, Version 2.0 -->
+# webcasa
 
-<div align="center">
-  <img src="images/house.svg" alt="micasa">
+A web interface for managing everything about your home -- projects, maintenance, appliances, vendors, documents, and more.
 
-  <br><br>
-
-  [![CI](https://github.com/cpcloud/micasa/actions/workflows/ci.yml/badge.svg)](https://github.com/cpcloud/micasa/actions/workflows/ci.yml)
-  [![Release](https://img.shields.io/github/v/release/cpcloud/micasa)](https://github.com/cpcloud/micasa/releases/latest)
-  [![Go](https://img.shields.io/github/go-mod/go-version/cpcloud/micasa)](https://go.dev)
-  [![Docs](https://img.shields.io/badge/docs-micasa.dev-blue)](https://micasa.dev/docs)
-</div>
-
-# `micasa`
-
-Your house is quietly plotting to break while you sleep -- and you're dreaming about redoing the kitchen. `micasa` tracks both from your terminal.
-
-> Single SQLite file. No cloud. No account. No subscriptions.
-
-<div align="center">
-  <img src="images/demo.webp" alt="micasa demo" width="800">
-</div>
+Built on the data layer and REST API from [micasa](https://github.com/cpcloud/micasa) by [Phillip Cloud](https://github.com/cpcloud). The original project is a terminal UI (TUI) for home management; **webcasa** provides the same functionality through a browser.
 
 ## Features
 
-- **When did I last change the furnace filter?** Maintenance schedules, auto-computed due dates, full service history.
-- **What if we finally did the backyard?** Projects from napkin sketch to completion -- or graceful abandonment.
-- **How much would it actually cost to...** Quotes side by side, vendor history, and the math you need to actually decide.
-- **Is the dishwasher still under warranty?** Appliance tracking with purchase dates, warranty status, and maintenance history tied to each one.
-- **The basement is leaking again.** Log incidents with severity and location, link them to appliances and vendors, and resolve them when fixed.
-- **Who did we use last time?** A vendor directory with contact info, quote history, and every job they've done for you.
-- **Where's the warranty card?** Attach files (manuals, invoices, photos) directly to projects and appliances. Stored as BLOBs in the same SQLite file -- one `cp` backs up everything.
-- **How much have I spent on plumbing?** Press `@` to chat with a local LLM about your data. It writes the SQL, runs the query, and summarizes the results -- all on your machine.
+- **Dashboard** -- at-a-glance view of open incidents, upcoming maintenance, active projects, expiring warranties, recent service logs, and spending summaries
+- **Projects** -- track home improvement projects with types, status, budget, and timelines
+- **Quotes** -- collect and compare vendor quotes linked to projects
+- **Vendors** -- manage contractor and service provider contacts
+- **Maintenance** -- schedule recurring maintenance with categories and intervals
+- **Service Log** -- record service visits with cost tracking and vendor links
+- **Appliances** -- catalog appliances with warranty dates, serial numbers, and costs
+- **Incidents** -- log problems with severity, status, and links to appliances/vendors
+- **Documents** -- attach files (invoices, manuals, photos) to any entity
+- **Soft delete / restore** -- nothing is permanently lost; deleted items can be restored
+- **Demo mode** -- launch with sample data to explore the interface
 
-## Keyboard driven
+## Quick start
 
-Vim-style modal keys: `nav` mode to browse, `edit` mode to change things. Sort by any column, jump to columns with fuzzy search, hide what you don't need, and drill into related records.
-
-See the full [keybinding reference](https://micasa.dev/docs/reference/keybindings/).
-
-## Local LLM chat
-
-Ask questions about your home data in plain English. micasa connects to a local [Ollama](https://ollama.com) server (or any OpenAI-compatible API) and translates your question into SQL, executes it, and summarizes the results.
-
-The model has access to your schema and actual database values, so it can handle fuzzy references like "plumbing stuff" or "planned projects." Toggle `ctrl+s` to see the generated SQL, or `ctrl+o` for [mag mode](https://magworld.pw) that replaces dollar amounts with their order of magnitude.
-
-See the [LLM chat guide](https://micasa.dev/docs/guide/llm-chat/) and [configuration reference](https://micasa.dev/docs/reference/configuration/) for setup.
-
-## Install
-
-Requires Go 1.25+:
-
-```sh
-go install github.com/cpcloud/micasa/cmd/micasa@latest
+```
+go build -o webcasa ./cmd/webcasa
+./webcasa --demo
 ```
 
-Or grab a binary from the [latest release](https://github.com/cpcloud/micasa/releases/latest).
+Open [http://localhost:8080](http://localhost:8080) in your browser.
 
-Linux, macOS, and Windows binaries are available for amd64 and arm64.
+### Flags
 
-```sh
-micasa --demo         # poke around with sample data
-micasa                # start fresh with your own house
-micasa --print-path   # show where the database lives
-```
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-addr` | `:8080` | Listen address (host:port) |
+| `-db` | platform data dir | SQLite database path |
+| `-demo` | `false` | Seed demo data into an in-memory database |
+| `-web-dir` | `web` | Path to the `web/` directory for static files |
 
-> One SQLite file. Your data, your machine. Back it up with `cp`.
+### Database location
 
-Need Nix or container install options? Use the full [installation guide](https://micasa.dev/docs/getting-started/installation/).
+When no `-db` flag is provided (and not in demo mode), the database is created at the platform-standard data directory:
 
-## Documentation
+- **macOS**: `~/Library/Application Support/webcasa/webcasa.db`
+- **Linux**: `$XDG_DATA_HOME/webcasa/webcasa.db` (default `~/.local/share`)
+- **Windows**: `%LOCALAPPDATA%/webcasa/webcasa.db`
 
-Full docs at [micasa.dev/docs](https://micasa.dev/docs/) -- start with [Installation](https://micasa.dev/docs/getting-started/installation/) and [First Run](https://micasa.dev/docs/getting-started/first-run/), then use the [Guide](https://micasa.dev/docs/guide/) and [Reference](https://micasa.dev/docs/reference/).
+Override with the `WEBCASA_DB_PATH` environment variable.
 
-## Development
+## Configuration
 
-[Pure Go](https://go.dev), zero CGO. Built on [Charmbracelet](https://github.com/charmbracelet) + [GORM](https://gorm.io) + [SQLite](https://sqlite.org). TUI design inspired by [VisiData](https://www.visidata.org/) -- modal navigation, column-level operations, and keyboard-driven data exploration. Developed with AI coding agents ([Claude](https://claude.ai), [Claude Code](https://claude.ai/code)).
+webcasa reads an optional TOML config file from `$XDG_CONFIG_HOME/webcasa/config.toml`. Environment variables override file values.
 
-PRs welcome -- including AI-assisted ones, as long as you've reviewed and curated the code. See the [contributing guide](https://micasa.dev/docs/development/contributing/) for details. The repo uses a [Nix](https://nixos.org) dev shell with pre-commit hooks for formatting, linting, and tests:
+| Setting | Env var | Default |
+|---------|---------|---------|
+| LLM base URL | `OLLAMA_HOST` | `http://localhost:11434/v1` |
+| LLM model | `WEBCASA_LLM_MODEL` | `qwen3` |
+| LLM timeout | `WEBCASA_LLM_TIMEOUT` | `5s` |
+| Max document size | `WEBCASA_MAX_DOCUMENT_SIZE` | `52428800` (50 MiB) |
+| Cache TTL (days) | `WEBCASA_CACHE_TTL_DAYS` | `30` |
 
-```sh
-nix develop          # enter dev shell
-go test -shuffle=on ./...        # run tests
-```
+## API
+
+All endpoints live under `/api/`. The web frontend at `/` is a single-page app that consumes these endpoints.
+
+Full CRUD is available for: projects, quotes, vendors, maintenance, service logs, appliances, incidents, and documents. Each entity supports soft delete (`DELETE`) and restore (`POST .../restore`).
+
+See `internal/api/server.go` for the complete route table.
+
+## Credits
+
+This project is derived from [micasa](https://github.com/cpcloud/micasa) by [Phillip Cloud](https://github.com/cpcloud), licensed under the Apache License 2.0. The data layer, models, and REST API are from the original project. webcasa strips the terminal UI and packages the web frontend as a standalone application.
 
 ## License
 
-Apache-2.0 -- see [LICENSE](LICENSE).
+[Apache License 2.0](LICENSE)

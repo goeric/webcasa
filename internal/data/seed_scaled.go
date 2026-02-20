@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cpcloud/micasa/internal/fake"
+	"github.com/cpcloud/webcasa/internal/fake"
 )
 
 // SeedSummary holds counts of generated entities for display after seeding.

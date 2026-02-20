@@ -10,10 +10,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/cpcloud/micasa/internal/data"
+	"github.com/cpcloud/webcasa/internal/data"
 )
 
-// Server is the REST API server for micasa-web.
+// Server is the REST API server for webcasa.
 type Server struct {
 	handler http.Handler
 	store   *data.Store

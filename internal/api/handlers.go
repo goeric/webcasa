@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cpcloud/micasa/internal/data"
+	"github.com/cpcloud/webcasa/internal/data"
 	"gorm.io/gorm"
 )
 

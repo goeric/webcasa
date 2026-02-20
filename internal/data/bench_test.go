@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpcloud/micasa/internal/fake"
+	"github.com/cpcloud/webcasa/internal/fake"
 	"github.com/stretchr/testify/require"
 )
 

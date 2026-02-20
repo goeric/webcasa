@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cpcloud/micasa/internal/data"
+	"github.com/cpcloud/webcasa/internal/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -58,7 +58,7 @@ base_url = "http://file-host:1234/v1"
 model = "from-file"
 `)
 	t.Setenv("OLLAMA_HOST", "http://env-host:5678")
-	t.Setenv("MICASA_LLM_MODEL", "from-env")
+	t.Setenv("WEBCASA_LLM_MODEL", "from-env")
 
 	cfg, err := LoadFromPath(path)
 	require.NoError(t, err)
@@ -123,7 +123,7 @@ max_file_size = 1048576
 }
 
 func TestMaxDocumentSizeEnvOverride(t *testing.T) {
-	t.Setenv("MICASA_MAX_DOCUMENT_SIZE", "2097152")
+	t.Setenv("WEBCASA_MAX_DOCUMENT_SIZE", "2097152")
 	cfg, err := LoadFromPath(filepath.Join(t.TempDir(), "nope.toml"))
 	require.NoError(t, err)
 	assert.Equal(t, int64(2097152), cfg.Documents.MaxFileSize)
@@ -161,7 +161,7 @@ func TestCacheTTLDaysZeroDisables(t *testing.T) {
 }
 
 func TestCacheTTLDaysEnvOverride(t *testing.T) {
-	t.Setenv("MICASA_CACHE_TTL_DAYS", "14")
+	t.Setenv("WEBCASA_CACHE_TTL_DAYS", "14")
 	cfg, err := LoadFromPath(filepath.Join(t.TempDir(), "nope.toml"))
 	require.NoError(t, err)
 	assert.Equal(t, 14, cfg.Documents.CacheTTLDays)
@@ -196,7 +196,7 @@ func TestLLMTimeout(t *testing.T) {
 	})
 
 	t.Run("env override", func(t *testing.T) {
-		t.Setenv("MICASA_LLM_TIMEOUT", "15s")
+		t.Setenv("WEBCASA_LLM_TIMEOUT", "15s")
 		cfg, err := LoadFromPath(filepath.Join(t.TempDir(), "nope.toml"))
 		require.NoError(t, err)
 		assert.Equal(t, 15*time.Second, cfg.LLM.TimeoutDuration())

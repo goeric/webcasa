@@ -15,8 +15,8 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/iancoleman/strcase"
 
-	"github.com/cpcloud/micasa/internal/data/sqlite"
-	"github.com/cpcloud/micasa/internal/fake"
+	"github.com/cpcloud/webcasa/internal/data/sqlite"
+	"github.com/cpcloud/webcasa/internal/fake"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -44,6 +44,18 @@ func Open(path string) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
+
+	// In-memory SQLite gives each connection its own database. Limit the
+	// pool to one connection so AutoMigrate, seeding, and queries all
+	// share the same in-memory instance.
+	if path == ":memory:" {
+		sqlDB, err := db.DB()
+		if err != nil {
+			return nil, fmt.Errorf("get underlying db: %w", err)
+		}
+		sqlDB.SetMaxOpenConns(1)
+	}
+
 	return &Store{db: db, maxDocumentSize: MaxDocumentSize}, nil
 }
 

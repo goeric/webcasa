@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cpcloud/micasa/internal/data"
+	"github.com/cpcloud/webcasa/internal/data"
 )
 
 // dashboardResponse is the aggregated JSON returned by GET /api/dashboard.

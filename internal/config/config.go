@@ -14,7 +14,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
 
-	"github.com/cpcloud/micasa/internal/data"
+	"github.com/cpcloud/webcasa/internal/data"
 )
 
 // Config is the top-level application configuration, loaded from a TOML file.
@@ -75,7 +75,7 @@ const (
 	DefaultModel        = "qwen3"
 	DefaultLLMTimeout   = 5 * time.Second
 	DefaultCacheTTLDays = 30
-	configRelPath       = "micasa/config.toml"
+	configRelPath       = "webcasa/config.toml"
 )
 
 // defaults returns a Config with all default values populated.
@@ -93,7 +93,7 @@ func defaults() Config {
 	}
 }
 
-// Path returns the expected config file path (XDG_CONFIG_HOME/micasa/config.toml).
+// Path returns the expected config file path (XDG_CONFIG_HOME/webcasa/config.toml).
 func Path() string {
 	return filepath.Join(xdg.ConfigHome, configRelPath)
 }
@@ -154,7 +154,7 @@ func LoadFromPath(path string) (Config, error) {
 
 // applyEnvOverrides lets environment variables override config-file values.
 // OLLAMA_HOST sets the base URL (with /v1 appended if missing).
-// MICASA_LLM_MODEL sets the model.
+// WEBCASA_LLM_MODEL sets the model.
 func applyEnvOverrides(cfg *Config) {
 	if host := os.Getenv("OLLAMA_HOST"); host != "" {
 		host = strings.TrimRight(host, "/")
@@ -163,18 +163,18 @@ func applyEnvOverrides(cfg *Config) {
 		}
 		cfg.LLM.BaseURL = host
 	}
-	if model := os.Getenv("MICASA_LLM_MODEL"); model != "" {
+	if model := os.Getenv("WEBCASA_LLM_MODEL"); model != "" {
 		cfg.LLM.Model = model
 	}
-	if timeout := os.Getenv("MICASA_LLM_TIMEOUT"); timeout != "" {
+	if timeout := os.Getenv("WEBCASA_LLM_TIMEOUT"); timeout != "" {
 		cfg.LLM.Timeout = timeout
 	}
-	if maxSize := os.Getenv("MICASA_MAX_DOCUMENT_SIZE"); maxSize != "" {
+	if maxSize := os.Getenv("WEBCASA_MAX_DOCUMENT_SIZE"); maxSize != "" {
 		if n, err := strconv.ParseInt(maxSize, 10, 64); err == nil {
 			cfg.Documents.MaxFileSize = n
 		}
 	}
-	if ttl := os.Getenv("MICASA_CACHE_TTL_DAYS"); ttl != "" {
+	if ttl := os.Getenv("WEBCASA_CACHE_TTL_DAYS"); ttl != "" {
 		if n, err := strconv.Atoi(ttl); err == nil {
 			cfg.Documents.CacheTTLDays = n
 		}
@@ -184,7 +184,7 @@ func applyEnvOverrides(cfg *Config) {
 // ExampleTOML returns a commented config file suitable for writing as a
 // starter config. Not written automatically -- offered to the user on demand.
 func ExampleTOML() string {
-	return `# micasa configuration
+	return `# webcasa configuration
 # Place this file at: ` + Path() + `
 
 [llm]

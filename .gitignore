@@ -1,25 +1,21 @@
-# Copyright 2026 Phillip Cloud
-# Licensed under the Apache License, Version 2.0
-
-# Binaries for programs and plugins
+# Binaries
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-/micasa
-/micasa-web
+/webcasa
 
 # Test binary, built with `go test -c`
 *.test
 
-# Code coverage profiles and other test artifacts
+# Code coverage
 *.out
 coverage.*
 *.coverprofile
 profile.cov
 
-# Go workspace file
+# Go workspace
 go.work
 go.work.sum
 
@@ -30,33 +26,8 @@ vendor
 *.db
 *.sqlite
 
-# Nix
-.direnv
-result
-result-*
-
 # Editor
 .cursor/
 
-# Hugo output
-docs/public/
-docs/resources/
-website/
-
-# Intermediate GIFs from VHS recordings (converted to WebP, then deleted)
-*.gif
-
-# Build-time copies of shared assets (source of truth: images/)
-docs/static/images/favicon.svg
-docs/static/images/demo.webp
-
 # Env / local
 .env
-.pre-commit-config.yaml
-dev.md
-
-# Rust (legacy)
-target/
-
-# Claude local settings
-.claude/settings.local.json
