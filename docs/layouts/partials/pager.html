@@ -1,0 +1,45 @@
+{{- /* Copyright 2026 Phillip Cloud */ -}}
+{{- /* Licensed under the Apache License, Version 2.0 */ -}}
+
+{{- $docs := site.GetPage "docs" -}}
+{{- $pages := slice }}
+{{- range $docs.Sections.ByWeight }}
+  {{- range .Pages.ByWeight }}
+    {{- $pages = $pages | append . }}
+  {{- end }}
+{{- end }}
+
+{{- $prev := false }}
+{{- $next := false }}
+{{- $found := false }}
+{{- range $i, $p := $pages }}
+  {{- if eq $p.RelPermalink $.RelPermalink }}
+    {{- $found = true }}
+    {{- if gt $i 0 }}
+      {{- $prev = index $pages (sub $i 1) }}
+    {{- end }}
+  {{- else if $found }}
+    {{- if not $next }}
+      {{- $next = $p }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{ if or $prev $next }}
+<div class="docs-pager">
+  {{ with $prev }}
+    <a href="{{ .RelPermalink }}">
+      <span class="pager-label">&larr; Previous</span>
+      {{ .LinkTitle }}
+    </a>
+  {{ else }}
+    <span></span>
+  {{ end }}
+  {{ with $next }}
+    <a href="{{ .RelPermalink }}" class="next">
+      <span class="pager-label">Next &rarr;</span>
+      {{ .LinkTitle }}
+    </a>
+  {{ end }}
+</div>
+{{ end }}

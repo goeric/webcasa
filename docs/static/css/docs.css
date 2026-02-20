@@ -1,0 +1,508 @@
+/* Copyright 2026 Phillip Cloud */
+/* Licensed under the Apache License, Version 2.0 */
+
+/* micasa docs -- same palette, fonts, and feel as the main website */
+
+@import url("variables.css");
+@import url("fonts.css");
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 18px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
+  color: var(--charcoal);
+  background: var(--cream);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ────────────────────────────────────────────────── */
+
+.docs-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+
+.docs-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--linen);
+  border-right: 1px solid var(--rule);
+  padding: 2rem 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 1rem;
+}
+
+.sidebar-brand-link {
+  font-family: "DM Serif Display", "Georgia", serif;
+  font-size: 1.4rem;
+  color: var(--charcoal);
+  text-decoration: none;
+}
+
+.sidebar-brand-link:hover {
+  color: var(--terracotta);
+}
+
+.sidebar-brand-link .dot {
+  color: var(--terracotta);
+}
+
+.sidebar-house {
+  color: var(--warm-gray);
+  transition: color 0.15s;
+  line-height: 1;
+}
+
+.sidebar-house:hover {
+  color: var(--terracotta);
+}
+
+.sidebar-section {
+  padding: 0.5rem 1.5rem 0.25rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--warm-gray);
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+}
+
+.sidebar-nav a {
+  display: block;
+  padding: 0.25rem 1.5rem;
+  font-size: 0.88rem;
+  color: var(--charcoal-soft);
+  text-decoration: none;
+  transition: color 0.1s;
+}
+
+.sidebar-nav a:hover {
+  color: var(--terracotta);
+}
+
+.sidebar-nav a.active {
+  color: var(--terracotta);
+  font-weight: 600;
+}
+
+.sidebar-external {
+  margin-top: auto;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  gap: 1rem;
+}
+
+.sidebar-external a {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--warm-gray);
+  text-decoration: none;
+}
+
+.sidebar-external a:hover {
+  color: var(--terracotta);
+}
+
+/* ── Main content ──────────────────────────────────────────── */
+
+.docs-main {
+  flex: 1;
+  min-width: 0;
+  padding: 2.5rem 3rem 4rem;
+  max-width: 1100px;
+}
+
+/* ── Top bar (mobile + home link) ──────────────────────────── */
+
+.docs-topbar {
+  display: none;
+  background: var(--linen);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.75rem 1.5rem;
+  align-items: center;
+  gap: 1rem;
+}
+
+.docs-topbar a {
+  font-family: "DM Serif Display", "Georgia", serif;
+  color: var(--charcoal);
+  text-decoration: none;
+  font-size: 1.1rem;
+}
+
+.docs-topbar a:hover {
+  color: var(--terracotta);
+}
+
+.docs-topbar-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+}
+
+.docs-topbar-nav a {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--warm-gray);
+}
+
+.docs-topbar-nav a:hover {
+  color: var(--terracotta);
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: var(--charcoal);
+  padding: 0;
+}
+
+/* ── Typography ────────────────────────────────────────────── */
+
+.docs-main h1,
+.docs-main h2,
+.docs-main h3,
+.docs-main h4 {
+  font-family: "DM Serif Display", "Georgia", serif;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--charcoal);
+  position: relative;
+}
+
+.heading-anchor {
+  color: var(--warm-gray);
+  text-decoration: none;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75em;
+  margin-left: 0.4em;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.docs-main h1:hover .heading-anchor,
+.docs-main h2:hover .heading-anchor,
+.docs-main h3:hover .heading-anchor,
+.docs-main h4:hover .heading-anchor,
+.heading-anchor:focus {
+  opacity: 1;
+}
+
+.heading-anchor:hover {
+  color: var(--terracotta);
+}
+
+.docs-main h1 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.docs-main h2 {
+  font-size: 1.5rem;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.docs-main h3 {
+  font-size: 1.15rem;
+  margin: 2rem 0 0.75rem;
+}
+
+.docs-main h4 {
+  font-size: 1rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.docs-main p {
+  margin-bottom: 1rem;
+}
+
+.docs-main ul,
+.docs-main ol {
+  margin: 0 0 1rem 1.5rem;
+}
+
+.docs-main li {
+  margin-bottom: 0.35rem;
+}
+
+.docs-main strong {
+  font-weight: 600;
+}
+
+.docs-main hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 2rem 0;
+}
+
+/* ── Links ─────────────────────────────────────────────────── */
+
+.docs-main a {
+  color: var(--terracotta);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.docs-main a:hover {
+  color: var(--terracotta-dark);
+}
+
+/* ── Code ──────────────────────────────────────────────────── */
+
+code,
+pre {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
+
+.docs-main :not(pre) > code {
+  font-size: 0.85em;
+  background: var(--linen);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.docs-main pre {
+  background: var(--charcoal);
+  color: #e8e2da;
+  padding: 1.25rem 1.5rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.docs-main pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ── Blockquotes ───────────────────────────────────────────── */
+
+.docs-main blockquote {
+  border-left: 3px solid var(--terracotta);
+  background: var(--linen);
+  border-radius: 0 6px 6px 0;
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
+  color: var(--charcoal-soft);
+}
+
+.docs-main blockquote p {
+  margin-bottom: 0;
+}
+
+/* ── Tables ────────────────────────────────────────────────── */
+
+.docs-main table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.92rem;
+}
+
+.docs-main th {
+  font-family: "DM Serif Display", "Georgia", serif;
+  font-weight: 400;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: var(--linen);
+  border-bottom: 2px solid var(--rule);
+}
+
+.docs-main td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.docs-main tr:last-child td {
+  border-bottom: none;
+}
+
+.docs-main td code {
+  color: var(--terracotta);
+  background: rgba(192, 94, 60, 0.06);
+}
+
+/* ── Status colors (match terminal UI Wong palette, light mode) */
+
+.status-ideating  { color: #AA4499; }
+.status-planned   { color: #0072B2; }
+.status-quoted    { color: #D55E00; }
+.status-underway  { color: #007A5A; }
+.status-delayed   { color: #B8860B; }
+.status-completed { color: #6B7280; }
+.status-abandoned { color: #CC3311; }
+
+/* ── Mermaid diagrams ──────────────────────────────────────── */
+
+.docs-main pre.mermaid {
+  background: none;
+  color: var(--charcoal);
+  padding: 1rem 0;
+  box-shadow: none;
+  text-align: center;
+}
+
+.docs-main pre.mermaid .entityLabel {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace !important;
+  font-size: 0.9em;
+}
+
+/* ── Screenshots ───────────────────────────────────────────── */
+
+.docs-main img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1rem 0 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Prev / Next navigation ────────────────────────────────── */
+
+.docs-pager {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  gap: 1rem;
+}
+
+.docs-pager a {
+  display: block;
+  padding: 0.6rem 1rem;
+  background: var(--linen);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.88rem;
+  color: var(--charcoal);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.docs-pager a:hover {
+  background: var(--rule);
+  border-color: var(--warm-gray);
+  color: var(--charcoal);
+}
+
+.docs-pager .pager-label {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--warm-gray);
+  margin-bottom: 0.15rem;
+}
+
+.docs-pager .next {
+  text-align: right;
+  margin-left: auto;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+
+.docs-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  color: var(--warm-gray);
+  font-size: 0.8rem;
+}
+
+.docs-footer a {
+  color: var(--warm-gray);
+}
+
+.docs-footer a:hover {
+  color: var(--terracotta);
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+
+@media (max-width: 800px) {
+  html {
+    font-size: 16px;
+  }
+
+  .docs-topbar {
+    display: flex;
+  }
+
+  .docs-sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    z-index: 100;
+    transition: left 0.25s ease;
+    box-shadow: none;
+  }
+
+  .docs-sidebar.open {
+    left: 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .docs-main {
+    padding: 1.5rem;
+  }
+
+  .docs-pager {
+    flex-direction: column;
+  }
+
+  .docs-pager .next {
+    text-align: left;
+    margin-left: 0;
+  }
+}

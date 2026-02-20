@@ -1,0 +1,506 @@
+/* Copyright 2026 Phillip Cloud */
+/* Licensed under the Apache License, Version 2.0 */
+
+@import url("variables.css");
+
+/* --- Reset & Base --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 18px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
+  color: var(--charcoal);
+  background: var(--cream);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Typography --- */
+h1,
+h2,
+h3 {
+  font-family: "DM Serif Display", "Georgia", serif;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  margin-bottom: 1.5rem;
+  color: var(--charcoal);
+}
+
+h2 .accent {
+  color: var(--terracotta);
+}
+
+h2 .accent-alt {
+  color: var(--sage);
+}
+
+/* --- Typewriter --- */
+.typewriter {
+  white-space: nowrap;
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.85em;
+}
+
+.typewriter::after {
+  content: "\2588";
+  margin-left: 1px;
+  opacity: 0.3;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter::after {
+    animation: none;
+  }
+}
+
+a {
+  color: var(--terracotta);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--terracotta-dark);
+}
+
+code,
+pre {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
+
+code {
+  font-size: 0.85em;
+  background: var(--linen);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+pre {
+  background: var(--charcoal);
+  color: #e8e2da;
+  padding: 1.25rem 1.5rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* --- Layout --- */
+.container {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+section {
+  padding: 4rem 0;
+}
+
+section + section {
+  border-top: 1px solid var(--rule);
+}
+
+/* --- Hero --- */
+.hero {
+  padding: 5rem 0 1rem;
+  text-align: center;
+}
+
+.hero-house-scene {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+}
+
+.hero-house {
+  position: relative;
+  display: inline-block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--terracotta);
+  user-select: none;
+  transition: filter 0.3s;
+}
+
+/* Crumbling blocks */
+.crumble-block {
+  position: absolute;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--terracotta);
+  cursor: pointer;
+  z-index: 10;
+  will-change: transform, opacity;
+}
+
+/* Caption after crumble */
+.crumble-caption {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--warm-gray);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+
+.crumble-caption.visible {
+  opacity: 1;
+}
+
+/* --- Chimney smoke --- */
+.chimney {
+  color: var(--terracotta-dark);
+}
+
+.chimney-anchor {
+  position: relative;
+}
+
+.smoke-bed {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2.5em;
+  height: 5em;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.smoke-particle {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  color: var(--warm-gray);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75em;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+
+.hero h1 .dot {
+  color: var(--terracotta);
+}
+
+.tagline {
+  font-size: 1.15rem;
+  color: var(--charcoal-soft);
+  max-width: 480px;
+  margin: 0 auto 2rem;
+}
+
+.hero-cta {
+  display: inline-flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hero-cta a {
+  display: inline-block;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-primary {
+  background: var(--terracotta);
+  color: var(--cream) !important;
+}
+
+.btn-primary:hover {
+  background: var(--terracotta-dark);
+  color: var(--cream) !important;
+}
+
+.btn-secondary {
+  background: var(--linen);
+  color: var(--charcoal) !important;
+  border: 1px solid var(--rule);
+}
+
+.btn-secondary:hover {
+  background: var(--rule);
+  color: var(--charcoal) !important;
+}
+
+.hero-repo {
+  display: block;
+  margin-top: 1.1rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--warm-gray);
+  text-decoration: none;
+}
+
+.hero-repo:hover {
+  color: var(--terracotta);
+}
+
+/* --- Demo GIF --- */
+.demo-container {
+  text-align: center;
+  max-width: 1100px;
+  padding: 1.5rem 1.5rem 3rem;
+}
+
+.demo-gif {
+  max-width: 100%;
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(45, 42, 38, 0.12);
+}
+
+/* --- Pitch --- */
+.brand {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.85em;
+  font-style: normal;
+  background: var(--linen);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.pitch {
+  font-size: 1.05rem;
+  color: var(--charcoal-soft);
+  text-align: center;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 0 1rem;
+  font-style: italic;
+}
+
+.pitch-follow {
+  padding: 0;
+  font-style: normal;
+}
+
+/* --- Features --- */
+.features-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.feature-q {
+  font-family: "DM Serif Display", "Georgia", serif;
+  font-size: 1.1rem;
+  color: var(--charcoal);
+  margin-bottom: 0.25rem;
+}
+
+.feature-q::before {
+  content: "Q. ";
+  color: var(--terracotta);
+  font-weight: 700;
+}
+
+.feature-a {
+  color: var(--charcoal-soft);
+  padding-left: 1.75rem;
+}
+
+.feature-a::before {
+  content: "A. ";
+  color: var(--sage);
+  font-weight: 700;
+  margin-left: -1.75rem;
+}
+
+.keys-pitch {
+  color: var(--charcoal-soft);
+  font-size: 1rem;
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.keys-pitch .mode-badge {
+  display: inline-block;
+  vertical-align: baseline;
+  font-size: 0.7rem;
+  padding: 0.15em 0.4em;
+}
+
+/* --- Install --- */
+.install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.install-steps p {
+  color: var(--charcoal-soft);
+}
+
+.install-or {
+  text-align: center;
+  color: var(--warm-gray);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.install-data {
+  text-align: center;
+  color: var(--warm-gray);
+  font-size: 0.85rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* --- Keybindings --- */
+.mode-normal {
+  background: var(--sage);
+  color: var(--cream);
+}
+
+.mode-edit {
+  background: var(--terracotta);
+  color: var(--cream);
+}
+
+/* --- Testimonials --- */
+.testimonials-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.testimonial {
+  border-left: 3px solid var(--rule);
+  padding-left: 1.25rem;
+  opacity: 0;
+  transform: translateY(1.2rem);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.testimonial.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonial {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+.testimonial p {
+  font-style: italic;
+  color: var(--charcoal-soft);
+  margin-bottom: 0.4rem;
+}
+
+.testimonial cite {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.75rem;
+  font-style: normal;
+  color: var(--warm-gray);
+}
+
+/* --- Origin --- */
+.origin-quote {
+  font-family: "DM Serif Display", "Georgia", serif;
+  font-size: 1.15rem;
+  color: var(--terracotta);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.origin-body {
+  color: var(--charcoal-soft);
+  text-align: center;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* --- Footer --- */
+footer {
+  padding: 3rem 0;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  color: var(--warm-gray);
+  font-size: 0.85rem;
+}
+
+footer a {
+  color: var(--warm-gray);
+}
+
+footer a:hover {
+  color: var(--terracotta);
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  html {
+    font-size: 16px;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+
+  section {
+    padding: 3rem 0;
+  }
+
+  .hero {
+    padding: 3rem 0 1rem;
+  }
+}

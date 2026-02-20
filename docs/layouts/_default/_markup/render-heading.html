@@ -1,0 +1,6 @@
+{{- /* Copyright 2026 Phillip Cloud */ -}}
+{{- /* Licensed under the Apache License, Version 2.0 */ -}}
+
+<h{{ .Level }} id="{{ .Anchor }}">
+  {{- .Text | safeHTML }}<a class="heading-anchor" href="#{{ .Anchor }}">#</a>
+</h{{ .Level }}>

@@ -1,0 +1,44 @@
+<!-- Copyright 2026 Phillip Cloud -->
+<!-- Licensed under the Apache License, Version 2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 90" width="112" height="120">
+  <!-- Grid: 11 cols x 7 rows, cell=6x10, offset=(8,12) for padding -->
+  <!-- Row 0: peak -->
+  <rect x="32" y="17" width="6" height="5" fill="#c05e3c"/>
+  <rect x="38" y="12" width="6" height="10" fill="#c05e3c" opacity="0.75"/>
+  <rect x="44" y="17" width="6" height="5" fill="#c05e3c"/>
+  <!-- Row 1: mid roof -->
+  <rect x="20" y="27" width="6" height="5" fill="#c05e3c"/>
+  <rect x="26" y="22" width="30" height="10" fill="#c05e3c" opacity="0.75"/>
+  <rect x="56" y="27" width="6" height="5" fill="#c05e3c"/>
+  <!-- Row 2: roof base -->
+  <rect x="8" y="37" width="6" height="5" fill="#c05e3c"/>
+  <rect x="14" y="32" width="54" height="10" fill="#c05e3c" opacity="0.75"/>
+  <rect x="68" y="37" width="6" height="5" fill="#c05e3c"/>
+  <!-- Row 3: walls + windows -->
+  <rect x="8" y="42" width="6" height="10" fill="#c05e3c"/>
+  <rect x="14" y="42" width="6" height="10" fill="#c05e3c"/>
+  <rect x="26" y="42" width="6" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="32" y="42" width="6" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="44" y="42" width="6" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="50" y="42" width="6" height="10" fill="#c05e3c" opacity="0.3"/>
+  <rect x="62" y="42" width="6" height="10" fill="#c05e3c"/>
+  <rect x="68" y="42" width="6" height="10" fill="#c05e3c"/>
+  <!-- Row 4: walls + door top -->
+  <rect x="8" y="52" width="6" height="10" fill="#c05e3c"/>
+  <rect x="14" y="52" width="6" height="10" fill="#c05e3c"/>
+  <rect x="32" y="52" width="6" height="10" fill="#c05e3c"/>
+  <rect x="38" y="52" width="6" height="10" fill="#c05e3c"/>
+  <rect x="44" y="52" width="6" height="10" fill="#c05e3c"/>
+  <rect x="50" y="52" width="6" height="10" fill="#c05e3c"/>
+  <rect x="62" y="52" width="6" height="10" fill="#c05e3c"/>
+  <rect x="68" y="52" width="6" height="10" fill="#c05e3c"/>
+  <!-- Row 5: walls + door -->
+  <rect x="8" y="62" width="6" height="10" fill="#c05e3c"/>
+  <rect x="14" y="62" width="6" height="10" fill="#c05e3c"/>
+  <rect x="32" y="62" width="6" height="10" fill="#c05e3c"/>
+  <rect x="50" y="62" width="6" height="10" fill="#c05e3c"/>
+  <rect x="62" y="62" width="6" height="10" fill="#c05e3c"/>
+  <rect x="68" y="62" width="6" height="10" fill="#c05e3c"/>
+  <!-- Row 6: foundation -->
+  <rect x="8" y="72" width="66" height="5" fill="#c05e3c"/>
+</svg>
