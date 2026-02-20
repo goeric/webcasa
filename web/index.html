@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>micasa — Home Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   CSS CUSTOM PROPERTIES
+   ═══════════════════════════════════════════ */
+:root {
+  /* Palette — warm earth, sage, slate */
+  --clay:        #B8613F;
+  --clay-light:  #D4885E;
+  --clay-dark:   #8F4A2E;
+  --sage:        #7A8B6F;
+  --sage-light:  #A3B496;
+  --sage-pale:   #E8EDE4;
+  --slate:       #5B7B8A;
+  --slate-light: #8AACBA;
+  --slate-pale:  #E3EDF1;
+
+  /* Neutrals */
+  --linen:       #F7F3ED;
+  --cream:       #FFFCF7;
+  --warm-100:    #F0EBE3;
+  --warm-200:    #E3DCD2;
+  --warm-300:    #C9C0B4;
+  --warm-400:    #A69D91;
+  --warm-500:    #7D7569;
+  --warm-600:    #5A544A;
+  --charcoal:    #2D2A26;
+  --ink:         #1A1816;
+
+  /* Semantic */
+  --danger:      #C45041;
+  --danger-bg:   #FDF0EE;
+  --warning:     #C4883A;
+  --warning-bg:  #FDF6ED;
+  --success:     #5A8A5E;
+  --success-bg:  #EFF5EF;
+  --info:        #5B7B8A;
+  --info-bg:     #EDF3F6;
+
+  /* Typography */
+  --font-display: 'Fraunces', 'DM Serif Display', Georgia, serif;
+  --font-body:    'Inter', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* Spacing */
+  --sidebar-w: 260px;
+  --header-h:  0px;
+  --radius:    10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(45,42,38,.06), 0 1px 2px rgba(45,42,38,.04);
+  --shadow-md:  0 4px 12px rgba(45,42,38,.08), 0 2px 4px rgba(45,42,38,.04);
+  --shadow-lg:  0 12px 40px rgba(45,42,38,.12), 0 4px 12px rgba(45,42,38,.06);
+  --shadow-xl:  0 24px 60px rgba(45,42,38,.16), 0 8px 20px rgba(45,42,38,.08);
+
+  /* Transitions */
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--charcoal);
+  background: var(--linen);
+  line-height: 1.6;
+  overflow: hidden;
+  height: 100vh;
+}
+
+h1,h2,h3,h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+a { color: var(--clay); text-decoration: none; }
+a:hover { color: var(--clay-dark); }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: inherit;
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+  font-size: 0.93rem;
+  border: 1.5px solid var(--warm-200);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  background: var(--cream);
+  color: var(--charcoal);
+  transition: border-color .2s, box-shadow .2s;
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--clay);
+  box-shadow: 0 0 0 3px rgba(184,97,63,.12);
+}
+
+textarea { resize: vertical; min-height: 80px; }
+select { cursor: pointer; }
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--warm-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--warm-400); }
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════ */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--ink);
+  color: var(--warm-300);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 100;
+}
+
+/* Grain texture overlay */
+.sidebar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.sidebar-brand {
+  padding: 1.5rem 1.25rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sidebar-brand svg {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.sidebar-brand h1 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--cream);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-variation-settings: 'opsz' 48;
+}
+
+.sidebar-brand small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--warm-500);
+  margin-top: 1px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0.75rem 0;
+  overflow-y: auto;
+}
+
+.nav-section-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--warm-500);
+  padding: 1.25rem 1.25rem 0.4rem;
+  font-weight: 600;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 1.25rem;
+  color: var(--warm-400);
+  font-size: 0.87rem;
+  font-weight: 400;
+  transition: all .15s ease;
+  cursor: pointer;
+  position: relative;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover {
+  color: var(--cream);
+  background: rgba(255,255,255,.04);
+}
+
+.nav-item.active {
+  color: var(--cream);
+  background: rgba(255,255,255,.07);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--clay);
+  border-radius: 0 3px 3px 0;
+}
+
+.nav-item svg {
+  width: 18px;
+  height: 18px;
+  opacity: .6;
+  flex-shrink: 0;
+}
+
+.nav-item.active svg,
+.nav-item:hover svg { opacity: 1; }
+
+.nav-badge {
+  margin-left: auto;
+  background: var(--clay);
+  color: var(--cream);
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════
+   MAIN CONTENT
+   ═══════════════════════════════════════════ */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2rem 2.5rem;
+  scroll-behavior: smooth;
+}
+
+.page { display: none; animation: fadeUp .35s var(--ease-out); }
+.page.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  gap: 1rem;
+}
+
+.page-header h2 {
+  font-size: 1.8rem;
+  color: var(--ink);
+  font-variation-settings: 'opsz' 48;
+}
+
+.page-header p {
+  color: var(--warm-500);
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all .2s var(--ease-out);
+  white-space: nowrap;
+}
+
+.btn svg { width: 16px; height: 16px; }
+
+.btn-primary {
+  background: var(--clay);
+  color: white;
+  box-shadow: 0 1px 3px rgba(184,97,63,.25);
+}
+.btn-primary:hover {
+  background: var(--clay-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(184,97,63,.3);
+}
+
+.btn-secondary {
+  background: var(--cream);
+  color: var(--charcoal);
+  border: 1.5px solid var(--warm-200);
+}
+.btn-secondary:hover {
+  border-color: var(--warm-300);
+  background: white;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+.btn-danger:hover { background: #a8392c; }
+
+.btn-ghost {
+  color: var(--warm-500);
+  padding: 0.4rem 0.6rem;
+}
+.btn-ghost:hover { color: var(--charcoal); background: var(--warm-100); }
+
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+
+/* ═══════════════════════════════════════════
+   CARDS
+   ═══════════════════════════════════════════ */
+.card {
+  background: var(--cream);
+  border-radius: var(--radius);
+  border: 1px solid var(--warm-200);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--warm-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header h3 {
+  font-size: 1rem;
+  color: var(--charcoal);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-body { padding: 1.25rem; }
+
+/* ═══════════════════════════════════════════
+   DASHBOARD
+   ═══════════════════════════════════════════ */
+.dash-greeting {
+  margin-bottom: 2rem;
+}
+
+.dash-greeting h2 {
+  font-size: 2rem;
+  font-variation-settings: 'opsz' 72;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+}
+
+.dash-greeting p {
+  color: var(--warm-500);
+  font-size: 0.9rem;
+}
+
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--cream);
+  border: 1px solid var(--warm-200);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s var(--ease-out), box-shadow .2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.stat-card.--danger::before  { background: var(--danger); }
+.stat-card.--warning::before { background: var(--warning); }
+.stat-card.--success::before { background: var(--success); }
+.stat-card.--info::before    { background: var(--info); }
+
+.stat-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+  font-variation-settings: 'opsz' 48;
+}
+
+.stat-card.--danger .stat-value  { color: var(--danger); }
+.stat-card.--warning .stat-value { color: var(--warning); }
+.stat-card.--success .stat-value { color: var(--success); }
+.stat-card.--info .stat-value    { color: var(--info); }
+
+.stat-card .stat-label {
+  font-size: 0.78rem;
+  color: var(--warm-500);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.dash-grid .card { height: fit-content; }
+
+.dash-list {
+  list-style: none;
+}
+
+.dash-list li {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--warm-100);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.87rem;
+}
+
+.dash-list li:last-child { border-bottom: none; }
+
+.dash-list .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-list .dot.--urgent   { background: var(--danger); box-shadow: 0 0 6px rgba(196,80,65,.4); }
+.dash-list .dot.--soon     { background: var(--warning); }
+.dash-list .dot.--whenever { background: var(--sage); }
+.dash-list .dot.--overdue  { background: var(--danger); }
+.dash-list .dot.--upcoming { background: var(--warning); }
+.dash-list .dot.--active   { background: var(--success); }
+.dash-list .dot.--expiring { background: var(--warning); }
+
+.dash-list .meta {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--warm-400);
+  white-space: nowrap;
+}
+
+.dash-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--warm-400);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════
+   BADGES
+   ═══════════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badge.--urgent    { background: var(--danger-bg); color: var(--danger); }
+.badge.--soon      { background: var(--warning-bg); color: var(--warning); }
+.badge.--whenever  { background: var(--sage-pale); color: var(--sage); }
+.badge.--open      { background: var(--danger-bg); color: var(--danger); }
+.badge.--in_progress { background: var(--warning-bg); color: var(--warning); }
+.badge.--ideating  { background: var(--warm-100); color: var(--warm-500); }
+.badge.--planned   { background: var(--info-bg); color: var(--info); }
+.badge.--quoted    { background: var(--slate-pale); color: var(--slate); }
+.badge.--underway  { background: var(--warning-bg); color: var(--warning); }
+.badge.--delayed   { background: var(--danger-bg); color: var(--danger); }
+.badge.--completed { background: var(--success-bg); color: var(--success); }
+.badge.--abandoned { background: var(--warm-100); color: var(--warm-400); }
+
+/* ═══════════════════════════════════════════
+   DATA TABLES
+   ═══════════════════════════════════════════ */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.table-search {
+  position: relative;
+  flex: 1;
+  max-width: 340px;
+}
+
+.table-search input {
+  padding-left: 2.2rem;
+  background: var(--cream);
+}
+
+.table-search svg {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--warm-400);
+}
+
+.data-table-wrap {
+  background: var(--cream);
+  border: 1px solid var(--warm-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.data-table {
+  font-size: 0.85rem;
+}
+
+.data-table thead th {
+  background: var(--warm-100);
+  padding: 0.7rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--warm-500);
+  border-bottom: 1px solid var(--warm-200);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s;
+  position: relative;
+}
+
+.data-table thead th:hover { color: var(--charcoal); }
+
+.data-table thead th .sort-arrow {
+  display: inline-block;
+  margin-left: 0.3rem;
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+.data-table thead th:hover .sort-arrow { opacity: 0.4; }
+.data-table thead th.sorted .sort-arrow { opacity: 1; color: var(--clay); }
+
+.data-table tbody tr {
+  transition: background .1s;
+}
+
+.data-table tbody tr:hover {
+  background: var(--warm-100);
+}
+
+.data-table tbody td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--warm-100);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+.data-table .cell-money {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.data-table .cell-date {
+  white-space: nowrap;
+  color: var(--warm-500);
+}
+
+.data-table .cell-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table .cell-actions button {
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  color: var(--warm-400);
+  transition: all .15s;
+}
+
+.data-table .cell-actions button:hover {
+  color: var(--charcoal);
+  background: var(--warm-200);
+}
+
+.data-table .cell-actions button.--delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.table-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--warm-400);
+}
+
+.table-empty svg {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.75rem;
+  opacity: .3;
+}
+
+/* ═══════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,22,.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: modalOverlayIn .25s ease;
+}
+
+@keyframes modalOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: var(--cream);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  animation: modalIn .3s var(--ease-spring);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--warm-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--cream);
+  z-index: 1;
+}
+
+.modal-header h3 {
+  font-size: 1.15rem;
+  font-family: var(--font-display);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--warm-400);
+  transition: all .15s;
+}
+
+.modal-close:hover {
+  background: var(--warm-100);
+  color: var(--charcoal);
+}
+
+.modal-body { padding: 1.5rem; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.form-group.--full { grid-column: 1 / -1; }
+
+.form-group label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--warm-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--warm-100);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  position: sticky;
+  bottom: 0;
+  background: var(--cream);
+}
+
+/* ═══════════════════════════════════════════
+   HOUSE PROFILE
+   ═══════════════════════════════════════════ */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.profile-section h3 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--warm-200);
+  color: var(--charcoal);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-field {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.45rem 0;
+  font-size: 0.87rem;
+  border-bottom: 1px dotted var(--warm-200);
+}
+
+.profile-field:last-child { border-bottom: none; }
+
+.profile-field .label {
+  color: var(--warm-500);
+  font-size: 0.8rem;
+}
+
+.profile-field .value {
+  font-weight: 500;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toast {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn .3s var(--ease-spring), toastOut .3s ease 2.7s forwards;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px) scale(.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+  to { opacity: 0; transform: translateY(-5px); }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+  .dash-grid  { grid-template-columns: 1fr; }
+  .profile-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { width: 60px; min-width: 60px; }
+  .sidebar-brand small, .nav-section-label, .nav-item span, .nav-badge { display: none; }
+  .sidebar-brand h1 { display: none; }
+  .nav-item { justify-content: center; padding: 0.7rem; }
+  .nav-item svg { margin: 0; }
+  .main { padding: 1.25rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  .page-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ═════════════ SIDEBAR ═════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L2 14h4v14h8v-8h4v8h8V14h4L16 2z" fill="#B8613F" opacity=".9"/><path d="M16 2L2 14h4v14h8v-8h4v8h8V14h4L16 2z" fill="none" stroke="#F7F3ED" stroke-width="0.5" opacity=".3"/></svg>
+      <div>
+        <h1>micasa</h1>
+        <small>Home Management</small>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <button class="nav-item active" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="11" rx="1"/><rect x="3" y="13" width="7" height="8" rx="1"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-page="house">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>House Profile</span>
+      </button>
+
+      <div class="nav-section-label">Manage</div>
+      <button class="nav-item" data-page="projects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        <span>Projects</span>
+      </button>
+      <button class="nav-item" data-page="maintenance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        <span>Maintenance</span>
+      </button>
+      <button class="nav-item" data-page="appliances">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><circle cx="12" cy="16" r="2"/></svg>
+        <span>Appliances</span>
+      </button>
+      <button class="nav-item" data-page="incidents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Incidents</span>
+        <span class="nav-badge" id="incident-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-item" data-page="vendors">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>Vendors</span>
+      </button>
+      <button class="nav-item" data-page="quotes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Quotes</span>
+      </button>
+      <button class="nav-item" data-page="documents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        <span>Documents</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- ═════════════ MAIN ═════════════ -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard"></div>
+
+    <!-- HOUSE PROFILE -->
+    <div class="page" id="page-house"></div>
+
+    <!-- PROJECTS -->
+    <div class="page" id="page-projects"></div>
+
+    <!-- MAINTENANCE -->
+    <div class="page" id="page-maintenance"></div>
+
+    <!-- APPLIANCES -->
+    <div class="page" id="page-appliances"></div>
+
+    <!-- INCIDENTS -->
+    <div class="page" id="page-incidents"></div>
+
+    <!-- VENDORS -->
+    <div class="page" id="page-vendors"></div>
+
+    <!-- QUOTES -->
+    <div class="page" id="page-quotes"></div>
+
+    <!-- DOCUMENTS -->
+    <div class="page" id="page-documents"></div>
+  </main>
+</div>
+
+<!-- MODAL MOUNT -->
+<div id="modal-root"></div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   micasa Web — API-backed App
+   ═══════════════════════════════════════════════════ */
+
+// ── API Client ─────────────────────────────────────
+const api = {
+  get:  path => fetch(path).then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
+  post: (path, body) => fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error||r.statusText); }); return r.json(); }),
+  put:  (path, body) => fetch(path, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error||r.statusText); }); return r.json(); }),
+  del:  path => fetch(path, {method:'DELETE'}).then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error||r.statusText); }); }),
+};
+
+// ── Helpers ────────────────────────────────────────
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const el = (tag, attrs={}, ...children) => {
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'html') e.innerHTML = v;
+    else e.setAttribute(k, v);
+  }
+  children.flat(Infinity).forEach(c => {
+    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    else if (c) e.appendChild(c);
+  });
+  return e;
+};
+
+const money = cents => cents == null ? '—' : '$' + (cents/100).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+const moneyFull = cents => cents == null ? '—' : '$' + (cents/100).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—';
+const relDate = d => {
+  if (!d) return '—';
+  const diff = Math.floor((new Date(d) - new Date()) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  if (diff > 0 && diff <= 30) return `In ${diff}d`;
+  if (diff < 0 && diff >= -30) return `${-diff}d ago`;
+  return fmtDate(d);
+};
+const daysUntil = d => d ? Math.floor((new Date(d) - new Date()) / 86400000) : null;
+
+function nextDue(lastServiced, intervalMonths) {
+  if (!lastServiced || !intervalMonths) return null;
+  const d = new Date(lastServiced);
+  d.setMonth(d.getMonth() + intervalMonths);
+  return d.toISOString().slice(0,10);
+}
+
+// Date helper for converting JS date input values to RFC3339 for the API.
+function toRFC3339(dateStr) {
+  if (!dateStr) return null;
+  return new Date(dateStr + 'T00:00:00').toISOString();
+}
+
+// Extract a YYYY-MM-DD date string from an RFC3339 or ISO string.
+function toDateInput(isoStr) {
+  if (!isoStr) return '';
+  return isoStr.slice(0, 10);
+}
+
+// ── Toast ──────────────────────────────────────────
+function toast(msg) {
+  const t = el('div', {class:'toast'}, msg);
+  $('#toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ── Modal ──────────────────────────────────────────
+function openModal(title, bodyEl, onSave) {
+  const root = $('#modal-root');
+  const overlay = el('div', {class:'modal-overlay'});
+  const modal = el('div', {class:'modal'},
+    el('div', {class:'modal-header'},
+      el('h3', {}, title),
+      el('button', {class:'modal-close', onClick:()=>closeModal(), html:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'})
+    ),
+    el('div', {class:'modal-body'}, bodyEl),
+    el('div', {class:'modal-footer'},
+      el('button', {class:'btn btn-secondary', onClick:()=>closeModal()}, 'Cancel'),
+      el('button', {class:'btn btn-primary', onClick:()=>{ onSave(); closeModal(); }}, 'Save')
+    )
+  );
+  overlay.appendChild(modal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  root.appendChild(overlay);
+  const firstInput = modal.querySelector('input, select, textarea');
+  if (firstInput) setTimeout(() => firstInput.focus(), 100);
+}
+
+function closeModal() { $('#modal-root').innerHTML = ''; }
+
+function confirmDelete(entityName, onConfirm) {
+  const root = $('#modal-root');
+  const overlay = el('div', {class:'modal-overlay'});
+  const modal = el('div', {class:'modal', style:'max-width:400px'},
+    el('div', {class:'modal-header'}, el('h3', {}, 'Confirm Delete')),
+    el('div', {class:'modal-body'}, el('p', {}, `Are you sure you want to delete this ${entityName}? This action can be undone.`)),
+    el('div', {class:'modal-footer'},
+      el('button', {class:'btn btn-secondary', onClick:()=>closeModal()}, 'Cancel'),
+      el('button', {class:'btn btn-danger', onClick:()=>{ onConfirm(); closeModal(); }}, 'Delete')
+    )
+  );
+  overlay.appendChild(modal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  root.appendChild(overlay);
+}
+
+// ── Form Helpers ───────────────────────────────────
+function formField(label, inputEl, full=false) {
+  return el('div', {class:'form-group' + (full ? ' --full' : '')},
+    el('label', {}, label), inputEl
+  );
+}
+
+function textInput(value='', placeholder='') {
+  const inp = el('input', {type:'text', placeholder, value});
+  return inp;
+}
+
+function numberInput(value='', placeholder='') {
+  const inp = el('input', {type:'number', placeholder, value:value||''});
+  return inp;
+}
+
+function dateInput(value='') {
+  return el('input', {type:'date', value:value||''});
+}
+
+function selectInput(options, selected='') {
+  const sel = el('select', {});
+  options.forEach(([val, label]) => {
+    const opt = el('option', {value:val}, label);
+    if (val === selected) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  return sel;
+}
+
+function textareaInput(value='', placeholder='') {
+  const ta = el('textarea', {placeholder}, value);
+  return ta;
+}
+
+function moneyInput(cents) {
+  const inp = el('input', {type:'number', step:'0.01', placeholder:'0.00', value: cents ? (cents/100).toFixed(2) : ''});
+  return inp;
+}
+
+function moneyVal(inp) {
+  const v = parseFloat(inp.value);
+  return isNaN(v) ? 0 : Math.round(v * 100);
+}
+
+// ── Sorting helper ─────────────────────────────────
+let sortState = {};
+
+function sortedData(key, arr) {
+  const s = sortState[key];
+  if (!s) return arr;
+  return [...arr].sort((a,b) => {
+    let va = a[s.col], vb = b[s.col];
+    if (va == null) va = '';
+    if (vb == null) vb = '';
+    if (typeof va === 'number') return s.dir === 'asc' ? va-vb : vb-va;
+    return s.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE RENDERERS
+// ═══════════════════════════════════════════════════
+
+// ── DASHBOARD ──────────────────────────────────────
+async function renderDashboard() {
+  const page = $('#page-dashboard');
+  const data = await api.get('/api/dashboard');
+
+  const openIncidents = data.incidents || [];
+  const maintenanceItems = data.maintenance || [];
+  const overdue = maintenanceItems.filter(m => {
+    const nd = nextDue(m.LastServicedAt, m.IntervalMonths);
+    return nd && daysUntil(nd) < 0;
+  });
+  const upcoming = maintenanceItems.filter(m => {
+    const nd = nextDue(m.LastServicedAt, m.IntervalMonths);
+    return nd && daysUntil(nd) >= 0 && daysUntil(nd) <= 30;
+  });
+  const activeProjects = data.activeProjects || [];
+  const expiringWarranties = data.expiringWarranties || [];
+  const house = data.house || {};
+
+  // Update incident badge
+  const badge = $('#incident-badge');
+  if (openIncidents.length > 0) {
+    badge.style.display = '';
+    badge.textContent = openIncidents.length;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  const timeGreeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  })();
+
+  page.innerHTML = '';
+  page.appendChild(el('div', {class:'dash-greeting'},
+    el('h2', {}, `${timeGreeting}`),
+    el('p', {}, `Here's what's happening at ${house.Nickname || 'your home'}`)
+  ));
+
+  // Stats row
+  const stats = el('div', {class:'dash-stats'},
+    statCard(openIncidents.length, 'Open Incidents', '--danger'),
+    statCard(overdue.length, 'Overdue Tasks', '--warning'),
+    statCard(activeProjects.length, 'Active Projects', '--success'),
+    statCard(expiringWarranties.length, 'Expiring Soon', '--info'),
+  );
+  page.appendChild(stats);
+
+  // Grid
+  const grid = el('div', {class:'dash-grid'});
+
+  // Incidents card
+  grid.appendChild(dashCard('Incidents', openIncidents.length ? openIncidents.map(i =>
+    dashItem(i.Title, `badge --${i.Severity}`, i.Severity, relDate(i.DateNoticed))
+  ) : null));
+
+  // Overdue
+  grid.appendChild(dashCard('Overdue Maintenance', overdue.length ? overdue.map(m => {
+    const nd = nextDue(m.LastServicedAt, m.IntervalMonths);
+    return dashItem(m.Name, 'dot --overdue', null, relDate(nd));
+  }) : null));
+
+  // Upcoming
+  grid.appendChild(dashCard('Upcoming Maintenance', upcoming.length ? upcoming.map(m => {
+    const nd = nextDue(m.LastServicedAt, m.IntervalMonths);
+    return dashItem(m.Name, 'dot --upcoming', null, relDate(nd));
+  }) : null));
+
+  // Active projects
+  grid.appendChild(dashCard('Active Projects', activeProjects.length ? activeProjects.map(p =>
+    dashItem(p.Title, `badge --${p.Status}`, p.Status, p.ProjectType ? p.ProjectType.Name : '')
+  ) : null));
+
+  // Warranty
+  if (expiringWarranties.length) {
+    grid.appendChild(dashCard('Expiring Warranties', expiringWarranties.map(a => {
+      const d = daysUntil(a.WarrantyExpiry);
+      return dashItem(`${a.Name} (${a.Brand})`, d < 0 ? 'dot --overdue' : 'dot --expiring', null, relDate(a.WarrantyExpiry));
+    })));
+  }
+
+  // Insurance
+  if (house.InsuranceRenewal) {
+    const d = daysUntil(house.InsuranceRenewal);
+    if (d !== null && d >= -30 && d <= 90) {
+      grid.appendChild(dashCard('Insurance Renewal', [
+        dashItem(`${house.InsuranceCarrier} — ${house.InsurancePolicy}`, d < 0 ? 'dot --overdue' : 'dot --upcoming', null, relDate(house.InsuranceRenewal))
+      ]));
+    }
+  }
+
+  page.appendChild(grid);
+}
+
+function statCard(value, label, cls) {
+  return el('div', {class:`stat-card ${cls}`},
+    el('div', {class:'stat-value'}, String(value)),
+    el('div', {class:'stat-label'}, label)
+  );
+}
+
+function dashCard(title, items) {
+  const card = el('div', {class:'card'});
+  card.appendChild(el('div', {class:'card-header'}, el('h3', {}, title)));
+  if (!items || !items.length) {
+    card.appendChild(el('div', {class:'dash-empty'}, 'All clear'));
+  } else {
+    const list = el('ul', {class:'dash-list'});
+    items.forEach(i => list.appendChild(i));
+    card.appendChild(el('div', {class:'card-body', style:'padding:0.5rem 1.25rem'}, list));
+  }
+  return card;
+}
+
+function dashItem(text, indicatorClass, badgeText, meta) {
+  const li = el('li', {});
+  if (indicatorClass.startsWith('badge')) {
+    li.appendChild(el('span', {class:indicatorClass}, badgeText));
+  } else {
+    li.appendChild(el('span', {class:indicatorClass}));
+  }
+  li.appendChild(el('span', {}, text));
+  if (meta) li.appendChild(el('span', {class:'meta'}, meta));
+  return li;
+}
+
+// ── HOUSE PROFILE ──────────────────────────────────
+async function renderHouse() {
+  const page = $('#page-house');
+  let h;
+  try { h = await api.get('/api/house'); } catch(e) { h = {}; }
+  if (!h.ID) h = {}; // empty profile
+  page.innerHTML = '';
+
+  const header = el('div', {class:'page-header'},
+    el('div', {},
+      el('h2', {}, h.Nickname || 'Your Home'),
+      el('p', {}, h.AddressLine1 ? `${h.AddressLine1}, ${h.City}, ${h.State} ${h.PostalCode}` : 'No address set')
+    ),
+    el('button', {class:'btn btn-primary', onClick:()=>editHouse(h)},
+      el('span', {html:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'}),
+      'Edit Profile'
+    )
+  );
+  page.appendChild(header);
+
+  const grid = el('div', {class:'profile-grid'});
+
+  grid.appendChild(profileSection('Property Details', [
+    ['Year Built', h.YearBuilt || '—'],
+    ['Square Feet', h.SquareFeet ? h.SquareFeet.toLocaleString() : '—'],
+    ['Lot (sqft)', h.LotSquareFeet ? h.LotSquareFeet.toLocaleString() : '—'],
+    ['Bedrooms', h.Bedrooms || '—'],
+    ['Bathrooms', h.Bathrooms || '—'],
+    ['Parking', h.ParkingType || '—'],
+    ['Basement', h.BasementType || '—'],
+  ]));
+
+  grid.appendChild(profileSection('Construction', [
+    ['Foundation', h.FoundationType || '—'],
+    ['Wiring', h.WiringType || '—'],
+    ['Roof', h.RoofType || '—'],
+    ['Exterior', h.ExteriorType || '—'],
+    ['Heating', h.HeatingType || '—'],
+    ['Cooling', h.CoolingType || '—'],
+    ['Water Source', h.WaterSource || '—'],
+    ['Sewer', h.SewerType || '—'],
+  ]));
+
+  grid.appendChild(profileSection('Insurance', [
+    ['Carrier', h.InsuranceCarrier || '—'],
+    ['Policy #', h.InsurancePolicy || '—'],
+    ['Renewal', fmtDate(h.InsuranceRenewal)],
+  ]));
+
+  grid.appendChild(profileSection('Financials', [
+    ['Property Tax', money(h.PropertyTaxCents) + '/yr'],
+    ['HOA', h.HOAName ? `${h.HOAName} — ${money(h.HOAFeeCents)}/mo` : 'None'],
+  ]));
+
+  page.appendChild(grid);
+}
+
+function profileSection(title, fields) {
+  const sec = el('div', {class:'card'});
+  const body = el('div', {class:'card-body'});
+  const h3 = el('div', {class:'profile-section'}, el('h3', {}, title));
+  body.appendChild(h3);
+  fields.forEach(([label, value]) => {
+    body.appendChild(el('div', {class:'profile-field'},
+      el('span', {class:'label'}, label),
+      el('span', {class:'value'}, String(value))
+    ));
+  });
+  sec.appendChild(body);
+  return sec;
+}
+
+function editHouse(h) {
+  const fields = {};
+  const form = el('div', {class:'form-grid'},
+    formField('Nickname', fields.Nickname = textInput(h.Nickname||'', 'e.g. The Craftsman')),
+    formField('Year Built', fields.YearBuilt = numberInput(h.YearBuilt)),
+    formField('Address Line 1', fields.AddressLine1 = textInput(h.AddressLine1||''), true),
+    formField('City', fields.City = textInput(h.City||'')),
+    formField('State', fields.State = textInput(h.State||'')),
+    formField('Postal Code', fields.PostalCode = textInput(h.PostalCode||'')),
+    formField('Sqft', fields.SquareFeet = numberInput(h.SquareFeet)),
+    formField('Lot Sqft', fields.LotSquareFeet = numberInput(h.LotSquareFeet)),
+    formField('Bedrooms', fields.Bedrooms = numberInput(h.Bedrooms)),
+    formField('Bathrooms', fields.Bathrooms = numberInput(h.Bathrooms)),
+    formField('Foundation', fields.FoundationType = textInput(h.FoundationType||'')),
+    formField('Roof', fields.RoofType = textInput(h.RoofType||'')),
+    formField('Exterior', fields.ExteriorType = textInput(h.ExteriorType||'')),
+    formField('Heating', fields.HeatingType = textInput(h.HeatingType||'')),
+    formField('Cooling', fields.CoolingType = textInput(h.CoolingType||'')),
+    formField('Insurance Carrier', fields.InsuranceCarrier = textInput(h.InsuranceCarrier||'')),
+    formField('Policy #', fields.InsurancePolicy = textInput(h.InsurancePolicy||'')),
+    formField('Renewal Date', fields.InsuranceRenewal = dateInput(toDateInput(h.InsuranceRenewal))),
+    formField('Annual Property Tax', fields.PropertyTaxCents = moneyInput(h.PropertyTaxCents)),
+    formField('HOA Name', fields.HOAName = textInput(h.HOAName||'')),
+  );
+  openModal('Edit House Profile', form, async () => {
+    const body = {
+      Nickname: fields.Nickname.value,
+      AddressLine1: fields.AddressLine1.value,
+      City: fields.City.value,
+      State: fields.State.value,
+      PostalCode: fields.PostalCode.value,
+      YearBuilt: parseInt(fields.YearBuilt.value) || 0,
+      SquareFeet: parseInt(fields.SquareFeet.value) || 0,
+      LotSquareFeet: parseInt(fields.LotSquareFeet.value) || 0,
+      Bedrooms: parseInt(fields.Bedrooms.value) || 0,
+      Bathrooms: parseFloat(fields.Bathrooms.value) || 0,
+      FoundationType: fields.FoundationType.value,
+      RoofType: fields.RoofType.value,
+      ExteriorType: fields.ExteriorType.value,
+      HeatingType: fields.HeatingType.value,
+      CoolingType: fields.CoolingType.value,
+      InsuranceCarrier: fields.InsuranceCarrier.value,
+      InsurancePolicy: fields.InsurancePolicy.value,
+      InsuranceRenewal: toRFC3339(fields.InsuranceRenewal.value),
+      PropertyTaxCents: moneyVal(fields.PropertyTaxCents),
+      HOAName: fields.HOAName.value,
+    };
+    await api.put('/api/house', body);
+    renderHouse(); toast('House profile updated');
+  });
+}
+
+// ── GENERIC TABLE PAGE RENDERER ────────────────────
+// fetchData is an async function returning the array of items.
+function renderTablePage({pageId, title, subtitle, fetchData, columns, onAdd, onEdit, onDelete, searchFields}) {
+  const page = $(`#page-${pageId}`);
+  page.innerHTML = '';
+
+  const header = el('div', {class:'page-header'},
+    el('div', {}, el('h2', {}, title), subtitle ? el('p', {}, subtitle) : null),
+    onAdd ? el('button', {class:'btn btn-primary', onClick:onAdd},
+      el('span', {html:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'}),
+      `Add ${title.replace(/s$/,'')}`
+    ) : null
+  );
+  page.appendChild(header);
+
+  let searchTerm = '';
+  const toolbar = el('div', {class:'table-toolbar'});
+  const searchWrap = el('div', {class:'table-search'},
+    el('span', {html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'}),
+  );
+  const searchInput = el('input', {type:'text', placeholder:`Search ${title.toLowerCase()}...`});
+  searchWrap.appendChild(searchInput);
+  toolbar.appendChild(searchWrap);
+  page.appendChild(toolbar);
+
+  const tableWrap = el('div', {class:'data-table-wrap'});
+  const table = el('table', {class:'data-table'});
+  tableWrap.appendChild(table);
+  page.appendChild(tableWrap);
+
+  let cachedItems = [];
+
+  function renderTable(items) {
+    cachedItems = items;
+    let filtered = items;
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      filtered = filtered.filter(row => (searchFields||[]).some(f => {
+        const v = typeof f === 'function' ? f(row) : row[f];
+        return v && String(v).toLowerCase().includes(s);
+      }));
+    }
+    filtered = sortedData(pageId, filtered);
+
+    table.innerHTML = '';
+    const thead = el('thead');
+    const headRow = el('tr');
+    columns.forEach(col => {
+      const th = el('th', {});
+      th.textContent = col.label;
+      const arrow = el('span', {class:'sort-arrow'}, '↕');
+      th.appendChild(arrow);
+      if (sortState[pageId] && sortState[pageId].col === col.key) {
+        th.classList.add('sorted');
+        arrow.textContent = sortState[pageId].dir === 'asc' ? '↑' : '↓';
+      }
+      th.addEventListener('click', () => {
+        if (sortState[pageId] && sortState[pageId].col === col.key) {
+          sortState[pageId].dir = sortState[pageId].dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortState[pageId] = {col: col.key, dir: 'asc'};
+        }
+        renderTable(cachedItems);
+      });
+      headRow.appendChild(th);
+    });
+    if (onEdit || onDelete) headRow.appendChild(el('th', {style:'width:80px'}));
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = el('tbody');
+    if (filtered.length === 0) {
+      const td = el('td', {colspan: columns.length + (onEdit||onDelete?1:0), class:'table-empty'}, 'No records found');
+      tbody.appendChild(el('tr', {}, td));
+    } else {
+      filtered.forEach(row => {
+        const tr = el('tr');
+        columns.forEach(col => {
+          const td = el('td', {class: col.class||''});
+          if (col.render) {
+            const content = col.render(row);
+            if (typeof content === 'string') td.innerHTML = content;
+            else if (content instanceof HTMLElement) td.appendChild(content);
+            else td.textContent = content;
+          } else {
+            td.textContent = row[col.key] ?? '—';
+          }
+          tr.appendChild(td);
+        });
+        if (onEdit || onDelete) {
+          const actions = el('td', {class:'cell-actions'});
+          if (onEdit) {
+            actions.appendChild(el('button', {onClick:()=>onEdit(row), title:'Edit', html:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'}));
+          }
+          if (onDelete) {
+            actions.appendChild(el('button', {class:'--delete', onClick:()=>onDelete(row), title:'Delete', html:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>'}));
+          }
+          tr.appendChild(actions);
+        }
+        tbody.appendChild(tr);
+      });
+    }
+    table.appendChild(tbody);
+  }
+
+  searchInput.addEventListener('input', e => { searchTerm = e.target.value; renderTable(cachedItems); });
+
+  // Initial fetch and render
+  fetchData().then(items => renderTable(items));
+}
+
+// ── PROJECTS ───────────────────────────────────────
+async function renderProjects() {
+  const [projectTypes, projects] = await Promise.all([
+    api.get('/api/project-types'),
+    api.get('/api/projects'),
+  ]);
+  const typeNames = projectTypes.map(t => t.Name);
+  const statuses = ['ideating','planned','quoted','underway','delayed','completed','abandoned'];
+
+  renderTablePage({
+    pageId: 'projects', title: 'Projects', subtitle: `${projects.length} projects`,
+    fetchData: () => Promise.resolve(projects),
+    searchFields: ['Title', r => r.ProjectType?.Name, 'Status', 'Description'],
+    columns: [
+      {key:'Title', label:'Title'},
+      {key:'_type', label:'Type', render: r => r.ProjectType ? r.ProjectType.Name : '—'},
+      {key:'Status', label:'Status', render: r => `<span class="badge --${r.Status}">${r.Status}</span>`},
+      {key:'BudgetCents', label:'Budget', class:'cell-money', render: r => money(r.BudgetCents)},
+      {key:'ActualCents', label:'Actual', class:'cell-money', render: r => money(r.ActualCents)},
+      {key:'StartDate', label:'Start', class:'cell-date', render: r => fmtDate(r.StartDate)},
+    ],
+    onAdd: () => editProject(null, typeNames, statuses, projectTypes),
+    onEdit: r => editProject(r, typeNames, statuses, projectTypes),
+    onDelete: r => confirmDelete('project', async () => {
+      try { await api.del(`/api/projects/${r.ID}`); renderProjects(); toast('Project deleted'); }
+      catch(e) { toast(e.message); }
+    })
+  });
+}
+
+function editProject(existing, typeNames, statuses, projectTypes) {
+  const f = {};
+  const typeOpts = typeNames.map(t => [t, t]);
+  const currentType = existing?.ProjectType ? existing.ProjectType.Name : 'Remodel';
+  const form = el('div', {class:'form-grid'},
+    formField('Title', f.Title = textInput(existing?.Title||'', 'Kitchen remodel'), true),
+    formField('Type', f.Type = selectInput(typeOpts, currentType)),
+    formField('Status', f.Status = selectInput(statuses.map(s=>[s,s.charAt(0).toUpperCase()+s.slice(1)]), existing?.Status||'ideating')),
+    formField('Budget', f.BudgetCents = moneyInput(existing?.BudgetCents)),
+    formField('Actual Cost', f.ActualCents = moneyInput(existing?.ActualCents)),
+    formField('Start Date', f.StartDate = dateInput(toDateInput(existing?.StartDate))),
+    formField('End Date', f.EndDate = dateInput(toDateInput(existing?.EndDate))),
+    formField('Description', f.Description = textareaInput(existing?.Description||''), true),
+  );
+  openModal(existing ? 'Edit Project' : 'New Project', form, async () => {
+    const typeName = f.Type.value;
+    const pt = projectTypes.find(t => t.Name === typeName);
+    const body = {
+      Title: f.Title.value,
+      ProjectTypeID: pt ? pt.ID : 0,
+      Status: f.Status.value,
+      BudgetCents: moneyVal(f.BudgetCents),
+      ActualCents: moneyVal(f.ActualCents),
+      StartDate: toRFC3339(f.StartDate.value),
+      EndDate: toRFC3339(f.EndDate.value),
+      Description: f.Description.value,
+    };
+    if (existing) await api.put(`/api/projects/${existing.ID}`, body);
+    else await api.post('/api/projects', body);
+    renderProjects(); toast(existing ? 'Project updated' : 'Project created');
+  });
+}
+
+// ── MAINTENANCE ────────────────────────────────────
+async function renderMaintenance() {
+  const [categories, items, appliances] = await Promise.all([
+    api.get('/api/maintenance-categories'),
+    api.get('/api/maintenance'),
+    api.get('/api/appliances'),
+  ]);
+  const catNames = categories.map(c => c.Name);
+
+  renderTablePage({
+    pageId: 'maintenance', title: 'Maintenance', subtitle: `${items.length} items`,
+    fetchData: () => Promise.resolve(items),
+    searchFields: ['Name', r => r.Category?.Name, 'Notes'],
+    columns: [
+      {key:'Name', label:'Item'},
+      {key:'_cat', label:'Category', render: r => r.Category ? r.Category.Name : '—'},
+      {key:'_app', label:'Appliance', render: r => r.Appliance && r.Appliance.ID ? r.Appliance.Name : '—'},
+      {key:'LastServicedAt', label:'Last Serviced', class:'cell-date', render: r => fmtDate(r.LastServicedAt)},
+      {key:'_nextDue', label:'Next Due', render: r => {
+        const nd = nextDue(r.LastServicedAt, r.IntervalMonths);
+        if (!nd) return '—';
+        const d = daysUntil(nd);
+        const cls = d < 0 ? '--urgent' : d <= 14 ? '--soon' : '--whenever';
+        return `<span class="badge ${cls}">${relDate(nd)}</span>`;
+      }},
+      {key:'IntervalMonths', label:'Interval', render: r => r.IntervalMonths ? `${r.IntervalMonths}mo` : '—'},
+      {key:'CostCents', label:'Cost', class:'cell-money', render: r => money(r.CostCents)},
+    ],
+    onAdd: () => editMaintenance(null, catNames, categories, appliances),
+    onEdit: r => editMaintenance(r, catNames, categories, appliances),
+    onDelete: r => confirmDelete('maintenance item', async () => {
+      try { await api.del(`/api/maintenance/${r.ID}`); renderMaintenance(); toast('Maintenance item deleted'); }
+      catch(e) { toast(e.message); }
+    })
+  });
+}
+
+function editMaintenance(existing, catNames, categories, appliances) {
+  const f = {};
+  const appOpts = [['','None'], ...appliances.map(a=>[String(a.ID), a.Name])];
+  const currentCat = existing?.Category ? existing.Category.Name : 'HVAC';
+  const form = el('div', {class:'form-grid'},
+    formField('Name', f.Name = textInput(existing?.Name||'', 'HVAC Filter Change'), true),
+    formField('Category', f.Category = selectInput(catNames.map(c=>[c,c]), currentCat)),
+    formField('Appliance', f.ApplianceID = selectInput(appOpts, existing?.ApplianceID ? String(existing.ApplianceID) : '')),
+    formField('Interval (months)', f.IntervalMonths = numberInput(existing?.IntervalMonths)),
+    formField('Last Serviced', f.LastServicedAt = dateInput(toDateInput(existing?.LastServicedAt))),
+    formField('Cost', f.CostCents = moneyInput(existing?.CostCents)),
+    formField('Notes', f.Notes = textareaInput(existing?.Notes||''), true),
+  );
+  openModal(existing ? 'Edit Maintenance' : 'New Maintenance Item', form, async () => {
+    const catName = f.Category.value;
+    const cat = categories.find(c => c.Name === catName);
+    const appId = f.ApplianceID.value ? parseInt(f.ApplianceID.value) : null;
+    const body = {
+      Name: f.Name.value,
+      CategoryID: cat ? cat.ID : 0,
+      ApplianceID: appId,
+      IntervalMonths: parseInt(f.IntervalMonths.value) || 0,
+      LastServicedAt: toRFC3339(f.LastServicedAt.value),
+      CostCents: moneyVal(f.CostCents),
+      Notes: f.Notes.value,
+    };
+    if (existing) await api.put(`/api/maintenance/${existing.ID}`, body);
+    else await api.post('/api/maintenance', body);
+    renderMaintenance(); toast(existing ? 'Maintenance updated' : 'Maintenance item created');
+  });
+}
+
+// ── APPLIANCES ─────────────────────────────────────
+async function renderAppliances() {
+  const items = await api.get('/api/appliances');
+
+  renderTablePage({
+    pageId: 'appliances', title: 'Appliances', subtitle: `${items.length} appliances`,
+    fetchData: () => Promise.resolve(items),
+    searchFields: ['Name','Brand','ModelNumber','SerialNumber','Location'],
+    columns: [
+      {key:'Name', label:'Name'},
+      {key:'Brand', label:'Brand'},
+      {key:'ModelNumber', label:'Model'},
+      {key:'Location', label:'Location'},
+      {key:'PurchaseDate', label:'Purchased', class:'cell-date', render: r => fmtDate(r.PurchaseDate)},
+      {key:'WarrantyExpiry', label:'Warranty', render: r => {
+        if (!r.WarrantyExpiry) return '—';
+        const d = daysUntil(r.WarrantyExpiry);
+        const cls = d < 0 ? '--urgent' : d <= 90 ? '--soon' : '--whenever';
+        return `<span class="badge ${cls}">${relDate(r.WarrantyExpiry)}</span>`;
+      }},
+      {key:'CostCents', label:'Cost', class:'cell-money', render: r => money(r.CostCents)},
+    ],
+    onAdd: () => editAppliance(),
+    onEdit: r => editAppliance(r),
+    onDelete: r => confirmDelete('appliance', async () => {
+      try { await api.del(`/api/appliances/${r.ID}`); renderAppliances(); toast('Appliance deleted'); }
+      catch(e) { toast(e.message); }
+    })
+  });
+}
+
+function editAppliance(existing) {
+  const f = {};
+  const form = el('div', {class:'form-grid'},
+    formField('Name', f.Name = textInput(existing?.Name||'', 'Refrigerator')),
+    formField('Brand', f.Brand = textInput(existing?.Brand||'', 'Samsung')),
+    formField('Model', f.ModelNumber = textInput(existing?.ModelNumber||'')),
+    formField('Serial #', f.SerialNumber = textInput(existing?.SerialNumber||'')),
+    formField('Location', f.Location = textInput(existing?.Location||'', 'Kitchen')),
+    formField('Cost', f.CostCents = moneyInput(existing?.CostCents)),
+    formField('Purchase Date', f.PurchaseDate = dateInput(toDateInput(existing?.PurchaseDate))),
+    formField('Warranty Expiry', f.WarrantyExpiry = dateInput(toDateInput(existing?.WarrantyExpiry))),
+    formField('Notes', f.Notes = textareaInput(existing?.Notes||''), true),
+  );
+  openModal(existing ? 'Edit Appliance' : 'New Appliance', form, async () => {
+    const body = {
+      Name: f.Name.value, Brand: f.Brand.value, ModelNumber: f.ModelNumber.value,
+      SerialNumber: f.SerialNumber.value, Location: f.Location.value,
+      CostCents: moneyVal(f.CostCents),
+      PurchaseDate: toRFC3339(f.PurchaseDate.value),
+      WarrantyExpiry: toRFC3339(f.WarrantyExpiry.value),
+      Notes: f.Notes?.value||''
+    };
+    if (existing) await api.put(`/api/appliances/${existing.ID}`, body);
+    else await api.post('/api/appliances', body);
+    renderAppliances(); toast(existing ? 'Appliance updated' : 'Appliance added');
+  });
+}
+
+// ── INCIDENTS ──────────────────────────────────────
+async function renderIncidents() {
+  const [items, vendors, appliances] = await Promise.all([
+    api.get('/api/incidents'),
+    api.get('/api/vendors'),
+    api.get('/api/appliances'),
+  ]);
+
+  renderTablePage({
+    pageId: 'incidents', title: 'Incidents', subtitle: `${items.length} incidents`,
+    fetchData: () => Promise.resolve(items),
+    searchFields: ['Title','Description','Location','Notes'],
+    columns: [
+      {key:'Title', label:'Title'},
+      {key:'Severity', label:'Severity', render: r => `<span class="badge --${r.Severity}">${r.Severity}</span>`},
+      {key:'Status', label:'Status', render: r => `<span class="badge --${r.Status}">${r.Status.replace('_',' ')}</span>`},
+      {key:'Location', label:'Location'},
+      {key:'_vendor', label:'Vendor', render: r => r.Vendor && r.Vendor.ID ? r.Vendor.Name : '—'},
+      {key:'DateNoticed', label:'Noticed', class:'cell-date', render: r => relDate(r.DateNoticed)},
+      {key:'CostCents', label:'Cost', class:'cell-money', render: r => money(r.CostCents)},
+    ],
+    onAdd: () => editIncident(null, vendors, appliances),
+    onEdit: r => editIncident(r, vendors, appliances),
+    onDelete: r => confirmDelete('incident', async () => {
+      try { await api.del(`/api/incidents/${r.ID}`); renderIncidents(); toast('Incident deleted'); }
+      catch(e) { toast(e.message); }
+    })
+  });
+}
+
+function editIncident(existing, vendors, appliances) {
+  const f = {};
+  const vendorOpts = [['','None'], ...vendors.map(v=>[String(v.ID), v.Name])];
+  const appOpts = [['','None'], ...appliances.map(a=>[String(a.ID), a.Name])];
+  const form = el('div', {class:'form-grid'},
+    formField('Title', f.Title = textInput(existing?.Title||'', 'Leaking faucet'), true),
+    formField('Severity', f.Severity = selectInput([['urgent','Urgent'],['soon','Soon'],['whenever','Whenever']], existing?.Severity||'soon')),
+    formField('Status', f.Status = selectInput([['open','Open'],['in_progress','In Progress']], existing?.Status||'open')),
+    formField('Location', f.Location = textInput(existing?.Location||'', 'Kitchen')),
+    formField('Appliance', f.ApplianceID = selectInput(appOpts, existing?.ApplianceID ? String(existing.ApplianceID) : '')),
+    formField('Vendor', f.VendorID = selectInput(vendorOpts, existing?.VendorID ? String(existing.VendorID) : '')),
+    formField('Date Noticed', f.DateNoticed = dateInput(toDateInput(existing?.DateNoticed))),
+    formField('Date Resolved', f.DateResolved = dateInput(toDateInput(existing?.DateResolved))),
+    formField('Cost', f.CostCents = moneyInput(existing?.CostCents)),
+    formField('Description', f.Description = textareaInput(existing?.Description||''), true),
+    formField('Notes', f.Notes = textareaInput(existing?.Notes||''), true),
+  );
+  openModal(existing ? 'Edit Incident' : 'Report Incident', form, async () => {
+    const appId = f.ApplianceID.value ? parseInt(f.ApplianceID.value) : null;
+    const venId = f.VendorID.value ? parseInt(f.VendorID.value) : null;
+    const body = {
+      Title: f.Title.value, Severity: f.Severity.value, Status: f.Status.value,
+      Location: f.Location.value,
+      ApplianceID: appId, VendorID: venId,
+      DateNoticed: toRFC3339(f.DateNoticed.value) || new Date().toISOString(),
+      DateResolved: toRFC3339(f.DateResolved.value),
+      CostCents: moneyVal(f.CostCents),
+      Description: f.Description.value,
+      Notes: f.Notes.value,
+    };
+    if (existing) await api.put(`/api/incidents/${existing.ID}`, body);
+    else await api.post('/api/incidents', body);
+    renderIncidents(); toast(existing ? 'Incident updated' : 'Incident reported');
+  });
+}
+
+// ── VENDORS ────────────────────────────────────────
+async function renderVendors() {
+  const items = await api.get('/api/vendors');
+
+  renderTablePage({
+    pageId: 'vendors', title: 'Vendors', subtitle: `${items.length} vendors`,
+    fetchData: () => Promise.resolve(items),
+    searchFields: ['Name','ContactName','Email','Phone','Notes'],
+    columns: [
+      {key:'Name', label:'Name'},
+      {key:'ContactName', label:'Contact'},
+      {key:'Email', label:'Email', render: r => r.Email ? `<a href="mailto:${r.Email}">${r.Email}</a>` : '—'},
+      {key:'Phone', label:'Phone'},
+      {key:'Website', label:'Website', render: r => r.Website || '—'},
+    ],
+    onAdd: () => editVendor(),
+    onEdit: r => editVendor(r),
+    onDelete: r => confirmDelete('vendor', async () => {
+      try { await api.del(`/api/vendors/${r.ID}`); renderVendors(); toast('Vendor deleted'); }
+      catch(e) { toast(e.message); }
+    })
+  });
+}
+
+function editVendor(existing) {
+  const f = {};
+  const form = el('div', {class:'form-grid'},
+    formField('Name', f.Name = textInput(existing?.Name||'', 'Rosewood Plumbing'), true),
+    formField('Contact', f.ContactName = textInput(existing?.ContactName||'', 'Maria Chen')),
+    formField('Email', f.Email = textInput(existing?.Email||'', 'email@example.com')),
+    formField('Phone', f.Phone = textInput(existing?.Phone||'', '503-555-0142')),
+    formField('Website', f.Website = textInput(existing?.Website||'')),
+    formField('Notes', f.Notes = textareaInput(existing?.Notes||''), true),
+  );
+  openModal(existing ? 'Edit Vendor' : 'New Vendor', form, async () => {
+    const body = {
+      Name: f.Name.value, ContactName: f.ContactName.value, Email: f.Email.value,
+      Phone: f.Phone.value, Website: f.Website.value, Notes: f.Notes.value,
+    };
+    if (existing) await api.put(`/api/vendors/${existing.ID}`, body);
+    else await api.post('/api/vendors', body);
+    renderVendors(); toast(existing ? 'Vendor updated' : 'Vendor added');
+  });
+}
+
+// ── QUOTES ─────────────────────────────────────────
+async function renderQuotes() {
+  const [items, projects, vendors] = await Promise.all([
+    api.get('/api/quotes'),
+    api.get('/api/projects'),
+    api.get('/api/vendors'),
+  ]);
+
+  renderTablePage({
+    pageId: 'quotes', title: 'Quotes', subtitle: `${items.length} quotes`,
+    fetchData: () => Promise.resolve(items),
+    searchFields: [r => r.Project?.Title, r => r.Vendor?.Name, 'Notes'],
+    columns: [
+      {key:'_project', label:'Project', render: r => r.Project ? r.Project.Title : '—'},
+      {key:'_vendor', label:'Vendor', render: r => r.Vendor ? r.Vendor.Name : '—'},
+      {key:'TotalCents', label:'Total', class:'cell-money', render: r => moneyFull(r.TotalCents)},
+      {key:'LaborCents', label:'Labor', class:'cell-money', render: r => money(r.LaborCents)},
+      {key:'MaterialsCents', label:'Materials', class:'cell-money', render: r => money(r.MaterialsCents)},
+      {key:'ReceivedDate', label:'Received', class:'cell-date', render: r => fmtDate(r.ReceivedDate)},
+    ],
+    onAdd: () => editQuote(null, projects, vendors),
+    onEdit: r => editQuote(r, projects, vendors),
+    onDelete: r => confirmDelete('quote', async () => {
+      try { await api.del(`/api/quotes/${r.ID}`); renderQuotes(); toast('Quote deleted'); }
+      catch(e) { toast(e.message); }
+    })
+  });
+}
+
+function editQuote(existing, projects, vendors) {
+  const f = {};
+  const projOpts = [['','Select project'], ...projects.map(p=>[String(p.ID), p.Title])];
+  const vendorOpts = [['','Select vendor'], ...vendors.map(v=>[String(v.ID), v.Name])];
+  const form = el('div', {class:'form-grid'},
+    formField('Project', f.ProjectID = selectInput(projOpts, existing?.ProjectID ? String(existing.ProjectID) : '')),
+    formField('Vendor', f.VendorID = selectInput(vendorOpts, existing?.VendorID ? String(existing.VendorID) : '')),
+    formField('Total', f.TotalCents = moneyInput(existing?.TotalCents)),
+    formField('Labor', f.LaborCents = moneyInput(existing?.LaborCents)),
+    formField('Materials', f.MaterialsCents = moneyInput(existing?.MaterialsCents)),
+    formField('Other', f.OtherCents = moneyInput(existing?.OtherCents)),
+    formField('Received Date', f.ReceivedDate = dateInput(toDateInput(existing?.ReceivedDate))),
+    formField('Notes', f.Notes = textareaInput(existing?.Notes||''), true),
+  );
+  openModal(existing ? 'Edit Quote' : 'New Quote', form, async () => {
+    const selectedVendor = vendors.find(v => v.ID === parseInt(f.VendorID.value));
+    const body = {
+      ProjectID: parseInt(f.ProjectID.value) || 0,
+      TotalCents: moneyVal(f.TotalCents),
+      LaborCents: moneyVal(f.LaborCents),
+      MaterialsCents: moneyVal(f.MaterialsCents),
+      OtherCents: moneyVal(f.OtherCents),
+      ReceivedDate: toRFC3339(f.ReceivedDate.value),
+      Notes: f.Notes.value,
+      Vendor: selectedVendor || {Name: ''},
+    };
+    if (existing) await api.put(`/api/quotes/${existing.ID}`, body);
+    else await api.post('/api/quotes', body);
+    renderQuotes(); toast(existing ? 'Quote updated' : 'Quote added');
+  });
+}
+
+// ── DOCUMENTS ──────────────────────────────────────
+const entityKindLabels = {
+  project: 'Project', quote: 'Quote', maintenance: 'Maintenance',
+  appliance: 'Appliance', service_log: 'Service Log', vendor: 'Vendor', incident: 'Incident',
+};
+
+function fmtSize(bytes) {
+  if (!bytes) return '—';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+async function renderDocuments() {
+  const items = await api.get('/api/documents');
+
+  const page = $('#page-documents');
+  page.innerHTML = '';
+
+  const header = el('div', {class:'page-header'},
+    el('div', {}, el('h2', {}, 'Documents'), el('p', {}, `${items.length} documents`)),
+    el('button', {class:'btn btn-primary', onClick:()=>uploadDocument()},
+      el('span', {html:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'}),
+      'Upload'
+    )
+  );
+  page.appendChild(header);
+
+  let searchTerm = '';
+  const toolbar = el('div', {class:'table-toolbar'});
+  const searchWrap = el('div', {class:'table-search'},
+    el('span', {html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'}),
+  );
+  const searchInput = el('input', {type:'text', placeholder:'Search documents...'});
+  searchWrap.appendChild(searchInput);
+  toolbar.appendChild(searchWrap);
+  page.appendChild(toolbar);
+
+  const tableWrap = el('div', {class:'data-table-wrap'});
+  const table = el('table', {class:'data-table'});
+  tableWrap.appendChild(table);
+  page.appendChild(tableWrap);
+
+  function renderTable(docs) {
+    let filtered = docs;
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      filtered = filtered.filter(d =>
+        (d.Title && d.Title.toLowerCase().includes(s)) ||
+        (d.FileName && d.FileName.toLowerCase().includes(s)) ||
+        (d.Notes && d.Notes.toLowerCase().includes(s))
+      );
+    }
+
+    table.innerHTML = '';
+    const thead = el('thead');
+    const headRow = el('tr');
+    ['Title', 'File', 'Entity', 'Type', 'Size', 'Notes', ''].forEach(label => {
+      headRow.appendChild(el('th', {}, label));
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = el('tbody');
+    if (filtered.length === 0) {
+      const td = el('td', {colspan:'7', class:'table-empty'}, 'No documents found');
+      tbody.appendChild(el('tr', {}, td));
+    } else {
+      filtered.forEach(doc => {
+        const tr = el('tr');
+        // Title (clickable download)
+        const titleTd = el('td');
+        const link = el('a', {href:`/api/documents/${doc.ID}/download`, style:'color:var(--clay);font-weight:500'}, doc.Title || doc.FileName);
+        titleTd.appendChild(link);
+        tr.appendChild(titleTd);
+        // Filename
+        tr.appendChild(el('td', {style:'font-size:0.8rem;color:var(--warm-500)'}, doc.FileName || '—'));
+        // Entity
+        const entityLabel = doc.EntityKind ? `${entityKindLabels[doc.EntityKind] || doc.EntityKind} #${doc.EntityID}` : '—';
+        tr.appendChild(el('td', {}, entityLabel));
+        // MIME
+        tr.appendChild(el('td', {style:'font-size:0.8rem'}, doc.MIMEType || '—'));
+        // Size
+        tr.appendChild(el('td', {class:'cell-money'}, fmtSize(doc.SizeBytes)));
+        // Notes
+        tr.appendChild(el('td', {style:'max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'}, doc.Notes || ''));
+        // Actions
+        const actions = el('td', {class:'cell-actions'});
+        actions.appendChild(el('button', {onClick:()=>editDocument(doc), title:'Edit', html:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'}));
+        actions.appendChild(el('button', {class:'--delete', onClick:()=>confirmDelete('document', async () => {
+          try { await api.del(`/api/documents/${doc.ID}`); renderDocuments(); toast('Document deleted'); }
+          catch(e) { toast(e.message); }
+        }), title:'Delete', html:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>'}));
+        tr.appendChild(actions);
+        tbody.appendChild(tr);
+      });
+    }
+    table.appendChild(tbody);
+  }
+
+  searchInput.addEventListener('input', e => { searchTerm = e.target.value; renderTable(items); });
+  renderTable(items);
+}
+
+function uploadDocument() {
+  const f = {};
+  const fileInput = el('input', {type:'file'});
+  const entityKinds = [['','None'], ...Object.entries(entityKindLabels).map(([k,v]) => [k, v])];
+  const form = el('div', {class:'form-grid'},
+    formField('File', fileInput, true),
+    formField('Title', f.title = textInput('', 'Auto-generated from filename if empty'), true),
+    formField('Link to Entity Type', f.entityKind = selectInput(entityKinds, '')),
+    formField('Entity ID', f.entityId = numberInput('', 'e.g. 5')),
+    formField('Notes', f.notes = textareaInput(''), true),
+  );
+
+  openModal('Upload Document', form, async () => {
+    const file = fileInput.files[0];
+    if (!file) { toast('Select a file to upload'); return; }
+
+    const fd = new FormData();
+    fd.append('file', file);
+    if (f.title.value) fd.append('title', f.title.value);
+    if (f.entityKind.value) fd.append('entityKind', f.entityKind.value);
+    if (f.entityId.value) fd.append('entityId', f.entityId.value);
+    if (f.notes.value) fd.append('notes', f.notes.value);
+
+    const resp = await fetch('/api/documents', {method: 'POST', body: fd});
+    if (!resp.ok) {
+      const err = await resp.json();
+      toast(err.error || 'Upload failed');
+      return;
+    }
+    renderDocuments(); toast('Document uploaded');
+  });
+}
+
+function editDocument(doc) {
+  const f = {};
+  const form = el('div', {class:'form-grid'},
+    formField('Title', f.title = textInput(doc.Title || ''), true),
+    formField('Notes', f.notes = textareaInput(doc.Notes || ''), true),
+  );
+  openModal('Edit Document', form, async () => {
+    await api.put(`/api/documents/${doc.ID}`, {
+      Title: f.title.value,
+      Notes: f.notes.value,
+    });
+    renderDocuments(); toast('Document updated');
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+const renderers = {
+  dashboard: renderDashboard,
+  house: renderHouse,
+  projects: renderProjects,
+  maintenance: renderMaintenance,
+  appliances: renderAppliances,
+  incidents: renderIncidents,
+  vendors: renderVendors,
+  quotes: renderQuotes,
+  documents: renderDocuments,
+};
+
+function navigate(pageId) {
+  $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === pageId));
+  $$('.page').forEach(p => p.classList.toggle('active', p.id === `page-${pageId}`));
+  if (renderers[pageId]) renderers[pageId]().catch(e => console.error('Page render error:', e));
+}
+
+$$('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => navigate(btn.dataset.page));
+});
+
+// Initial render
+renderDashboard().catch(e => console.error('Dashboard load error:', e));
+
+</script>
+</body>
+</html>

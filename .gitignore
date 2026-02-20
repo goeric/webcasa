@@ -8,6 +8,7 @@
 *.so
 *.dylib
 /micasa
+/micasa-web
 
 # Test binary, built with `go test -c`
 *.test
