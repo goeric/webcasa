@@ -4,6 +4,8 @@ A web interface for managing everything about your home -- projects, maintenance
 
 Built on the data layer and REST API from [micasa](https://github.com/cpcloud/micasa) by [Phillip Cloud](https://github.com/cpcloud). The original project is a terminal UI (TUI) for home management; **webcasa** provides the same functionality through a browser.
 
+![webcasa dashboard](docs/webcasa.png)
+
 ## Features
 
 - **Dashboard** -- at-a-glance view of open incidents, upcoming maintenance, active projects, expiring warranties, recent service logs, and spending summaries
